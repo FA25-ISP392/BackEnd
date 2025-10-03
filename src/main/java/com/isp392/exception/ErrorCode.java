@@ -17,7 +17,11 @@ public enum ErrorCode {
     PASSWORD_INVALID(1005,"Password must be at least 8 characters"),
     UNAUTHENTICATED(1006, "Unauthenticated "),
     STAFF_ACCESS_FORBIDDEN(1007, "Access denied"),
-    STAFF_NOT_FOUND(1008, "Staff not found");
+    STAFF_NOT_FOUND(1008, "Staff not found"),
+
+    //Ingredent Exception
+    INGREDIENT_NOT_FOUND(1010,  "Ingredient not found"),
+    INGREDIENT_ALREADY_EXISTS(1011, "Ingredient already exists");
 
     int code;
     String message;
