@@ -1,7 +1,7 @@
 package com.isp392.dto.request;
 
 import com.isp392.enums.Role;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -11,18 +11,25 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffCreationRequest {
-    @Size(min = 3, message = "USERNAME_INVALID")
-     String username;
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 3, max = 30, message = "USERNAME_INVALID")
+    String username;
 
-    @Size(min = 8, message = "PASSWORD_INVALID")
-     String password;
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 8, max = 30, message = "PASSWORD_INVALID")
+    String password;
 
-     String staffName;
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 2, max = 30, message = "STAFF_NAME_INVALID")
+    String staffName;
 
-     String staffPhone;
+    @Pattern(regexp = "^[0-9]{9,11}$", message = "STAFF_PHONE_INVALID")
+    String staffPhone;
 
-     String staffEmail;
+    @Email(message = "STAFF_EMAIL_INVALID")
+    String staffEmail;
 
-     Role role;
+    @NotNull(message = "ROLE_INVALID")
+    Role role;
 
 }
