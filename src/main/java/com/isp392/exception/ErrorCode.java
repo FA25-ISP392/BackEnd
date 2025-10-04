@@ -30,8 +30,11 @@ public enum ErrorCode {
 
     // 🔹 Ingredient
     INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
-    INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists");
+    INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists"),
 
+    // Dish
+    DISH_EXISTED(2001, "Dish existed"),
+    DISH_NOT_FOUND(2002, "Dish not found");
     final int code;
     final String message;
 }
