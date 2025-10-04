@@ -19,7 +19,7 @@ public enum ErrorCode {
     STAFF_ACCESS_FORBIDDEN(1007, "Access denied"),
     STAFF_NOT_FOUND(1008, "Staff not found"),
 
-    //Ingredent Exception
+    //Ingredient Exception
     INGREDIENT_NOT_FOUND(1010,  "Ingredient not found"),
     INGREDIENT_ALREADY_EXISTS(1011, "Ingredient already exists");
 

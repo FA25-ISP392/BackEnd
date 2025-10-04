@@ -1,5 +1,6 @@
 package com.isp392.dto.request;
 
+import com.isp392.enums.Role;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -18,4 +19,5 @@ public class StaffUpdateRequest {
 
     String staffName;
 
+    Role role;
 }

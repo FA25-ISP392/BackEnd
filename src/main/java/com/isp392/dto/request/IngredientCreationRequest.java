@@ -12,9 +12,9 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IngredentCreationRequest {
-    @NotBlank(message = "Ingredent Name can not empty")
-    @Size(min = 3, message = "Ingredent Name is Invalid")
+public class IngredientCreationRequest {
+    @NotBlank(message = "Ingredient Name can not empty")
+    @Size(min = 3, message = "Ingredient Name is Invalid")
     String name;
 
     @NotNull(message = "Calories is required")

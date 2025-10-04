@@ -9,7 +9,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IngredentUpdateRequest {
+public class IngredientUpdateRequest {
     String name;
     @Min(value = 0, message = "Calories must be >= 0")
     Double calories;

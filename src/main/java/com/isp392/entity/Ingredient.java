@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Table(name = "Ingredent")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Ingredent {
+public class Ingredient {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ingredentId")

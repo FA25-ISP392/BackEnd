@@ -1,9 +1,9 @@
 package com.isp392.mapper;
 
-import com.isp392.dto.request.IngredentCreationRequest;
-import com.isp392.dto.request.IngredentUpdateRequest;
-import com.isp392.dto.response.IngredentResponse;
-import com.isp392.entity.Ingredent;
+import com.isp392.dto.request.IngredientCreationRequest;
+import com.isp392.dto.request.IngredientUpdateRequest;
+import com.isp392.dto.response.IngredientResponse;
+import com.isp392.entity.Ingredient;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
@@ -13,9 +13,9 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface IngredentMapper {
-    Ingredent toIngredent(IngredentCreationRequest ingredent);
-    IngredentResponse toIngredentResponse(Ingredent ingredent);
-    List<IngredentResponse> toIngredentResponse(List<Ingredent> ingredents);
+    Ingredient toIngredent(IngredientCreationRequest ingredent);
+    IngredientResponse toIngredentResponse(Ingredient ingredient);
+    List<IngredientResponse> toIngredentResponse(List<Ingredient> ingredients);
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateIngredient(@MappingTarget Ingredent ingredent, IngredentUpdateRequest request);
+    void updateIngredient(@MappingTarget Ingredient ingredient, IngredientUpdateRequest request);
 }
