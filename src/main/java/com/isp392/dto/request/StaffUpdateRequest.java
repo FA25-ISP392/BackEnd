@@ -1,6 +1,7 @@
 package com.isp392.dto.request;
 
 import com.isp392.enums.Role;
+import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -10,14 +11,19 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffUpdateRequest {
-
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 8, max = 30, message = "PASSWORD_INVALID")
     String password;
 
+    @Email(message = "STAFF_EMAIL_INVALID")
     String staffEmail;
 
+    @Pattern(regexp = "^[0-9]{9,11}$", message = "STAFF_PHONE_INVALID")
     String staffPhone;
 
+    @Size(min = 2, max = 30, message = "STAFF_NAME_INVALID")
     String staffName;
 
+    @NotNull(message = "ROLE_INVALID")
     Role role;
 }
