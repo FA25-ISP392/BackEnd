@@ -25,18 +25,26 @@ public class CustomerService {
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
 
-    public CustomerResponse findByName(String name) {
-        return customerMapper.toCustomerResponse(customerRepository.findByFullNameContainingIgnoreCase(name));
+    public List<CustomerResponse> findByName(String name) {
+        return customerMapper.toCustomerResponseList(customerRepository.findByFullNameContainingIgnoreCase(name));
     }
     public List<CustomerResponse> findAll() {
         return customerMapper.toCustomerResponseList(customerRepository.findAll());
     }
     public CustomerResponse createCustomer(CustomerCreationRequest request) {
+        if(customerRepository.existsByPhone(request.getPhone())){
+            throw new AppException(ErrorCode.CUSTOMER_PHONE_ALREADY_EXISTS);
+        }
         Customer customer = customerMapper.toCustomer(request);
         return customerMapper.toCustomerResponse(customerRepository.save(customer));
     }
     public CustomerResponse updateCustomer(long id, CustomerUpdateRequest request) {
-        Customer customer= customerRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+
+        if (customerRepository.existsByPhoneAndIdNot(request.getPhone(), id)) {
+            throw new AppException(ErrorCode.CUSTOMER_PHONE_ALREADY_EXISTS);
+        }
         customerMapper.updateCustomer(customer, request);
         return customerMapper.toCustomerResponse(customerRepository.save(customer));
     }

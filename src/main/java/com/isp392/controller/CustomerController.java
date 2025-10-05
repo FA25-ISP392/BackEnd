@@ -16,9 +16,9 @@ import java.util.List;
 public class CustomerController {
     @Autowired
     CustomerService customerService;
-    @GetMapping("/{name}")
-    ApiResponse<CustomerResponse> getCustomerByName(@PathVariable String name) {
-        ApiResponse<CustomerResponse> response = new ApiResponse<>();
+    @GetMapping(params = "name")
+    ApiResponse<List<CustomerResponse>> getCustomerByName(@RequestParam String name) {
+        ApiResponse<List<CustomerResponse>> response = new ApiResponse<>();
         response.setResult(customerService.findByName(name));
         return response;
     }

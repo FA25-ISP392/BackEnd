@@ -23,7 +23,8 @@ public enum ErrorCode {
     INGREDIENT_NOT_FOUND(1010,  "Ingredient not found"),
     INGREDIENT_ALREADY_EXISTS(1011, "Ingredient already exists"),
     //Customer Exception
-    CUSTOMER_NOT_FOUND(1300, "Customer not found"),;
+    CUSTOMER_NOT_FOUND(1300, "Customer not found"),
+    CUSTOMER_PHONE_ALREADY_EXISTS(1301, "Customer Phone already exists"),;
     int code;
     String message;
 
