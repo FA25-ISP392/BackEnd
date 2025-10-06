@@ -1,0 +1,74 @@
+name: CI/CD for Spring Boot Application (Local Docker)
+
+on:
+  push:
+    branches:
+      - main # Chạy workflow khi có push lên nhánh 'master' (hoặc 'main')
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted # Chạy trên VPS Linux của bạn
+
+    env:
+      # Các biến môi trường lấy từ GitHub Secrets.
+      # Đảm bảo bạn đã cấu hình các secrets này trong repo của mình.
+      IMAGE_NAME: gender_healthcare # Tên image Docker (ví dụ: healthcare-app)
+      DOCKER_HOST_PORT: 9020 # Cổng trên máy host (ví dụ: 80)
+      APP_INTERNAL_PORT: 8080 # Cổng mà ứng dụng Spring Boot lắng nghe bên trong container (thường là 8080)
+
+      # Nếu ứng dụng Spring Boot của bạn cần các biến môi trường cấu hình, hãy thêm vào đây
+      # Ví dụ:
+      # DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # API_KEY: ${{ secrets.API_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4 # Kéo mã nguồn về runner (trên VPS của bạn)
+
+      # --- Không cần cài đặt Java/Maven SDK trực tiếp trên runner nữa ---
+      # Lý do: Dockerfile của bạn đã xử lý việc này trong giai đoạn BUILD của image.
+      # DOCKERFILE của bạn (FROM openjdk:17-jdk-slim-buster as build ...)
+      # sẽ tự tải JDK và Maven cần thiết để build JAR bên trong Docker context.
+      # Do đó, runner (VPS của bạn) chỉ cần có Docker Engine.
+
+      - name: Build Docker Image
+        run: |
+          echo "Building Docker image ${IMAGE_NAME}:latest from Dockerfile..."
+          # Lệnh này sẽ chạy Docker build. Docker sẽ đọc Dockerfile của bạn,
+          # thực hiện multi-stage build (build Maven JAR, copy vào JRE image)
+          # và tạo ra image cuối cùng.
+          docker build -t $IMAGE_NAME:latest .
+          echo "Docker image built successfully: ${IMAGE_NAME}:latest"
+
+      - name: Stop and Remove Old Container (if exists)
+        run: |
+          echo "Stopping and removing existing container ${IMAGE_NAME}..."
+          docker stop $IMAGE_NAME || true
+          docker rm $IMAGE_NAME || true
+          echo "Old container stopped and removed (if it existed)."
+
+      # --- Bước bổ sung: Xóa image cũ (tùy chọn nhưng được khuyến nghị để tiết kiệm dung lượng) ---
+      - name: Clean up old Docker Image (optional)
+        run: |
+          echo "Cleaning up old Docker image ${IMAGE_NAME}:<previous_tag> (if any not in use)..."
+          # Lệnh này sẽ xóa các image không được sử dụng bởi bất kỳ container nào.
+          # Cẩn thận nếu bạn muốn giữ lại các phiên bản image cũ để rollback.
+          docker image prune -f || true
+          echo "Docker images cleaned up."
+
+      - name: Run Docker Container (Inject Environment Variables)
+        run: |
+          echo "Running new Docker container ${IMAGE_NAME}..."
+          docker run -d \
+            --name $IMAGE_NAME \
+            -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
+            $IMAGE_NAME:latest
+          echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
+
+      - name: Check Running Container Status
+        run: |
+          echo "Checking status of container ${IMAGE_NAME}..."
+          docker ps -f "name=${IMAGE_NAME}"
