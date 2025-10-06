@@ -1,5 +1,5 @@
 // src/main/java/com/isp392/service/DishService.java
-package com.isp392.repository;
+package com.isp392.service;
 
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
@@ -8,6 +8,7 @@ import com.isp392.entity.Dish;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.DishMapper;
+import com.isp392.repository.DishRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

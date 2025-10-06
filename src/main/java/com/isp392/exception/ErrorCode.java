@@ -17,6 +17,12 @@ public enum ErrorCode {
     UNAUTHENTICATED(1003, "Unauthenticated"),
     STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
 
+
+
+    //Customer Exception
+    CUSTOMER_NOT_FOUND(1300, "Customer not found"),
+    CUSTOMER_PHONE_ALREADY_EXISTS(1301, "Customer Phone already exists"),
+
     // 🔹 User / Staff
     STAFF_EXISTED(1100, "Staff already exists"),
     STAFF_NOT_FOUND(1101, "Staff not found"),
@@ -31,6 +37,7 @@ public enum ErrorCode {
     // 🔹 Ingredient
     INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
     INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists"),
+
 
     // Dish
     DISH_EXISTED(2001, "Dish existed"),

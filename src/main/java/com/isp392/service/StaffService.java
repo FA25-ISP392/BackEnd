@@ -51,8 +51,15 @@ public class StaffService {
     }
 
     public StaffResponse updateStaff(long staffId, StaffUpdateRequest request) {
-        Staff staff = staffRepository.findById(staffId).orElseThrow(() -> new RuntimeException("Staff not found"));
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
         staffMapper.updateUser(staff, request);
+
+
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+        staff.setPassword(passwordEncoder.encode(request.getPassword()));
+
+
         return staffMapper.toStaffResponse(staffRepository.save(staff));
     }
 
