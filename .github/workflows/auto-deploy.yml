@@ -15,7 +15,8 @@ jobs:
     env:
       # Các biến môi trường lấy từ GitHub Secrets.
       # Đảm bảo bạn đã cấu hình các secrets này trong repo của mình.
-      IMAGE_NAME: gender_healthcare # Tên image Docker (ví dụ: healthcare-app)
+      IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
+      # Tên image Docker (ví dụ: healthcare-app)
       DOCKER_HOST_PORT: 9020 # Cổng trên máy host (ví dụ: 80)
       APP_INTERNAL_PORT: 8080 # Cổng mà ứng dụng Spring Boot lắng nghe bên trong container (thường là 8080)
 
