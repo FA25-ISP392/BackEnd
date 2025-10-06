@@ -16,7 +16,7 @@ public enum ErrorCode {
     NOT_BLANKED(1002, "Field cannot be empty"),
     UNAUTHENTICATED(1003, "Unauthenticated"),
     STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
-
+    DTO_NOT_FOUND(1005, "DTO class not found"),
 
 
     //Customer Exception
