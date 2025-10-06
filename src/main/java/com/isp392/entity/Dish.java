@@ -1,5 +1,6 @@
 package com.isp392.entity;
 
+import com.isp392.enums.Category;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -35,4 +36,8 @@ public class Dish {
 
     @Column(length = 255, nullable = false, columnDefinition = "varchar(255) default 'loading'")
     String picture;
+
+    @Column(name = "category", nullable = false, length = 15)
+    @Enumerated(EnumType.STRING)
+    Category category;
 }

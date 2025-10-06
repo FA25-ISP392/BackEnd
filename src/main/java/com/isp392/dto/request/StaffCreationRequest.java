@@ -29,7 +29,6 @@ public class StaffCreationRequest {
     @Email(message = "STAFF_EMAIL_INVALID")
     String staffEmail;
 
-    @NotNull(message = "ROLE_INVALID")
     Role role;
 
 }

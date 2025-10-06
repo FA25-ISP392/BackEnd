@@ -48,7 +48,7 @@ public class StaffController {
     }
 
     @PutMapping("/{staffId}")
-    ApiResponse<StaffResponse> updateStaff(@PathVariable long staffId, @RequestBody StaffUpdateRequest request) {
+    ApiResponse<StaffResponse> updateStaff(@PathVariable long staffId, @RequestBody @Valid StaffUpdateRequest request) {
         ApiResponse<StaffResponse> apiResponse = new ApiResponse<>();
         apiResponse.setResult(staffService.updateStaff(staffId, request));
         return apiResponse;
