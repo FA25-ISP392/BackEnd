@@ -1,19 +1,23 @@
 package com.isp392.dto.request;
 
+import com.isp392.enums.Category;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 import java.math.BigDecimal;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishUpdateRequest {
-    private String dishName;
-    private BigDecimal price;
-    private String description;
-
-    // Getters and setters
-    public String getDishName() { return dishName; }
-    public void setDishName(String dishName) { this.dishName = dishName; }
-
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
+    String dishName;
+    BigDecimal price;
+    String description;
+    Category category;
+    String imageUrl;
+    Boolean status;
 }

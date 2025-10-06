@@ -1,43 +1,31 @@
 // src/main/java/com/isp392/dto/request/DishCreationRequest.java
 package com.isp392.dto.request;
 
+import com.isp392.enums.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishCreationRequest {
     @NotBlank
-    private String dishName;
+    String dishName;
 
     @NotNull
-    private BigDecimal price;
+    BigDecimal price;
 
-    private String description;
+    String description;
 
     @NotNull
-    private Long categoryId;
+    Category category;
 
-    private String imageUrl;
+    String imageUrl;
 
-    private Boolean status;
-
-    // Getters and setters
-    public String getDishName() { return dishName; }
-    public void setDishName(String dishName) { this.dishName = dishName; }
-
-    public BigDecimal getPrice() { return price; }
-    public void setPrice(BigDecimal price) { this.price = price; }
-
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-
-    public Long getCategoryId() { return categoryId; }
-    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
-
-    public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
-
-    public Boolean getStatus() { return status; }
-    public void setStatus(Boolean status) { this.status = status; }
+    Boolean status;
 }
