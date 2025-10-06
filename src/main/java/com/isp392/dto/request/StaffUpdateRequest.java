@@ -24,6 +24,5 @@ public class StaffUpdateRequest {
     @Size(min = 2, max = 30, message = "STAFF_NAME_INVALID")
     String staffName;
 
-    @NotNull(message = "ROLE_INVALID")
     Role role;
 }
