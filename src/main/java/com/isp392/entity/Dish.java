@@ -31,7 +31,7 @@ public class Dish {
     @Column(precision = 10, scale = 2, nullable = false)
     BigDecimal calo;
 
-    @Column
+    @Column(nullable = false, columnDefinition = "bit default 1")
     Boolean isAvailable;
 
     @Column(length = 255, nullable = false, columnDefinition = "varchar(255) default 'loading'")

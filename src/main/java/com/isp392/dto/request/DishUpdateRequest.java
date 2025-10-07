@@ -15,9 +15,10 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishUpdateRequest {
     String dishName;
-    BigDecimal price;
     String description;
+    BigDecimal price;
+    BigDecimal calo;
     Category category;
-    String imageUrl;
-    Boolean status;
+    String picture;
+    Boolean isAvailable;
 }
