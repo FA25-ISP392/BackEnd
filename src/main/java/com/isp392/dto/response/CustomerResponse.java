@@ -9,11 +9,13 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerResponse {
-    long id;
+    long customerId;
 
-    String phone;
+    String customerPhone;
 
-    String fullName;
+    String customerName ;
+
+    String customerEmail;
 
     Double height;
 

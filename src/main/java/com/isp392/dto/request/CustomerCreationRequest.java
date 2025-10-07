@@ -1,6 +1,7 @@
 package com.isp392.dto.request;
 
-import jakarta.persistence.Column;
+import com.isp392.enums.Role;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -13,13 +14,26 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerCreationRequest {
-    @NotBlank(message = "CUSTOMER_PHONE_NOT_BLANKED")
-    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "CUSTOMER_PHONE_INVALID")
-    String phone;
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 3, max = 30, message = "USERNAME_INVALID")
+    String username;
 
-    @NotBlank(message = "CUSTOMER_FULLNAME_NOT_BLANKED")
+    @NotBlank(message = "NOT_BLANKED")
+    @Size(min = 8, max = 30, message = "PASSWORD_INVALID")
+    String password;
+
+    @NotBlank(message = "NOT_BLANKED")
+    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "PHONE_INVALID")
+    String customerPhone;
+
+    @NotBlank(message = "NOT_BLANKED")
     @Size(min = 3, message = "CUSTOMER_FULLNAME_TOO_SHORT")
-    String fullName;
+    String customerName;
+
+    @Email(message = "STAFF_EMAIL_INVALID")
+    String staffEmail;
+
+    Role role;
 
     Double height;
 

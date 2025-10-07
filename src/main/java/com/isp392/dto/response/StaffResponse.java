@@ -10,9 +10,6 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffResponse {
-    long staffId;
-    String username;
-    String password;
     String staffName;
     String staffPhone;
     String staffEmail;

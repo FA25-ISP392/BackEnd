@@ -16,18 +16,19 @@ public class Staff {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int staffId;
+
+    @OneToOne
+    @JoinColumn(name = "account_id", nullable = false, unique = true)
+    Account account;
+
     @Column(name = "staffName", nullable = false, length = 100)
     String staffName;
+
     @Column(name = "staffEmail", nullable = true, length = 100, unique = true)
     String staffEmail;
-    @Column(name = "staffPhone", nullable = false, length = 15)
+
+    @Column(name = "staffPhone", nullable = false, length = 15, unique = true)
     String staffPhone;
-    @Column(name = "username", nullable = false, length = 50, unique = true)
-    String username;
-    @Column(name = "password", nullable = false, length = 100)
-    String password;
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 10)
-    Role role;
+
 
 }
