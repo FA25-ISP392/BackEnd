@@ -5,37 +5,34 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Getter
-@Setter
-@AllArgsConstructor
+@Table(name = "customer")
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-@Table(name = "Customer")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Customer {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "customer_id")
-    long id;
+    int customerId;
 
-    @Column(name = "phone")
-    String phone;
+    @OneToOne
+    @JoinColumn(name = "account_id", nullable = false, unique = true)
+    Account account;
 
-    @Column(name = "fullName", nullable = false)
-    String fullName;
+    @Column(name = "customerName", nullable = false, length = 100)
+    String customerName;
 
-    @Column(name = "height")
+    @Column(name = "customerPhone", nullable = false, length = 15, unique = true)
+    String customerPhone;
+
+    @Column(name = "customerEmail", nullable = true, length = 100, unique = true)
+    String customerEmail;
+
     Double height;
-
-    @Column(name = "weight")
     Double weight;
-
-    @Column(name = "sex")
     Boolean sex;
-
-    @Column(name = "age")
     Integer age;
-
-    @Column(name = "portion")
     Integer portion;
 }

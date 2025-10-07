@@ -4,9 +4,14 @@ import com.isp392.dto.request.AuthenticationRequest;
 import com.isp392.dto.request.IntrospectRequest;
 import com.isp392.dto.response.AuthenticationResponse;
 import com.isp392.dto.response.IntrospectResponse;
+import com.isp392.entity.Staff;
+import com.isp392.entity.Customer;
+import com.isp392.enums.Role;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
+import com.isp392.repository.AccountRepository;
 import com.isp392.repository.StaffRepository;
+import com.isp392.repository.CustomerRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -16,9 +21,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -32,12 +35,14 @@ import java.util.Date;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
 
-    @Autowired
     StaffRepository staffRepository;
+    CustomerRepository customerRepository;
+    PasswordEncoder passwordEncoder;
+    private final AccountRepository accountRepository;
+
     @NonFinal
     @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;
-
+    String SIGNER_KEY;
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
 
@@ -53,47 +58,54 @@ public class AuthenticationService {
                 .valid(verified && expityTime.after(new Date()))
                 .build();
     }
-
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
-        var user = staffRepository.findByUsername(request.getUsername()).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        // 1️⃣ Tìm account theo username
+        var account = accountRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-
-        boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
-        if (!authenticated) {
+        // 2️⃣ Kiểm tra mật khẩu
+        if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
-        var token = generateToken(request.getUsername());
+        // 3️⃣ Sinh token có claim role
+        var token = generateToken(account.getUsername(), account.getRole());
 
+        // 4️⃣ Trả về response
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
                 .build();
-
     }
 
-   private String generateToken(String username) {
-        var user = staffRepository.findByUsername(username)
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
+    private AuthenticationResponse buildResponse(String username, Role role) {
+        String token = generateToken(username, role);
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
+    }
+
+    private String generateToken(String username, Role role) {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
-        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+
+        JWTClaimsSet claims = new JWTClaimsSet.Builder()
                 .subject(username)
-                .issuer("group 1")
+                .issuer("isp392")
                 .issueTime(new Date())
-                .expirationTime(new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()))
-                .claim("role", user.getRole()) // Add role claim
+                .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .claim("role", role.name())
                 .build();
 
-        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
-        JWSObject jwsObject = new JWSObject(header, payload);
+        JWSObject jwsObject = new JWSObject(header, new Payload(claims.toJSONObject()));
 
         try {
             jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error creating JWT", e);
         }
     }
+
 }

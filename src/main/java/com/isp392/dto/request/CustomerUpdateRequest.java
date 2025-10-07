@@ -12,9 +12,11 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerUpdateRequest {
     @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "CUSTOMER_PHONE_INVALID")
-    String phone;
+    String customerPhone;
     @Size(min = 3,message = "CUSTOMER_FULLNAME_TOO_SHORT")
-    String fullName;
+    String customerName;
+
+    String password;
 
     Double height;
 

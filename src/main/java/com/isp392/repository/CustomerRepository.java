@@ -2,14 +2,16 @@ package com.isp392.repository;
 
 import com.isp392.entity.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
 
 
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
-    List<Customer> findByFullNameContainingIgnoreCase(String fullName);
-    boolean existsByPhone(String phone);
-    boolean existsByPhoneAndIdNot(String phone, long customerId);
+    @Query("SELECT c FROM Customer c WHERE c.account.username = :username")
+    Optional<Customer> findByUsername(@Param("username") String username);
 
+    List<Customer> findByCustomerNameContainingIgnoreCase(String customerName);
 }
