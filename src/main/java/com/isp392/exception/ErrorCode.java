@@ -39,7 +39,7 @@ public enum ErrorCode {
     STAFF_ROLE_INVALID(1108, "Staff role is not valid"),
 
     // 🔹 Ingredient
-    IINGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
+    INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
     INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists"),
     INGREDIENT_NAME_NOT_BLANKED(1202, "Ingredient name cannot be blank"),
     INGREDIENT_NAME_INVALID(1203, "Ingredient name must be at least 3 characters long"),
