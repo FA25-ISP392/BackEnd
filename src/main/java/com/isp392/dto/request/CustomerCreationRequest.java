@@ -13,12 +13,12 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerCreationRequest {
-    @NotBlank(message = "Phone number cannot be empty")
-    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "Phone number is invalid")
+    @NotBlank(message = "CUSTOMER_PHONE_NOT_BLANKED")
+    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "CUSTOMER_PHONE_INVALID")
     String phone;
 
-    @NotBlank(message = "Full name cannot be empty")
-    @Size(min = 3, message = "Full name must be more 3 characters")
+    @NotBlank(message = "CUSTOMER_FULLNAME_NOT_BLANKED")
+    @Size(min = 3, message = "CUSTOMER_FULLNAME_TOO_SHORT")
     String fullName;
 
     Double height;

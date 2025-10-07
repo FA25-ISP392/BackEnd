@@ -22,6 +22,10 @@ public enum ErrorCode {
     //Customer Exception
     CUSTOMER_NOT_FOUND(1300, "Customer not found"),
     CUSTOMER_PHONE_ALREADY_EXISTS(1301, "Customer Phone already exists"),
+    CUSTOMER_PHONE_INVALID(1302, "Customer phone format is invalid"),
+    CUSTOMER_PHONE_NOT_BLANKED(1303, "Customer phone cannot be blank"),
+    CUSTOMER_FULLNAME_NOT_BLANKED(1304, "Customer full name cannot be blank"),
+    CUSTOMER_FULLNAME_TOO_SHORT(1305, "Customer full name must be at least 3 characters long"),
 
     // 🔹 User / Staff
     STAFF_EXISTED(1100, "Staff already exists"),
@@ -35,8 +39,16 @@ public enum ErrorCode {
     STAFF_ROLE_INVALID(1108, "Staff role is not valid"),
 
     // 🔹 Ingredient
-    INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
+    IINGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
     INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists"),
+    INGREDIENT_NAME_NOT_BLANKED(1202, "Ingredient name cannot be blank"),
+    INGREDIENT_NAME_INVALID(1203, "Ingredient name must be at least 3 characters long"),
+    INGREDIENT_CALORIES_REQUIRED(1204, "Calories is required"),
+    INGREDIENT_CALORIES_NEGATIVE(1205, "Calories must be greater than or equal to 0"),
+    INGREDIENT_QUANTITY_REQUIRED(1206, "Quantity is required"),
+    INGREDIENT_QUANTITY_NEGATIVE(1207, "Quantity must be greater than or equal to 0"),
+    INGREDIENT_PRICE_REQUIRED(1208, "Price is required"),
+    INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"),
 
 
     // Dish

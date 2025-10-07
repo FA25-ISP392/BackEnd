@@ -11,10 +11,9 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerUpdateRequest {
-    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$",
-            message = "Phone number is invalid")
+    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "CUSTOMER_PHONE_INVALID")
     String phone;
-    @Size(min = 3, message = "Full name must be more 3 characters")
+    @Size(min = 3,message = "CUSTOMER_FULLNAME_TOO_SHORT")
     String fullName;
 
     Double height;

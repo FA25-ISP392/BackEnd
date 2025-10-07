@@ -13,19 +13,19 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class IngredientCreationRequest {
-    @NotBlank(message = "Ingredient Name can not empty")
-    @Size(min = 3, message = "Ingredient Name is Invalid")
+    @NotBlank(message = "INGREDIENT_NAME_NOT_BLANKED")
+    @Size(min = 3, message = "INGREDIENT_NAME_INVALID")
     String name;
 
-    @NotNull(message = "Calories is required")
-    @Min(value = 0, message = "Calories must be >= 0")
+    @NotNull(message = "INGREDIENT_CALORIES_REQUIRED")
+    @Min(value = 0, message = "INGREDIENT_CALORIES_NEGATIVE")
     double calories;
 
-    @NotNull(message = "Quantity is required")
-    @Min(value = 0, message = "Quantity must be >= 0")
+    @NotNull(message = "INGREDIENT_QUANTITY_REQUIRED")
+    @Min(value = 0, message = "INGREDIENT_QUANTITY_NEGATIVE")
     double quantity;
 
-    @NotNull(message = "Price is required")
-    @Min(value = 0, message = "Price must be >= 0")
+    @NotNull(message = "INGREDIENT_PRICE_REQUIRED")
+    @Min(value = 0, message = "INGREDIENT_PRICE_NEGATIVE")
     double price;
 }
