@@ -18,6 +18,7 @@ public enum ErrorCode {
     STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
     DTO_NOT_FOUND(1005, "DTO class not found"),
     USER_EXISTED(1100, "User already exists"),
+    STAFF_EXISTED(1100, "User already exists"),
 
     //Customer Exception
     CUSTOMER_NOT_FOUND(1300, "Customer not found"),
@@ -48,10 +49,19 @@ public enum ErrorCode {
     INGREDIENT_QUANTITY_NEGATIVE(1207, "Quantity must be greater than or equal to 0"),
     INGREDIENT_PRICE_REQUIRED(1208, "Price is required"),
     INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"),
-
     // Dish
     DISH_EXISTED(2001, "Dish existed"),
-    DISH_NOT_FOUND(2002, "Dish not found");
+    DISH_NOT_FOUND(2002, "Dish not found"),
+    DISH_NAME_REQUIRED(2100, "Dish name cannot be blank"),
+    DISH_NAME_INVALID(2101, "Dish name must be at least 3 characters long"),
+    DISH_DESCRIPTION_NOT_BLANKED(2102, "Description cannot be blank"),
+    DISH_PRICE_REQUIRED(2103, "Price is required"),
+    DISH_PRICE_NEGATIVE(2104, "Price must be greater than or equal to 0"),
+    DISH_CATEGORY_REQUIRED(2105, "Category is required"),
+    DISH_STATUS_REQUIRED(2107, "Status is required"),
+    DISH_CALO_REQUIRED(2108, "Calo is required"),
+    DISH_CALO_NEGATIVE(2109, "Calo must be greater than or equal to 0");
+
     final int code;
     final String message;
 }

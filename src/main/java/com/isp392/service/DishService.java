@@ -28,9 +28,12 @@ public class DishService {
         if (dishRepository.existsByDishName(request.getDishName())) {
             throw new AppException(ErrorCode.DISH_EXISTED);
         }
+
         Dish dish = dishMapper.toDish(request);
+        dish.setIsAvailable(true);
         return dishRepository.save(dish);
     }
+
 
     public List<Dish> getDishes() {
         return dishRepository.findAll();

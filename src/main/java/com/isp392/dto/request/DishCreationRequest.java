@@ -1,9 +1,9 @@
-// src/main/java/com/isp392/dto/request/DishCreationRequest.java
 package com.isp392.dto.request;
 
 import com.isp392.enums.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,18 +14,25 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishCreationRequest {
-    @NotBlank
+    @NotBlank(message = "DISH_NAME_REQUIRED")
     String dishName;
 
-    @NotNull
-    BigDecimal price;
-
+    @NotBlank(message = "DISH_DESCRIPTION_NOT_BLANKED")
     String description;
 
-    @NotNull
+    @NotNull(message = "DISH_PRICE_REQUIRED")
+    @PositiveOrZero(message = "DISH_PRICE_NEGATIVE")
+    BigDecimal price;
+
+    @NotNull(message = "DISH_CALO_REQUIRED")
+    @PositiveOrZero(message = "DISH_CALO_NEGATIVE")
+    BigDecimal calo;
+
+    @NotNull(message = "DISH_CATEGORY_REQUIRED")
     Category category;
 
-    String imageUrl;
+    String picture;
 
-    Boolean status;
+    @NotNull(message = "DISH_STATUS_REQUIRED")
+    Boolean isAvailable;
 }
