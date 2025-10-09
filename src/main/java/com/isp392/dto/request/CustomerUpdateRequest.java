@@ -1,30 +1,24 @@
 package com.isp392.dto.request;
 
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomerUpdateRequest {
-    @Pattern(regexp = "^(0)[1-9]\\d{8}$", message = "CUSTOMER_PHONE_INVALID")
-    String customerPhone;
-    @Size(min = 3,message = "CUSTOMER_FULLNAME_TOO_SHORT")
-    String customerName;
+public class CustomerUpdateRequest extends AccountUpdateRequest {
 
-    String password;
-
+    @PositiveOrZero(message = "HEIGHT_INVALID")
     Double height;
 
+    @PositiveOrZero(message = "WEIGHT_INVALID")
     Double weight;
 
     Boolean sex;
-
-    Integer age;
 
     Integer portion;
 }

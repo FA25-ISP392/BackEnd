@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 
-public interface CustomerRepository extends JpaRepository<Customer, Long> {
+public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     @Query("SELECT c FROM Customer c WHERE c.account.username = :username")
     Optional<Customer> findByUsername(@Param("username") String username);
-
-    List<Customer> findByCustomerNameContainingIgnoreCase(String customerName);
 }

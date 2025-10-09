@@ -10,11 +10,11 @@ import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.StaffMapper;
 import com.isp392.repository.AccountRepository;
 import com.isp392.repository.StaffRepository;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,90 +26,58 @@ import java.util.List;
 public class StaffService {
 
     StaffRepository staffRepository;
-    AccountRepository accountRepository;
     StaffMapper staffMapper;
-    PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+    AccountService accountService;
+    private final AccountRepository accountRepository;
 
-    /**
-     * ✅ Tạo mới Staff (tự động tạo Account trước)
-     */
+
     @Transactional
-    public Staff createStaff(StaffCreationRequest request) {
-        // Kiểm tra username đã tồn tại trong Account chưa
-        if (accountRepository.existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
-        }
-
-        // 🔹 Tạo Account
-        Account account = new Account();
-        account.setUsername(request.getUsername());
-        account.setPassword(passwordEncoder.encode(request.getPassword()));
-        account.setRole(request.getRole());
-        accountRepository.save(account);
-
-        // 🔹 Tạo Staff và gán Account
+    public StaffResponse createStaff(@Valid StaffCreationRequest request) {
+        Account account = accountService.createAccount(request);
         Staff staff = staffMapper.toStaff(request);
         staff.setAccount(account);
-
-        return staffRepository.save(staff);
-    }
-
-    /**
-     * ✅ Lấy danh sách toàn bộ Staff
-     */
-    public List<Staff> getStaffs() {
-        return staffRepository.findAll();
-    }
-
-    /**
-     * ✅ Lấy 1 Staff theo id, chỉ cho phép chính họ hoặc admin truy cập
-     */
-    public StaffResponse getStaff(long id, String usernameFromJwt) {
-        Staff staff = staffRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-
-        if (!staff.getAccount().getUsername().equals(usernameFromJwt)) {
-            throw new AppException(ErrorCode.STAFF_ACCESS_FORBIDDEN);
-        }
-
+        staff = staffRepository.save(staff);
         return staffMapper.toStaffResponse(staff);
     }
 
-    /**
-     * ✅ Cập nhật thông tin Staff (nếu có password thì update trong Account)
-     */
-    @Transactional
-    public StaffResponse updateStaff(long staffId, StaffUpdateRequest request) {
+    public List<StaffResponse> getStaff() {
+        List<Staff> staffList = staffRepository.findAll();
+        return staffMapper.toStaffResponseList(staffList);
+    }
+
+    public StaffResponse getStaff(Integer staffId, String usernameJwt) {
         Staff staff = staffRepository.findById(staffId)
                 .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        if (!staff.getAccount().getUsername().equals(usernameJwt)) {
+            throw new AppException(ErrorCode.STAFF_ACCESS_FORBIDDEN);
+        }
+        return staffMapper.toStaffResponse(staff);
+    }
 
-        // 🔹 Cập nhật thông tin Staff
-        staffMapper.updateUser(staff, request);
+    @Transactional
+    public StaffResponse updateStaff(Integer staffId, StaffUpdateRequest request) {
+        Staff staff = staffRepository.findById(staffId)
+                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        staffMapper.updateStaff(staff, request);
 
-        // 🔹 Cập nhật Account nếu có thay đổi password hoặc role
         Account account = staff.getAccount();
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            account.setPassword(passwordEncoder.encode(request.getPassword()));
+            account.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
         }
         if (request.getRole() != null) {
             account.setRole(request.getRole());
         }
 
         accountRepository.save(account);
-        staffRepository.save(staff);
+        staff = staffRepository.save(staff);
 
         return staffMapper.toStaffResponse(staff);
     }
 
-    /**
-     * ✅ Xoá Staff (và cả Account đi kèm)
-     */
     @Transactional
-    public void deleteStaff(long staffId) {
+    public void deleteStaff(Integer staffId) {
         Staff staff = staffRepository.findById(staffId)
                 .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-
-        // Xoá staff và account liên kết
         Account account = staff.getAccount();
         staffRepository.delete(staff);
         accountRepository.delete(account);
