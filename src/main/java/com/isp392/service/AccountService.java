@@ -1,7 +1,9 @@
 package com.isp392.service;
 
+import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.request.StaffCreationRequest;
 import com.isp392.dto.request.CustomerCreationRequest;
+import com.isp392.dto.request.StaffUpdateRequest;
 import com.isp392.entity.Account;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -45,21 +47,17 @@ public class AccountService {
     }
 
     @Transactional
-    public Account updateAccount(Account account, StaffCreationRequest request) {
-        if (request.getUsername() != null && !request.getUsername().equals(account.getUsername()) && existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
-        }
-        accountMapper.updateAccountFromStaffRequest(account, request);
+    public Account updateAccount(Account account, StaffUpdateRequest request) {
+        accountMapper.updateAccount(account, request);
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             account.setPassword(passwordEncoder.encode(request.getPassword()));
         }
         return accountRepository.save(account);
-    }@Transactional
-    public Account updateAccount(Account account, CustomerCreationRequest request) {
-        if (request.getUsername() != null && !request.getUsername().equals(account.getUsername()) && existsByUsername(request.getUsername())) {
-            throw new AppException(ErrorCode.USER_EXISTED);
-        }
-        accountMapper.updateAccountFromCustomerRequest(account, request);
+    }
+
+    @Transactional
+    public Account updateAccount(Account account, CustomerUpdateRequest request) {
+        accountMapper.updateAccount(account, request);
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
             account.setPassword(passwordEncoder.encode(request.getPassword()));
         }

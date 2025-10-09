@@ -23,16 +23,15 @@ public enum ErrorCode {
     EMAIL_EXISTED(1109, "Email already exists"),
     SIZE_INVALID(1010, "Field size is invalid"),
     EMAIL_INVALID(1011, "Email format is invalid"),
-    //Customer Exception
-    CUSTOMER_NOT_FOUND(1300, "Customer not found"),
-    CUSTOMER_PHONE_INVALID(1302, "Customer phone format is invalid"),
-
-    //Staff
-    STAFF_NOT_FOUND(1101, "Staff not found"),
+    PHONE_INVALID(1106, "Phone number must be between 9 and 11 digits"),
     USERNAME_INVALID(1103, "Username must be between 3 and 30 characters"),
     PASSWORD_INVALID(1104, "Password must be between 8 and 30 characters"),
-    STAFF_NAME_INVALID(1105, "Staff name must be between 2 and 30 characters"),
-    PHONE_INVALID(1106, "Phone number must be between 9 and 11 digits"),
+    //Customer Exception
+    CUSTOMER_NOT_FOUND(1300, "Customer not found"),
+    //Staff
+    STAFF_NOT_FOUND(1101, "Staff not found"),
+
+
 
     // 🔹 Ingredient
     INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),

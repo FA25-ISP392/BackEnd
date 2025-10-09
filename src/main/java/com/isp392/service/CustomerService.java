@@ -64,21 +64,17 @@ public class CustomerService {
     public CustomerResponse updateCustomer(Integer customerId, CustomerUpdateRequest request) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+
+        // Update các field của Customer (trừ Account)
         customerMapper.updateCustomer(customer, request);
 
+        // Update Account riêng
         Account account = customer.getAccount();
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            account.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
-        }
-        if (request.getRole() != null) {
-            account.setRole(request.getRole());
-        }
-
-        accountRepository.save(account);
-        customer = customerRepository.save(customer);
+        accountService.updateAccount(account, request);
 
         return customerMapper.toCustomerResponse(customer);
     }
+
 
     @Transactional
     public void deleteCustomer(Integer id) {

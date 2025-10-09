@@ -1,8 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.ApiResponse;
-import com.isp392.dto.request.StaffCreationRequest;
-import com.isp392.dto.request.CustomerCreationRequest;
+import com.isp392.dto.request.*;
 import com.isp392.dto.response.AccountResponse;
 import com.isp392.entity.Account;
 import com.isp392.exception.AppException;
@@ -43,10 +41,10 @@ public class AccountController {
         Account account = accountService.findById(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if (request instanceof StaffCreationRequest) {
-            account = accountService.updateAccount(account, (StaffCreationRequest) request);
-        } else if (request instanceof CustomerCreationRequest) {
-            account = accountService.updateAccount(account, (CustomerCreationRequest) request);
+        if (request instanceof StaffUpdateRequest) {
+            account = accountService.updateAccount(account, (StaffUpdateRequest) request);
+        } else if (request instanceof CustomerUpdateRequest) {
+            account = accountService.updateAccount(account, (CustomerUpdateRequest) request);
         } else {
             throw new AppException(ErrorCode.INVALID_ARGUMENT);
         }
