@@ -23,7 +23,7 @@ public class CustomerCreationRequest {
     String password;
 
     @NotBlank(message = "NOT_BLANKED")
-    @Pattern(regexp = "^(0|\\+84)\\d{9,10}$", message = "PHONE_INVALID")
+    @Pattern(regexp = "^(0)[1-9]\\d{8}$", message = "PHONE_INVALID")
     String customerPhone;
 
     @NotBlank(message = "NOT_BLANKED")

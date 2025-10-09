@@ -18,7 +18,7 @@ public class StaffUpdateRequest {
     @Email(message = "STAFF_EMAIL_INVALID")
     String staffEmail;
 
-    @Pattern(regexp = "^[0-9]{9,11}$", message = "STAFF_PHONE_INVALID")
+    @Pattern(regexp = "^(0)[1-9]\\d{8}$", message = "STAFF_PHONE_INVALID")
     String staffPhone;
 
     @Size(min = 2, max = 30, message = "STAFF_NAME_INVALID")
