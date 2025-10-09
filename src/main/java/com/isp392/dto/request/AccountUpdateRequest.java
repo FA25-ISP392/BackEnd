@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class AccountUpdateRequest {
-    @NotBlank(message = "PASSWORD_REQUIRED")
+
     @Size(min = 8, max = 30, message = "PASSWORD_INVALID")
     String password;
 
