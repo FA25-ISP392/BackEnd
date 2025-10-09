@@ -11,7 +11,7 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class StaffUpdateRequest {
-    @NotBlank(message = "NOT_BLANKED")
+
     @Size(min = 8, max = 30, message = "PASSWORD_INVALID")
     String password;
 
