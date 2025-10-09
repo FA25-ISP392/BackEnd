@@ -18,25 +18,21 @@ public enum ErrorCode {
     STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
     DTO_NOT_FOUND(1005, "DTO class not found"),
     USER_EXISTED(1100, "User already exists"),
+    USER_NOT_EXISTED(1102, "User not existed"),
     STAFF_EXISTED(1100, "User already exists"),
-
+    EMAIL_EXISTED(1109, "Email already exists"),
+    SIZE_INVALID(1010, "Field size is invalid"),
+    EMAIL_INVALID(1011, "Email format is invalid"),
     //Customer Exception
     CUSTOMER_NOT_FOUND(1300, "Customer not found"),
-    CUSTOMER_PHONE_ALREADY_EXISTS(1301, "Customer Phone already exists"),
     CUSTOMER_PHONE_INVALID(1302, "Customer phone format is invalid"),
-    CUSTOMER_PHONE_NOT_BLANKED(1303, "Customer phone cannot be blank"),
-    CUSTOMER_FULLNAME_NOT_BLANKED(1304, "Customer full name cannot be blank"),
-    CUSTOMER_FULLNAME_TOO_SHORT(1305, "Customer full name must be at least 3 characters long"),
 
     //Staff
     STAFF_NOT_FOUND(1101, "Staff not found"),
-    USER_NOT_EXISTED(1102, "User not existed"),
     USERNAME_INVALID(1103, "Username must be between 3 and 30 characters"),
     PASSWORD_INVALID(1104, "Password must be between 8 and 30 characters"),
     STAFF_NAME_INVALID(1105, "Staff name must be between 2 and 30 characters"),
     PHONE_INVALID(1106, "Phone number must be between 9 and 11 digits"),
-    STAFF_EMAIL_INVALID(1107, "Staff email is not valid"),
-    STAFF_ROLE_INVALID(1108, "Staff role is not valid"),
 
     // 🔹 Ingredient
     INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),

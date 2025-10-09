@@ -2,28 +2,18 @@ package com.isp392.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 
-@Getter
-@Setter
-@AllArgsConstructor
+@Data
 @NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CustomerResponse {
-    long customerId;
-
-    String customerPhone;
-
-    String customerName ;
-
-    String customerEmail;
-
+public class CustomerResponse extends AccountResponse {
+    Integer customerId;
+    Integer accountId; // Liên kết với Account
     Double height;
-
     Double weight;
-
     Boolean sex;
-
-    Integer age;
-
     Integer portion;
 }

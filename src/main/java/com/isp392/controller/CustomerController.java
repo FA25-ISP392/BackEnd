@@ -4,12 +4,14 @@ import com.isp392.dto.request.ApiResponse;
 import com.isp392.dto.request.CustomerCreationRequest;
 import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.response.CustomerResponse;
-import com.isp392.entity.Customer;
 import com.isp392.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,39 +24,50 @@ public class CustomerController {
 
     CustomerService customerService;
 
-    @GetMapping("/{name}")
-    ApiResponse<List<CustomerResponse>> getCustomer(@RequestParam String name) {
-        ApiResponse<List<CustomerResponse>> response = new ApiResponse<>();
-        response.setResult(customerService.findByName(name));
-        return response;
+    @PostMapping
+    public ApiResponse<CustomerResponse> createCustomer(@Valid @RequestBody CustomerCreationRequest request) {
+        CustomerResponse createdCustomer = customerService.createCustomer(request);
+        return ApiResponse.<CustomerResponse>builder()
+                .result(createdCustomer)
+                .build();
     }
 
     @GetMapping
-    ApiResponse<List<CustomerResponse>> getCustomer() {
-        ApiResponse<List<CustomerResponse>> response = new ApiResponse<>();
-        response.setResult(customerService.findAll());
-        return response;
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<CustomerResponse>> getCustomers() {
+        List<CustomerResponse> customers = customerService.getCustomer();
+        return ApiResponse.<List<CustomerResponse>>builder()
+                .result(customers)
+                .build();
     }
 
-    @PostMapping
-    ApiResponse<Customer> createCustomer(@RequestBody @Valid CustomerCreationRequest request) {
-        ApiResponse<Customer> response = new ApiResponse<>();
-        response.setResult(customerService.createCustomer(request));
-        return response;
+    @GetMapping("/{customerId}")
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<CustomerResponse> getCustomer(@PathVariable Integer customerId, @AuthenticationPrincipal Jwt jwt) {
+        String username = jwt.getClaimAsString("sub");
+        CustomerResponse customer = customerService.getCustomer(customerId, username);
+        return ApiResponse.<CustomerResponse>builder()
+                .result(customer)
+                .build();
     }
 
-    @PutMapping("/{id}")
-    ApiResponse<CustomerResponse> updateCustomer(@PathVariable Long id, @RequestBody @Valid CustomerUpdateRequest customerUpdateRequest) {
-        ApiResponse<CustomerResponse> response = new ApiResponse<>();
-        response.setResult(customerService.updateCustomer(id, customerUpdateRequest));
-        return response;
+    @PutMapping("/{customerId}")
+//    @PreAuthorize("hasRole('CUSTOMER')")
+    public ApiResponse<CustomerResponse> updateCustomer(@PathVariable Integer customerId, @Valid @RequestBody CustomerUpdateRequest request) {
+        CustomerResponse updatedCustomer = customerService.updateCustomer(customerId, request);
+        return ApiResponse.<CustomerResponse>builder()
+                .result(updatedCustomer)
+                .build();
     }
 
-    @DeleteMapping("/{id}")
-    ApiResponse<String> deleteCustomer(@PathVariable Long id) {
-        ApiResponse<String> response = new ApiResponse<>();
-        customerService.deleteCustomer(id);
-        response.setResult("Delete Successfully!");
-        return response;
+
+    @DeleteMapping("/{customerId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> deleteCustomer(@PathVariable Integer customerId) {
+        customerService.deleteCustomer(customerId);
+        return ApiResponse.<Void>builder()
+                .message("Customer deleted successfully")
+                .build();
     }
 }
+

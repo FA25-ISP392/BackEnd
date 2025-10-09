@@ -4,12 +4,10 @@ import com.isp392.dto.request.ApiResponse;
 import com.isp392.dto.request.StaffCreationRequest;
 import com.isp392.dto.request.StaffUpdateRequest;
 import com.isp392.dto.response.StaffResponse;
-import com.isp392.entity.Staff;
 import com.isp392.service.StaffService;
 import jakarta.validation.Valid;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -19,46 +17,53 @@ import java.util.List;
 @RestController
 @RequestMapping("/staff")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class StaffController {
 
-    StaffService staffService;
+    private final StaffService staffService;
 
     @PostMapping
-    ApiResponse<Staff> createStaff(@RequestBody @Valid StaffCreationRequest request) {
-        ApiResponse<Staff> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(staffService.createStaff(request));
-        return apiResponse;
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<StaffResponse> createStaff(@Valid @RequestBody StaffCreationRequest request) {
+        StaffResponse createdStaff = staffService.createStaff(request);
+        return ApiResponse.<StaffResponse>builder()
+                .result(createdStaff)
+                .build();
     }
 
     @GetMapping
-    ApiResponse<List<Staff>> getStaff() {
-        ApiResponse<List<Staff>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(staffService.getStaffs());
-        return apiResponse;
+//    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<StaffResponse>> getStaff() {
+        List<StaffResponse> staffList = staffService.getStaff();
+        return ApiResponse.<List<StaffResponse>>builder()
+                .result(staffList)
+                .build();
     }
 
     @GetMapping("/{staffId}")
-    ApiResponse<StaffResponse> getStaff(@PathVariable long staffId, @AuthenticationPrincipal Jwt jwt) {
+//    @PreAuthorize("hasRole('STAFF')")
+    public ApiResponse<StaffResponse> getStaff(@PathVariable Integer staffId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
-        StaffResponse staff = staffService.getStaff(staffId, username);
-        ApiResponse<StaffResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(staff);
-        return apiResponse;
+        StaffResponse staff = staffService.getStaff(staffId,username);
+        return ApiResponse.<StaffResponse>builder()
+                .result(staff)
+                .build();
     }
 
     @PutMapping("/{staffId}")
-    ApiResponse<StaffResponse> updateStaff(@PathVariable long staffId, @RequestBody @Valid StaffUpdateRequest request) {
-        ApiResponse<StaffResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(staffService.updateStaff(staffId, request));
-        return apiResponse;
+//    @PreAuthorize("hasRole('STAFF')")
+    public ApiResponse<StaffResponse> updateStaff(@PathVariable Integer staffId, @Valid @RequestBody StaffUpdateRequest request) {
+        StaffResponse updatedStaff = staffService.updateStaff(staffId, request);
+        return ApiResponse.<StaffResponse>builder()
+                .result(updatedStaff)
+                .build();
     }
 
     @DeleteMapping("/{staffId}")
-    ApiResponse<String> deleteStaff(@PathVariable long staffId) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<Void> deleteStaff(@PathVariable Integer staffId) {
         staffService.deleteStaff(staffId);
-        ApiResponse<String> apiResponse = new ApiResponse<>();
-        apiResponse.setResult("Delete user successfully");
-        return apiResponse;
+        return ApiResponse.<Void>builder()
+                .message("Staff deleted successfully")
+                .build();
     }
 }

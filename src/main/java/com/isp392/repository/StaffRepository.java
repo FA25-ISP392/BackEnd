@@ -9,9 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface StaffRepository extends JpaRepository<Staff,Long> {
+public interface StaffRepository extends JpaRepository<Staff,Integer> {
     boolean existsByAccount_Username(String username);
     @Query("SELECT s FROM Staff s WHERE s.account.username = :username")
     Optional<Staff> findByUsername(@Param("username") String username);
-
 }

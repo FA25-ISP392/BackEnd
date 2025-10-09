@@ -17,22 +17,15 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int customerId;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     Account account;
 
-    @Column(name = "customerName", nullable = false, length = 100)
-    String customerName;
-
-    @Column(name = "customerPhone", nullable = false, length = 15, unique = true)
-    String customerPhone;
-
-    @Column(name = "customerEmail", nullable = true, length = 100, unique = true)
-    String customerEmail;
-
     Double height;
+
     Double weight;
-    Boolean sex;
-    Integer age;
+
+    Boolean sex; // 0 = nữ, 1 = nam
+
     Integer portion;
 }
