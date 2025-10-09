@@ -23,7 +23,7 @@ public class StaffCreationRequest {
     @Size(min = 2, max = 30, message = "STAFF_NAME_INVALID")
     String staffName;
 
-    @Pattern(regexp = "^[0-9]{9,11}$", message = "PHONE_INVALID")
+    @Pattern(regexp = "^(0)[1-9]\\d{8}$", message = "PHONE_INVALID")
     String staffPhone;
 
     @Email(message = "STAFF_EMAIL_INVALID")
