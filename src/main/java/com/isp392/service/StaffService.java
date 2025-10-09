@@ -1,9 +1,12 @@
 package com.isp392.service;
 
+import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.request.StaffCreationRequest;
 import com.isp392.dto.request.StaffUpdateRequest;
+import com.isp392.dto.response.CustomerResponse;
 import com.isp392.dto.response.StaffResponse;
 import com.isp392.entity.Account;
+import com.isp392.entity.Customer;
 import com.isp392.entity.Staff;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -58,18 +61,13 @@ public class StaffService {
     public StaffResponse updateStaff(Integer staffId, StaffUpdateRequest request) {
         Staff staff = staffRepository.findById(staffId)
                 .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+
+        // Update các field của staff (trừ Account)
         staffMapper.updateStaff(staff, request);
 
+        // Update Account riêng
         Account account = staff.getAccount();
-        if (request.getPassword() != null && !request.getPassword().isEmpty()) {
-            account.setPassword(new BCryptPasswordEncoder().encode(request.getPassword()));
-        }
-        if (request.getRole() != null) {
-            account.setRole(request.getRole());
-        }
-
-        accountRepository.save(account);
-        staff = staffRepository.save(staff);
+        accountService.updateAccount(account, request);
 
         return staffMapper.toStaffResponse(staff);
     }

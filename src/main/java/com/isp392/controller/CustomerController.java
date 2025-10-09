@@ -62,7 +62,7 @@ public class CustomerController {
 
 
     @DeleteMapping("/{customerId}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> deleteCustomer(@PathVariable Integer customerId) {
         customerService.deleteCustomer(customerId);
         return ApiResponse.<Void>builder()

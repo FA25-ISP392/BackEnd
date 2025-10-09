@@ -17,8 +17,15 @@ public interface StaffMapper {
     StaffResponse toStaffResponse(Staff staff);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "account", ignore = true)
     void updateStaff(@MappingTarget Staff staff, StaffUpdateRequest request);
 
+    @AfterMapping
+    default void updateNestedAccount(@MappingTarget Staff staff, StaffUpdateRequest request, AccountMapper accountMapper) {
+        if (staff.getAccount() != null) {
+            accountMapper.updateAccount(staff.getAccount(), request);
+        }
+    }
     List<StaffResponse> toStaffResponseList(List<Staff> staffList);
 }
 
