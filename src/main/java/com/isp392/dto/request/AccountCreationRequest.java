@@ -23,6 +23,7 @@ public class AccountCreationRequest {
     @Size(min = 8, max = 30, message = "SIZE_INVALID")
     String password;
 
+    @NotBlank(message = "NOT_BLANKED")
     @Size(min=2, max = 50, message = "SIZE_INVALID")
     String fullName;
 
