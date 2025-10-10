@@ -8,10 +8,11 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IngredientResponse {
+public class ToppingResponse {
     int id;
     String name;
     double calories;
     double quantity;
     double price;
+    double gram;
 }

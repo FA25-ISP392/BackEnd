@@ -38,17 +38,20 @@ public enum ErrorCode {
     STAFF_EMAIL_INVALID(1107, "Staff email is not valid"),
     STAFF_ROLE_INVALID(1108, "Staff role is not valid"),
 
-    // 🔹 Ingredient
-    INGREDIENT_NOT_FOUND(1200, "Ingredient not found"),
-    INGREDIENT_ALREADY_EXISTS(1201, "Ingredient already exists"),
-    INGREDIENT_NAME_NOT_BLANKED(1202, "Ingredient name cannot be blank"),
-    INGREDIENT_NAME_INVALID(1203, "Ingredient name must be at least 3 characters long"),
+    // 🔹 Topping
+    INGREDIENT_NOT_FOUND(1200, "Topping not found"),
+    INGREDIENT_ALREADY_EXISTS(1201, "Topping already exists"),
+    INGREDIENT_NAME_NOT_BLANKED(1202, "Topping name cannot be blank"),
+    INGREDIENT_NAME_INVALID(1203, "Topping name must be at least 3 characters long"),
     INGREDIENT_CALORIES_REQUIRED(1204, "Calories is required"),
     INGREDIENT_CALORIES_NEGATIVE(1205, "Calories must be greater than or equal to 0"),
     INGREDIENT_QUANTITY_REQUIRED(1206, "Quantity is required"),
     INGREDIENT_QUANTITY_NEGATIVE(1207, "Quantity must be greater than or equal to 0"),
     INGREDIENT_PRICE_REQUIRED(1208, "Price is required"),
-    INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"),
+    INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"),INGREDIENT_GRAM_REQUIRED(1208, "Gram is required"),
+    INGREDIENT_GRAM_NEGATIVE(1209, "Gram must be greater than or equal to 0"),
+    ORDER_TOPPING_NOT_FOUND(1210, "Order topping not found"),
+    ORDER_TOPPING_ALREADY_EXISTS(1211, "Order topping already exists"),
     // Dish
     DISH_EXISTED(2001, "Dish existed"),
     DISH_NOT_FOUND(2002, "Dish not found"),

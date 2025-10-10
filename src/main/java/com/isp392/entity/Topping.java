@@ -4,25 +4,36 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "Ingredent")
+@Table(name = "topping")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Ingredient {
+public class Topping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ingredentId")
+    @Column(name = "toppingId")
     int id;
 
-    @Column(name = "ingredentName", nullable = false, length = 255)
+    @Column(name = "toppingName", nullable = false)
     String name;
+
     @Column(nullable = false)
     double calories;
-    @Column(nullable = false)
+
+    @Column(name = "stockQuantity", nullable = false)
     double quantity;
+
     @Column(nullable = false)
     double price;
+
+    @Column(nullable = false)
+    double gram;
+
+    @OneToMany(mappedBy = "topping")
+    List<OrderTopping> orderToppings;
 }
