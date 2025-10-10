@@ -1,11 +1,11 @@
 package com.isp392.repository;
 
-import com.isp392.entity.Ingredient;
+import com.isp392.entity.Topping;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IngredientRepository extends JpaRepository<Ingredient,Long> {
+public interface ToppingRepository extends JpaRepository<Topping,Long> {
     boolean existsByname(String name);
-    Ingredient findById(int id);
+    Topping findById(int id);
 }

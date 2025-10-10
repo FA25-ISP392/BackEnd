@@ -12,7 +12,13 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class IngredientCreationRequest {
+public class OrderToppingCreationRequest {
+    @NotNull(message = "OrderdetailId không null")
+    Integer orderDetailId;
+
+    @NotNull(message = "toppingId không null")
+    Integer toppingId;
+
     @NotBlank(message = "INGREDIENT_NAME_NOT_BLANKED")
     @Size(min = 3, message = "INGREDIENT_NAME_INVALID")
     String name;
