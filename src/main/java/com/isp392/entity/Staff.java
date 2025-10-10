@@ -16,7 +16,7 @@ public class Staff {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int staffId;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     Account account;
 

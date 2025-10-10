@@ -74,10 +74,6 @@ public class StaffService {
 
     @Transactional
     public void deleteStaff(Integer staffId) {
-        Staff staff = staffRepository.findById(staffId)
-                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-        Account account = staff.getAccount();
-        staffRepository.delete(staff);
-        accountRepository.delete(account);
+        staffRepository.deleteById(staffId);
     }
 }

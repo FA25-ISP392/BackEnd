@@ -59,7 +59,7 @@ public class StaffController {
     }
 
     @DeleteMapping("/{staffId}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> deleteStaff(@PathVariable Integer staffId) {
         staffService.deleteStaff(staffId);
         return ApiResponse.<Void>builder()
