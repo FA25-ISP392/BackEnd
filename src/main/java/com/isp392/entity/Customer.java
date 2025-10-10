@@ -17,7 +17,7 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int customerId;
 
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false,cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "account_id", nullable = false, unique = true)
     Account account;
 

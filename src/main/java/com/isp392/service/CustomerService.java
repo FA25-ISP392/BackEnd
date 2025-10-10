@@ -77,11 +77,7 @@ public class CustomerService {
 
 
     @Transactional
-    public void deleteCustomer(Integer id) {
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
-        Account account = customer.getAccount();
-        customerRepository.delete(customer);
-        accountRepository.delete(account);
+    public void deleteCustomer(Integer customerId) {
+        customerRepository.deleteById(customerId);
     }
 }
