@@ -34,8 +34,8 @@ public class CustomerController {
 
     @GetMapping
 //    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<CustomerResponse>> getCustomers() {
-        List<CustomerResponse> customers = customerService.getCustomer();
+    public ApiResponse<List<CustomerResponse>> getCustomers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size) {
+        List<CustomerResponse> customers = customerService.getCustomer(page, size);
         return ApiResponse.<List<CustomerResponse>>builder()
                 .result(customers)
                 .build();
