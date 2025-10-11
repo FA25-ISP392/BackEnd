@@ -5,11 +5,11 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class DishToppingId implements Serializable {
-    private long dishId;
-    private long toppingId;
+    private int dishId;
+    private int toppingId;
 
     public DishToppingId() {}
-    public DishToppingId(long dishId, long toppingId) {
+    public DishToppingId(int dishId, int toppingId) {
         this.dishId = dishId;
         this.toppingId = toppingId;
     }

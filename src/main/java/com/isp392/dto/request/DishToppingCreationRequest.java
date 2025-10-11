@@ -1,4 +1,3 @@
-// DishToppingCreationRequest.java
 package com.isp392.dto.request;
 
 import jakarta.validation.constraints.NotNull;
@@ -12,10 +11,10 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishToppingCreationRequest {
+
     @NotNull(message = "Dish ID cannot be null")
-    int dishId;
+    Integer dishId;
 
     @NotNull(message = "Topping ID cannot be null")
-    int toppingId;
-
+    Integer toppingId;
 }
