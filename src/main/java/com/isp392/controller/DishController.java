@@ -40,7 +40,7 @@ public class DishController {
     }
 
     @GetMapping("/{dishId}")
-    ApiResponse<DishResponse> getDish(@PathVariable long dishId, @AuthenticationPrincipal Jwt jwt) {
+    ApiResponse<DishResponse> getDish(@PathVariable int dishId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
         DishResponse dish = dishService.getDish(dishId, username);
         ApiResponse<DishResponse> apiResponse = new ApiResponse<>();
@@ -49,14 +49,14 @@ public class DishController {
     }
 
     @PutMapping("/{dishId}")
-    ApiResponse<DishResponse> updateDish(@PathVariable long dishId, @RequestBody DishUpdateRequest request) {
+    ApiResponse<DishResponse> updateDish(@PathVariable int dishId, @RequestBody DishUpdateRequest request) {
         ApiResponse<DishResponse> apiResponse = new ApiResponse<>();
         apiResponse.setResult(dishService.updateDish(dishId, request));
         return apiResponse;
     }
 
     @DeleteMapping("/{dishId}")
-    ApiResponse<String> deleteDish(@PathVariable long dishId) {
+    ApiResponse<String> deleteDish(@PathVariable int dishId) {
         dishService.deleteDish(dishId);
         ApiResponse<String> apiResponse = new ApiResponse<>();
         apiResponse.setResult("Delete dish successfully");

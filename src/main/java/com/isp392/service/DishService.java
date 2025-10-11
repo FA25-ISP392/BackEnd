@@ -39,21 +39,21 @@ public class DishService {
         return dishRepository.findAll();
     }
 
-    public DishResponse getDish(long dishId, String usernameFromJwt) {
+    public DishResponse getDish(int dishId, String usernameFromJwt) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
         // Add access control if needed
         return dishMapper.toDishResponse(dish);
     }
 
-    public DishResponse updateDish(long dishId, DishUpdateRequest request) {
+    public DishResponse updateDish(int dishId, DishUpdateRequest request) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
         dishMapper.updateDish(dish, request);
         return dishMapper.toDishResponse(dishRepository.save(dish));
     }
 
-    public void deleteDish(long dishId) {
+    public void deleteDish(int dishId) {
         dishRepository.deleteById(dishId);
     }
 

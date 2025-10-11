@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishResponse {
-    Long id;
+    int id;
     String dishName;
     BigDecimal price;
     String description;
