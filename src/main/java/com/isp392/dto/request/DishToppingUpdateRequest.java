@@ -13,8 +13,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishToppingUpdateRequest {
     @NotNull(message = "Dish ID cannot be null")
-    int dishId;
+    Integer dishId;
 
     @NotNull(message = "Topping ID cannot be null")
-    int toppingId;
+    Integer toppingId;
 }
