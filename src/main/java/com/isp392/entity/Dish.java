@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 public class Dish {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    Integer dishId;
+    int dishId;
 
     @Column(length = 255, unique = true, nullable = false)
     String dishName;
