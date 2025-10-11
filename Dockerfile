@@ -27,3 +27,4 @@ EXPOSE 8080
 
 # Lệnh mặc định để chạy ứng dụng khi container khởi động
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
