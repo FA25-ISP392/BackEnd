@@ -1,12 +1,9 @@
 package com.isp392.service;
 
-import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.request.StaffCreationRequest;
 import com.isp392.dto.request.StaffUpdateRequest;
-import com.isp392.dto.response.CustomerResponse;
 import com.isp392.dto.response.StaffResponse;
 import com.isp392.entity.Account;
-import com.isp392.entity.Customer;
 import com.isp392.entity.Staff;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -17,7 +14,13 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,8 @@ public class StaffService {
     StaffRepository staffRepository;
     StaffMapper staffMapper;
     AccountService accountService;
-    private final AccountRepository accountRepository;
+    AccountRepository accountRepository;
+    AuthenticationService authenticationService;
 
 
     @Transactional
@@ -43,9 +47,12 @@ public class StaffService {
         return staffMapper.toStaffResponse(staff);
     }
 
-    public List<StaffResponse> getStaff() {
-        List<Staff> staffList = staffRepository.findAll();
-        return staffMapper.toStaffResponseList(staffList);
+    public List<StaffResponse> getStaff(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("staffId").ascending());
+        Page<Staff> staffPage = staffRepository.findAll(pageable);
+        return staffPage.stream()
+                .map(staffMapper::toStaffResponse)
+                .toList();
     }
 
     public StaffResponse getStaff(Integer staffId, String usernameJwt) {
@@ -73,7 +80,21 @@ public class StaffService {
     }
 
     @Transactional
-    public void deleteStaff(Integer staffId) {
-        staffRepository.deleteById(staffId);
+    public void deleteStaff(Integer staffIdToDelete) {
+        // Lấy username của người đăng nhập hiện tại
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        // Lấy staff hiện tại (người đăng nhập)
+        Staff currentStaff = staffRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.LOGIN_REQUIRED));
+
+        // Kiểm tra không cho staff tự xoá bản thân
+        if (currentStaff.getStaffId().equals(staffIdToDelete)) {
+            throw new AppException(ErrorCode.CANNOT_DELETE_SELF);
+        }
+
+        // Xoá staff theo staffId được truyền vào
+        staffRepository.deleteById(staffIdToDelete);
     }
 }

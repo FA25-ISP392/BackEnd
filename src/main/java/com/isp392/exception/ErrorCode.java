@@ -26,6 +26,8 @@ public enum ErrorCode {
     PHONE_INVALID(1106, "Phone number must be between 9 and 11 digits"),
     USERNAME_INVALID(1103, "Username must be between 3 and 30 characters"),
     PASSWORD_INVALID(1104, "Password must be between 8 and 30 characters"),
+    CANNOT_DELETE_SELF(1012, "Cannot delete yourself"),
+    LOGIN_REQUIRED(1013, "Login first"),
     //Customer Exception
     CUSTOMER_NOT_FOUND(1300, "Customer not found"),
     //Staff

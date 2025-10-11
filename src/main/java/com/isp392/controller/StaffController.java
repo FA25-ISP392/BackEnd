@@ -4,6 +4,8 @@ import com.isp392.dto.request.ApiResponse;
 import com.isp392.dto.request.StaffCreationRequest;
 import com.isp392.dto.request.StaffUpdateRequest;
 import com.isp392.dto.response.StaffResponse;
+import com.isp392.exception.AppException;
+import com.isp392.exception.ErrorCode;
 import com.isp392.service.StaffService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.text.ParseException;
 import java.util.List;
 
 @RestController
@@ -31,9 +34,9 @@ public class StaffController {
     }
 
     @GetMapping
-//    @PreAuthorize("hasRole('ADMIN')")
-    public ApiResponse<List<StaffResponse>> getStaff() {
-        List<StaffResponse> staffList = staffService.getStaff();
+// @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<List<StaffResponse>> getStaff(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "5") int size) {
+        List<StaffResponse> staffList = staffService.getStaff(page, size);
         return ApiResponse.<List<StaffResponse>>builder()
                 .result(staffList)
                 .build();
@@ -43,7 +46,7 @@ public class StaffController {
 //    @PreAuthorize("hasRole('STAFF')")
     public ApiResponse<StaffResponse> getStaff(@PathVariable Integer staffId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
-        StaffResponse staff = staffService.getStaff(staffId,username);
+        StaffResponse staff = staffService.getStaff(staffId, username);
         return ApiResponse.<StaffResponse>builder()
                 .result(staff)
                 .build();
@@ -66,4 +69,5 @@ public class StaffController {
                 .message("Staff deleted successfully")
                 .build();
     }
+
 }
