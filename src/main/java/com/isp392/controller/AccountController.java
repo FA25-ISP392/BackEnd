@@ -2,27 +2,28 @@ package com.isp392.controller;
 
 import com.isp392.dto.request.*;
 import com.isp392.dto.response.AccountResponse;
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.entity.Account;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.service.AccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/accounts")
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class AccountController {
 
-    private final AccountService accountService;
+    AccountService accountService;
 
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<AccountResponse> createAccount(@Valid @RequestBody Object request) {
-        Account  account;
+        Account account;
         if (request instanceof StaffCreationRequest) {
             account = accountService.createAccount((StaffCreationRequest) request);
         } else if (request instanceof CustomerCreationRequest) {
@@ -36,7 +37,7 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<AccountResponse> updateAccount(@PathVariable Integer accountId, @Valid @RequestBody Object request) {
         Account account = accountService.findById(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -55,7 +56,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/{accountId}")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> deleteAccount(@PathVariable Integer accountId) {
         accountService.deleteAccount(accountId);
         return ApiResponse.<Void>builder()

@@ -7,8 +7,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Table(name = "DishTopping")
 @IdClass(DishToppingId.class)
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder

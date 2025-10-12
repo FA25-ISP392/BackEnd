@@ -15,16 +15,15 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AccountService {
-    private final AccountRepository accountRepository;
-    private final AccountMapper accountMapper;
-    private final PasswordEncoder passwordEncoder;
+    AccountRepository accountRepository;
+    AccountMapper accountMapper;
+    PasswordEncoder passwordEncoder;
 
     @Transactional
     public Account createAccount(StaffCreationRequest request) {

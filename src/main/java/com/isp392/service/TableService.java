@@ -10,7 +10,6 @@ import com.isp392.mapper.TableMapper;
 import com.isp392.repository.TableRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service

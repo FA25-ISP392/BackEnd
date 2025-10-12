@@ -1,14 +1,11 @@
-// DishToppingResponse.java
 package com.isp392.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishToppingResponse {
     int dishId;

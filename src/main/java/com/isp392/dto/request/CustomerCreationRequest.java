@@ -1,13 +1,12 @@
 package com.isp392.dto.request;
 
-import com.isp392.enums.Role;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CustomerCreationRequest extends AccountCreationRequest {
 

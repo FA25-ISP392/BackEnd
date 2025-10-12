@@ -13,20 +13,21 @@ import com.isp392.repository.DishToppingRepository;
 import com.isp392.repository.ToppingRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
-
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class DishToppingService {
 
-    private final DishToppingRepository dishToppingRepository;
-    private final DishRepository dishRepository;
-    private final ToppingRepository toppingRepository;
-    private final DishToppingMapper dishToppingMapper;
+    DishToppingRepository dishToppingRepository;
+    DishRepository dishRepository;
+    ToppingRepository toppingRepository;
+    DishToppingMapper dishToppingMapper;
 
     // CREATE
     public DishToppingResponse create(DishToppingCreationRequest request) {

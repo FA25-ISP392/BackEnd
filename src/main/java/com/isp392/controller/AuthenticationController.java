@@ -1,6 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.ApiResponse;
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.AuthenticationRequest;
 import com.isp392.dto.request.IntrospectRequest;
 import com.isp392.dto.response.AuthenticationResponse;
@@ -25,7 +25,7 @@ public class AuthenticationController {
     AuthenticationService authenticationService;
 
     @PostMapping("/token")
-    ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request){
+    ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
         var result = authenticationService.authenticate(request);
         return ApiResponse.<AuthenticationResponse>builder()
                 .result(result)

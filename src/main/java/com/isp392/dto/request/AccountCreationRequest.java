@@ -4,14 +4,11 @@ import com.isp392.enums.Role;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.time.LocalDate;
-import java.util.Date;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class AccountCreationRequest {
 
@@ -24,7 +21,7 @@ public class AccountCreationRequest {
     String password;
 
     @NotBlank(message = "NOT_BLANKED")
-    @Size(min=2, max = 50, message = "SIZE_INVALID")
+    @Size(min = 2, max = 50, message = "SIZE_INVALID")
     String fullName;
 
     @Email(message = "EMAIL_INVALID")

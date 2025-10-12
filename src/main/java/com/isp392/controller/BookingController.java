@@ -1,6 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.ApiResponse;
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.BookingCreationRequest;
 import com.isp392.dto.request.BookingUpdateRequest;
 import com.isp392.dto.response.BookingResponse;
@@ -38,6 +38,7 @@ public class BookingController {
         response.setResult(list);
         return response;
     }
+
     @PutMapping("/{id}")
     public ApiResponse<BookingResponse> updateBooking(
             @PathVariable int id,
@@ -51,6 +52,7 @@ public class BookingController {
         response.setResult(updated);
         return response;
     }
+
     @DeleteMapping("/{id}")
     public ApiResponse<String> cancelBooking(
             @PathVariable int id,
