@@ -1,6 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.ApiResponse;
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
 import com.isp392.dto.response.DishResponse;

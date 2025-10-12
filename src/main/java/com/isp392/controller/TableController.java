@@ -1,11 +1,13 @@
 package com.isp392.controller;
 
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.TableCreationRequest;
 import com.isp392.dto.request.TableUpdateRequest;
 import com.isp392.dto.response.TableResponse;
 import com.isp392.service.TableService;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,34 +15,49 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tables")
 @RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class TableController {
 
-    private final TableService tableService;
+    TableService tableService;
 
-    @PostMapping
-    public ResponseEntity<TableResponse> createTable(@RequestBody TableCreationRequest request) {
-        return ResponseEntity.ok(tableService.createTable(request));
+    @PostMapping("/create")
+    // @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<TableResponse> createTable(@RequestBody TableCreationRequest request) {
+        TableResponse response = tableService.createTable(request);
+        return ApiResponse.<TableResponse>builder()
+                .result(response)
+                .build();
     }
 
     @GetMapping
-    public ResponseEntity<List<TableResponse>> getAllTables() {
-        return ResponseEntity.ok(tableService.getAllTables());
+    public ApiResponse<List<TableResponse>> getAllTables() {
+        List<TableResponse> responses = tableService.getAllTables();
+        return ApiResponse.<List<TableResponse>>builder()
+                .result(responses)
+                .build();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TableResponse> getTableById(@PathVariable int id) {
-        return ResponseEntity.ok(tableService.getTableById(id));
+    public ApiResponse<TableResponse> getTableById(@PathVariable int id) {
+        TableResponse response = tableService.getTableById(id);
+        return ApiResponse.<TableResponse>builder()
+                .result(response)
+                .build();
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<TableResponse> updateTable(@PathVariable int id,
-                                                     @RequestBody TableUpdateRequest request) {
-        return ResponseEntity.ok(tableService.updateTable(id, request));
+    @PutMapping("/update/{id}")
+    public ApiResponse<TableResponse> updateTable(@PathVariable int id, @RequestBody TableUpdateRequest request) {
+        TableResponse response = tableService.updateTable(id, request);
+        return ApiResponse.<TableResponse>builder()
+                .result(response)
+                .build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTable(@PathVariable int id) {
+    public ApiResponse<Void> deleteTable(@PathVariable int id) {
         tableService.deleteTable(id);
-        return ResponseEntity.noContent().build();
+        return ApiResponse.<Void>builder()
+                .result(null)
+                .build();
     }
 }

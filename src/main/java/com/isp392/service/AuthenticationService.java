@@ -4,14 +4,10 @@ import com.isp392.dto.request.AuthenticationRequest;
 import com.isp392.dto.request.IntrospectRequest;
 import com.isp392.dto.response.AuthenticationResponse;
 import com.isp392.dto.response.IntrospectResponse;
-import com.isp392.entity.Staff;
-import com.isp392.entity.Customer;
 import com.isp392.enums.Role;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.repository.AccountRepository;
-import com.isp392.repository.StaffRepository;
-import com.isp392.repository.CustomerRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -24,7 +20,6 @@ import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -35,8 +30,6 @@ import java.util.Date;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
 
-    StaffRepository staffRepository;
-    CustomerRepository customerRepository;
     PasswordEncoder passwordEncoder;
     private final AccountRepository accountRepository;
 

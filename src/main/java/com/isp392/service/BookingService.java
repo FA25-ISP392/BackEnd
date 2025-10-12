@@ -15,7 +15,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -28,6 +27,7 @@ public class BookingService {
     CustomerRepository customerRepository;
     TableRepository tableRepository;
     BookingMapper bookingMapper;
+
     @Transactional
     public BookingResponse createBooking(BookingCreationRequest request, String username) {
         Customer customer = customerRepository.findByUsername(username)
@@ -84,6 +84,7 @@ public class BookingService {
         booking.setBookingDate(request.getBookingDate());
         return bookingMapper.toResponse(booking);
     }
+
     @Transactional
     public void cancelBooking(int bookingId) {
         Booking booking = bookingRepository.findById(bookingId)

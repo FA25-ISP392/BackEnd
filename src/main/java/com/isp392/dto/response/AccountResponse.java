@@ -5,7 +5,6 @@ import com.isp392.enums.Role;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.SuperBuilder;
-
 import java.time.LocalDate;
 
 @Data

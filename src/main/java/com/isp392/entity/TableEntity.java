@@ -8,8 +8,7 @@ import lombok.experimental.FieldDefaults;
 @Table(name = "restaurant_table") // ✅ Đổi tên để tránh lỗi
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class TableEntity {
 

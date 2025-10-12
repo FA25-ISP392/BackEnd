@@ -5,7 +5,6 @@ import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.response.CustomerResponse;
 import com.isp392.entity.Account;
 import com.isp392.entity.Customer;
-import com.isp392.entity.Staff;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.CustomerMapper;
@@ -20,7 +19,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 
 @Service

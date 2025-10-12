@@ -1,6 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.ApiResponse;
+import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.CustomerCreationRequest;
 import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.response.CustomerResponse;
@@ -9,7 +9,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
