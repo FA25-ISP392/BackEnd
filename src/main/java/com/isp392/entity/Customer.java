@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Entity
 @Table(name = "customer")
 @Data
@@ -28,4 +30,6 @@ public class Customer {
     Boolean sex; // 0 = nữ, 1 = nam
 
     Integer portion;
+    @OneToMany(mappedBy = "customer")
+    List<Booking> bookings;
 }

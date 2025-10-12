@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ToppingRepository extends JpaRepository<Topping,Long> {
     boolean existsByname(String name);
-    Topping findById(int id);
 }
