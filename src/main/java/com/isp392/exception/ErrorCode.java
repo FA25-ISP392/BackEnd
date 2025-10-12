@@ -34,7 +34,6 @@ public enum ErrorCode {
     STAFF_NOT_FOUND(1101, "Staff not found"),
 
 
-
     // 🔹 Topping
     INGREDIENT_NOT_FOUND(1200, "Topping not found"),
     INGREDIENT_ALREADY_EXISTS(1201, "Topping already exists"),
@@ -45,7 +44,7 @@ public enum ErrorCode {
     INGREDIENT_QUANTITY_REQUIRED(1206, "Quantity is required"),
     INGREDIENT_QUANTITY_NEGATIVE(1207, "Quantity must be greater than or equal to 0"),
     INGREDIENT_PRICE_REQUIRED(1208, "Price is required"),
-    INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"),INGREDIENT_GRAM_REQUIRED(1208, "Gram is required"),
+    INGREDIENT_PRICE_NEGATIVE(1209, "Price must be greater than or equal to 0"), INGREDIENT_GRAM_REQUIRED(1208, "Gram is required"),
     INGREDIENT_GRAM_NEGATIVE(1209, "Gram must be greater than or equal to 0"),
     ORDER_TOPPING_NOT_FOUND(1210, "Order topping not found"),
     ORDER_TOPPING_ALREADY_EXISTS(1211, "Order topping already exists"),
@@ -60,7 +59,16 @@ public enum ErrorCode {
     DISH_CATEGORY_REQUIRED(2105, "Category is required"),
     DISH_STATUS_REQUIRED(2107, "Status is required"),
     DISH_CALO_REQUIRED(2108, "Calo is required"),
-    DISH_CALO_NEGATIVE(2109, "Calo must be greater than or equal to 0");
+    DISH_CALO_NEGATIVE(2109, "Calo must be greater than or equal to 0"),
+
+
+    //Table
+    TABLE_NOT_FOUND(2200, "Table not found"),
+    // Orders
+    ORDER_NOT_FOUND(3000, "Order notfound"),
+
+    ;
+
 
     final int code;
     final String message;
