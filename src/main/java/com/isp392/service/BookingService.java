@@ -56,7 +56,7 @@ public class BookingService {
         Customer customer = customerRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
 
-        Booking booking = bookingMapper.toEntity(request);
+        Booking booking = bookingMapper.toBooking(request);
         booking.setCustomer(customer);
         booking.setStatus(BookingStatus.PENDING);
         booking.setCreatedAt(LocalDateTime.now());

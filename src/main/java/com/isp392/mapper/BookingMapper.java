@@ -11,13 +11,12 @@ public interface BookingMapper {
 
     @Mapping(target = "bookingId", ignore = true)
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "customer", ignore = true)
     @Mapping(target = "table", ignore = true)
-    @Mapping(target = "managerNote", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
-    Booking toEntity(BookingCreationRequest request);
+    Booking toBooking(BookingCreationRequest request);
 
     @Mapping(source = "table.tableId", target = "tableId")
-    @Mapping(source = "table.tableName", target = "tableName")
     @Mapping(source = "customer.account.fullName", target = "customerName")
     @Mapping(source = "customer.account.phone", target = "customerPhone")
     BookingResponse toResponse(Booking booking);
