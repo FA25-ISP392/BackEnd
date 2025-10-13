@@ -26,7 +26,6 @@ public class DishService {
     DishRepository dishRepository;
     DishMapper dishMapper;
 
-    // ✅ Tạo món mới
     public DishResponse createDish(DishCreationRequest request) {
         if (dishRepository.existsByDishName(request.getDishName())) {
             throw new AppException(ErrorCode.DISH_EXISTED);
@@ -37,7 +36,6 @@ public class DishService {
         return dishMapper.toDishResponse(saved);
     }
 
-    // ✅ Cập nhật món
     @Transactional
     public DishResponse updateDish(int dishId, DishUpdateRequest request) {
         Dish dish = dishRepository.findById(dishId)
@@ -52,7 +50,6 @@ public class DishService {
         return dishMapper.toDishResponse(dish);
     }
 
-    // ✅ Xóa mềm món
     public void deleteDish(int dishId) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
@@ -60,7 +57,6 @@ public class DishService {
         dishRepository.save(dish);
     }
 
-    // ✅ Lấy tất cả món còn khả dụng (tránh vòng lặp)
     public List<DishResponse> getAllDishes() {
         List<Dish> dishes = dishRepository.findAllWithToppings();
         return dishes.stream()

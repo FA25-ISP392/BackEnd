@@ -43,5 +43,6 @@ public class Dish {
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
+    @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
     private List<DishTopping> dishToppings;
 }

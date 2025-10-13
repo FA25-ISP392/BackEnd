@@ -31,5 +31,6 @@ public class Topping {
 
     @OneToMany(mappedBy = "topping")
     @JsonBackReference
+    @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
     private List<DishTopping> dishToppings;
 }
