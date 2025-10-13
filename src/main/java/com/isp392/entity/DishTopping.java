@@ -1,32 +1,32 @@
 package com.isp392.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "DishTopping")
-@IdClass(DishToppingId.class)
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class DishTopping {
 
-    @Id
-    @Column(name = "dishId")
-    int dishId;
+    @EmbeddedId
+    DishToppingId id;
 
-    @Id
-    @Column(name = "toppingId")
-    int toppingId;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dishId", insertable = false, updatable = false)
+    @ManyToOne
+    @MapsId("dishId")
+    @JoinColumn(name = "dish_id")
+    @JsonBackReference // serialize từ Dish → DishTopping, DishTopping bỏ Dish
     Dish dish;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "toppingId", insertable = false, updatable = false)
+    @ManyToOne
+    @MapsId("toppingId")
+    @JoinColumn(name = "topping_id")
+    // bỏ annotation tránh vòng lặp
     Topping topping;
+
+
 }

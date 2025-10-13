@@ -1,29 +1,17 @@
-// DishToppingId.java
 package com.isp392.entity;
 
-import java.io.Serializable;
-import java.util.Objects;
+import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
+@Embeddable
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class DishToppingId implements Serializable {
     private int dishId;
     private int toppingId;
-
-    public DishToppingId() {}
-    public DishToppingId(int dishId, int toppingId) {
-        this.dishId = dishId;
-        this.toppingId = toppingId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof DishToppingId)) return false;
-        DishToppingId that = (DishToppingId) o;
-        return dishId == that.dishId && toppingId == that.toppingId;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(dishId, toppingId);
-    }
 }
