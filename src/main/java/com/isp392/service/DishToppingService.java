@@ -34,7 +34,7 @@ public class DishToppingService {
         Dish dish = dishRepository.findById(request.getDishId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Dish ID " + request.getDishId() + " does not exist."));
-        Topping topping = toppingRepository.findById(request.getToppingId().longValue())
+        Topping topping = toppingRepository.findById(request.getToppingId().intValue())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Topping ID " + request.getToppingId() + " does not exist."));
 
@@ -69,7 +69,7 @@ public class DishToppingService {
         Dish dish = dishRepository.findById(request.getDishId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Dish ID " + request.getDishId() + " does not exist."));
-        Topping topping = toppingRepository.findById(request.getToppingId().longValue())
+        Topping topping = toppingRepository.findById(request.getToppingId().intValue())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
                         "Topping ID " + request.getToppingId() + " does not exist."));
 
