@@ -1,16 +1,18 @@
 package com.isp392.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.isp392.enums.Category;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
-@Table(name = "Dish")
-@AllArgsConstructor
-@NoArgsConstructor
+@Table(name = "dish")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Dish {
     @Id
@@ -35,7 +37,11 @@ public class Dish {
     @Column(length = 255, nullable = false, columnDefinition = "varchar(255) default 'loading'")
     String picture;
 
-    @Column(name = "category", nullable = false, length = 15)
     @Enumerated(EnumType.STRING)
+    @Column(length = 15, nullable = false)
     Category category;
+
+    @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<DishTopping> dishToppings;
 }
