@@ -1,13 +1,18 @@
 package com.isp392.controller;
 
+import com.isp392.dto.request.BookingApprovalRequest;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.BookingCreationRequest;
 import com.isp392.dto.request.BookingUpdateRequest;
 import com.isp392.dto.response.BookingResponse;
+import com.isp392.entity.Booking;
+import com.isp392.enums.BookingStatus;
+import com.isp392.enums.Role;
 import com.isp392.service.BookingService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +28,7 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub"); // lấy username từ token JWT
         BookingResponse booking = bookingService.createBooking(request, username);
@@ -32,8 +38,17 @@ public class BookingController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<List<BookingResponse>> findAllBookings() {
         List<BookingResponse> list = bookingService.findAllBookings();
+        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+        response.setResult(list);
+        return response;
+    }
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    public ApiResponse<List<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status) {
+        List<BookingResponse> list= bookingService.findBookingStatus(status);
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
         response.setResult(list);
         return response;
@@ -45,11 +60,28 @@ public class BookingController {
             @RequestBody BookingUpdateRequest request,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        String username = jwt.getClaimAsString("sub");
         BookingResponse updated = bookingService.updateBooking(id, request);
-
         ApiResponse<BookingResponse> response = new ApiResponse<>();
+        response.setMessage("Booking updated successfully!");
         response.setResult(updated);
+        return response;
+    }
+    @PutMapping("{id}/approved")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    public ApiResponse<BookingResponse> approveBooking(@PathVariable int id, @RequestBody BookingApprovalRequest request, @AuthenticationPrincipal Jwt jwt) {
+        BookingResponse booking = bookingService.approvedBooking(request, id);
+        ApiResponse<BookingResponse> response = new ApiResponse<>();
+        response.setMessage("Booking approved successfully!");
+        response.setResult(booking);
+        return response;
+    }
+    @PutMapping("{id}/reject")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    public ApiResponse<BookingResponse> rejectBooking(@PathVariable int id, @AuthenticationPrincipal Jwt jwt) {
+        BookingResponse booking = bookingService.rejectBooking(id);
+        ApiResponse<BookingResponse> response = new ApiResponse<>();
+        response.setMessage("Booking rejected successfully!");
+        response.setResult(booking);
         return response;
     }
 
@@ -61,7 +93,7 @@ public class BookingController {
         String username = jwt.getClaimAsString("sub");
         bookingService.cancelBooking(id);
         ApiResponse<String> response = new ApiResponse<>();
-        response.setResult("Booking cancelled successfully by " + username);
+        response.setResult("Cancelled");
         return response;
     }
 }

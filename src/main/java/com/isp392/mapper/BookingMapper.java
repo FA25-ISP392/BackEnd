@@ -9,18 +9,21 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface BookingMapper {
 
-    @Mapping(target = "customer", ignore = true)
-    @Mapping(target = "table.tableId", source = "tableId")
+    @Mapping(target = "bookingId", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "table", ignore = true)
+    @Mapping(target = "managerNote", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
     Booking toEntity(BookingCreationRequest request);
 
+    @Mapping(source = "table.tableId", target = "tableId")
+    @Mapping(source = "table.tableName", target = "tableName")
+    @Mapping(source = "customer.account.fullName", target = "customerName")
+    @Mapping(source = "customer.account.phone", target = "customerPhone")
+    BookingResponse toResponse(Booking booking);
     // Map khi cập nhật
     @Mapping(target = "customer", ignore = true)
     @Mapping(target = "table.tableId", source = "tableId")
     void updateEntity(@MappingTarget Booking booking, BookingUpdateRequest request);
-
-    // Map sang response
-    @Mapping(target = "customerName", source = "customer.account.username")
-    @Mapping(target = "tableId", source = "table.tableId")
-    BookingResponse toResponse(Booking booking);
 
 }

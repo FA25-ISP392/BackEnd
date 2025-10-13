@@ -1,5 +1,6 @@
 package com.isp392.entity;
 
+import com.isp392.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -18,7 +19,7 @@ public class Booking {
     int bookingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customerId")
+    @JoinColumn(name = "customerId", nullable = true)
     Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,6 +29,12 @@ public class Booking {
     @Column(nullable = false)
     int seat;
 
+    @Enumerated(EnumType.STRING)
+    BookingStatus status = BookingStatus.PENDING;
+
     @Column(name = "bookingDate", nullable = false)
     LocalDateTime bookingDate;
+
+    @Column(nullable = false, updatable = false)
+    LocalDateTime createdAt;
 }
