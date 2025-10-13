@@ -8,6 +8,7 @@ import lombok.experimental.FieldDefaults;
 @Entity
 @Getter
 @Setter
+@ToString // Thêm @ToString để có thể Exclude
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -19,14 +20,13 @@ public class DishTopping {
     @ManyToOne
     @MapsId("dishId")
     @JoinColumn(name = "dish_id")
-    @JsonBackReference // serialize từ Dish → DishTopping, DishTopping bỏ Dish
+    @JsonBackReference
+    @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
     Dish dish;
 
     @ManyToOne
     @MapsId("toppingId")
     @JoinColumn(name = "topping_id")
-    // bỏ annotation tránh vòng lặp
+    @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
     Topping topping;
-
-
 }

@@ -22,7 +22,6 @@ public class DishController {
 
     DishService dishService;
 
-    // ✅ Tạo món mới
     @PostMapping
     public ApiResponse<DishResponse> createDish(@Valid @RequestBody DishCreationRequest request) {
         return ApiResponse.<DishResponse>builder()
@@ -30,7 +29,6 @@ public class DishController {
                 .build();
     }
 
-    // ✅ Lấy danh sách tất cả món ăn kèm topping
     @GetMapping
     public ApiResponse<List<DishResponse>> getAllDishes() {
         return ApiResponse.<List<DishResponse>>builder()
@@ -38,7 +36,6 @@ public class DishController {
                 .build();
     }
 
-    // ✅ Lấy món theo ID kèm topping
     @GetMapping("/{dishId}")
     public ApiResponse<DishResponse> getDishById(@PathVariable int dishId) {
         return ApiResponse.<DishResponse>builder()
@@ -46,7 +43,6 @@ public class DishController {
                 .build();
     }
 
-    // ✅ Cập nhật món ăn
     @PutMapping("/{dishId}")
     public ApiResponse<DishResponse> updateDish(
             @PathVariable int dishId,
@@ -57,7 +53,6 @@ public class DishController {
                 .build();
     }
 
-    // ✅ Xóa mềm món ăn
     @DeleteMapping("/{dishId}")
     public ApiResponse<String> deleteDish(@PathVariable int dishId) {
         dishService.deleteDish(dishId);
