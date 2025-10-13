@@ -32,15 +32,13 @@ public class DishService {
         return dishRepository.save(dish);
     }
 
-
     public List<Dish> getDishes() {
-        return dishRepository.findAll();
+        return dishRepository.findAllByIsAvailableTrue(); // chỉ lấy món còn khả dụng
     }
 
     public DishResponse getDish(int dishId, String usernameFromJwt) {
-        Dish dish = dishRepository.findById(dishId)
+        Dish dish = dishRepository.findByDishIdAndIsAvailableTrue(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
-        // Add access control if needed
         return dishMapper.toDishResponse(dish);
     }
 
@@ -52,9 +50,9 @@ public class DishService {
     }
 
     public void deleteDish(int dishId) {
-        dishRepository.deleteById(dishId);
+        Dish dish = dishRepository.findById(dishId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+        dish.setIsAvailable(false); // xóa mềm
+        dishRepository.save(dish);
     }
-
-
-
 }
