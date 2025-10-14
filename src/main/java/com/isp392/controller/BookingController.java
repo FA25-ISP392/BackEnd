@@ -26,7 +26,7 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    //@PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub"); // lấy username từ token JWT
         BookingResponse booking = bookingService.createBooking(request, username);
@@ -36,7 +36,7 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    //@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<List<BookingResponse>> findAllBookings() {
         List<BookingResponse> list = bookingService.findAllBookings();
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
@@ -45,7 +45,7 @@ public class BookingController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    //@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<List<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status) {
         List<BookingResponse> list = bookingService.findBookingStatus(status);
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
@@ -67,7 +67,7 @@ public class BookingController {
     }
 
     @PutMapping("{id}/approved")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    //@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<BookingResponse> approveBooking(@PathVariable int id, @RequestBody BookingApprovalRequest request, @AuthenticationPrincipal Jwt jwt) {
         BookingResponse booking = bookingService.approvedBooking(request, id);
         ApiResponse<BookingResponse> response = new ApiResponse<>();
@@ -77,7 +77,7 @@ public class BookingController {
     }
 
     @PutMapping("{id}/reject")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    //@PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<BookingResponse> rejectBooking(@PathVariable int id, @AuthenticationPrincipal Jwt jwt) {
         BookingResponse booking = bookingService.rejectBooking(id);
         ApiResponse<BookingResponse> response = new ApiResponse<>();

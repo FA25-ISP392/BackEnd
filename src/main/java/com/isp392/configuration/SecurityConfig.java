@@ -37,12 +37,35 @@ public class SecurityConfig {
     private String signerKey;
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+        config.setAllowCredentials(true);
+
+        // CHỈ ĐỊNH CỤ THỂ origin, KHÔNG dùng dấu *
+        config.addAllowedOriginPattern("http://localhost:8080");
+        config.addAllowedOriginPattern("http://localhost:5173");
+        config.addAllowedOriginPattern("https://food-system-demo.vercel.app");
+        config.addAllowedOriginPattern("https://backend-production-0865.up.railway.app");
+        config.addAllowedOriginPattern("https://backend2-production-00a1.up.railway.app/");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.addExposedHeader("Authorization");
+        config.addExposedHeader("Content-Type");
+
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
 //                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().permitAll()
+                                .anyRequest().permitAll()
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->
@@ -53,24 +76,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable);
         return httpSecurity.build();
     }
-
-
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration config = new CorsConfiguration();
-//        // Thêm domain FE của bạn, ví dụ React chạy ở localhost:3000
-//        config.setAllowedOrigins(List.of(
-//                "http://localhost:3000",
-//                "http://localhost:5173"  // thêm port 5173 nè 🔥
-//        ));
-//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-//        config.setAllowedHeaders(List.of("*"));
-//        config.setAllowCredentials(true); // Cho phép gửi cookie hoặc token kèm request
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", config);
-//        return source;
-//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
