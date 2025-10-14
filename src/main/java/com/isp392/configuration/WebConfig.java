@@ -12,7 +12,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOrigins(
                         "https://food-system-demo.vercel.app",
-                        "http://localhost:5173"
+                        "http://localhost:5173",
+                        "https://backend-production-0865.up.railway.app"
                 )
                 // Cho phép tất cả method cần thiết
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
