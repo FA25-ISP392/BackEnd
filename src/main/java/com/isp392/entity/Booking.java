@@ -4,6 +4,8 @@ import com.isp392.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.annotations.CreationTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -19,7 +21,7 @@ public class Booking {
     int bookingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "customerId", nullable = true)
+    @JoinColumn(name = "customerId", nullable = false)
     Customer customer;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,6 +37,7 @@ public class Booking {
     @Column(name = "bookingDate", nullable = false)
     LocalDateTime bookingDate;
 
+    @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    LocalDateTime createdAt;
+    LocalDateTime createdAt= LocalDateTime.now();
 }

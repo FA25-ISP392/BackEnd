@@ -97,19 +97,22 @@ public class BookingService {
         tableRepository.save(table);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
+
     @Transactional
     public List<BookingResponse> findBookingStatus(BookingStatus status) {
         List<Booking> booking = bookingRepository.findByStatus(status);
         return booking.stream().map(bookingMapper::toResponse).toList();
     }
+
     @Transactional
     public BookingResponse updateBooking(int id, BookingUpdateRequest request) {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+        if (request.getBookingDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Booking date must be in the future!");
+        }
 
-        if (booking.getStatus() == BookingStatus.APPROVED ||
-                booking.getStatus() == BookingStatus.REJECTED ||
-                booking.getStatus() == BookingStatus.CANCELLED) {
+        if (booking.getStatus().equals(BookingStatus.APPROVED) || booking.getStatus().equals(BookingStatus.REJECTED) || booking.getStatus().equals(BookingStatus.CANCELLED)) {
             throw new RuntimeException("Cannot update a booking that has been approved, rejected, or cancelled!");
         }
 
@@ -126,17 +129,24 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
 
         booking.setStatus(BookingStatus.REJECTED);
+
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
     @Transactional
-    public void cancelBooking(int bookingId) {
+    public BookingResponse cancelBooking(int bookingId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
+        if (booking.getStatus().equals(BookingStatus.CANCELLED)) {
+            throw new RuntimeException("Booking has already been cancelled!");
+        }
 
         TableEntity table = booking.getTable();
-        table.setIsAvailable(true);
-        tableRepository.save(table);
-        bookingRepository.delete(booking);
+        if (table != null) {
+            table.setIsAvailable(true);
+            tableRepository.save(table);
+        }
+        booking.setStatus(BookingStatus.CANCELLED);
+        return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 }
