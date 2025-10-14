@@ -19,4 +19,10 @@ public interface StaffRepository extends JpaRepository<Staff, Integer> {
     // Thêm method phân trang
     @Query("SELECT s FROM Staff s")
     Page<Staff> findAll(Pageable pageable);
+
+    @Query("SELECT s FROM Staff s JOIN FETCH s.account WHERE s.account.username = :username")
+    Optional<Staff> findByUsernameWithAccount(@Param("username") String username);
+
+    @Query("SELECT s FROM Staff s JOIN FETCH s.account WHERE s.staffId = :id")
+    Optional<Staff> findByIdWithAccount(@Param("id") int id);
 }
