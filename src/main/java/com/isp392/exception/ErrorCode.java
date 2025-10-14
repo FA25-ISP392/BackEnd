@@ -67,9 +67,11 @@ public enum ErrorCode {
     // Orders
     ORDER_NOT_FOUND(3000, "Order notfound"),
 
-    ;
+    PLAN_NOT_FOUND(4000, "Plan not found"),
+    ITEM_NOT_FOUND(4001,"can't find the dish or topping" ), INVALID_REQUEST(4002,"just only oneStaffID can fix it" ),
+    PLAN_ALREADY_EXISTS_BATCH(4002,"Already exits" ), PLAN_ALREADY_EXISTS(4003,"already exits" ),
 
-
+    ACCESS_DENIED(1007, "You do not have permission"), PLAN_ALREADY_APPROVED(4005,"PLAN_ALREADY_APPROVED" );
     final int code;
     final String message;
 }
