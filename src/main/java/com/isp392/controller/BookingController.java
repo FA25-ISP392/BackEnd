@@ -5,9 +5,7 @@ import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.BookingCreationRequest;
 import com.isp392.dto.request.BookingUpdateRequest;
 import com.isp392.dto.response.BookingResponse;
-import com.isp392.entity.Booking;
 import com.isp392.enums.BookingStatus;
-import com.isp392.enums.Role;
 import com.isp392.service.BookingService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -45,10 +43,11 @@ public class BookingController {
         response.setResult(list);
         return response;
     }
+
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<List<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status) {
-        List<BookingResponse> list= bookingService.findBookingStatus(status);
+        List<BookingResponse> list = bookingService.findBookingStatus(status);
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
         response.setResult(list);
         return response;
@@ -66,6 +65,7 @@ public class BookingController {
         response.setResult(updated);
         return response;
     }
+
     @PutMapping("{id}/approved")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<BookingResponse> approveBooking(@PathVariable int id, @RequestBody BookingApprovalRequest request, @AuthenticationPrincipal Jwt jwt) {
@@ -75,6 +75,7 @@ public class BookingController {
         response.setResult(booking);
         return response;
     }
+
     @PutMapping("{id}/reject")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<BookingResponse> rejectBooking(@PathVariable int id, @AuthenticationPrincipal Jwt jwt) {
