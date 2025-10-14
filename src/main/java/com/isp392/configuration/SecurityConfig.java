@@ -41,41 +41,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                // ✅ Bật CORS cho toàn bộ request
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .authorizeHttpRequests(request ->
-                        request.requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                                .anyRequest().permitAll()
-                )
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwtConfigurer ->
-                                jwtConfigurer.decoder(jwtDecoder())
-                                        .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                        )
-                )
-                .csrf(AbstractHttpConfigurer::disable);
-
+        httpSecurity.cors(cors->{}).csrf(csrf->csrf.disable());
         return httpSecurity.build();
     }
 
-    // ✅ Cấu hình CORS cho phép FE truy cập
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        // Thêm domain FE của bạn, ví dụ React chạy ở localhost:3000
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:5173"  // thêm port 5173 nè 🔥
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // Cho phép gửi cookie hoặc token kèm request
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+//    @Bean
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration config = new CorsConfiguration();
+//        // Thêm domain FE của bạn, ví dụ React chạy ở localhost:3000
+//        config.setAllowedOrigins(List.of(
+//                "http://localhost:3000",
+//                "http://localhost:5173"  // thêm port 5173 nè 🔥
+//        ));
+//        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+//        config.setAllowedHeaders(List.of("*"));
+//        config.setAllowCredentials(true); // Cho phép gửi cookie hoặc token kèm request
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", config);
+//        return source;
+//    }
 
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
