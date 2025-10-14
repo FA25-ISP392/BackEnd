@@ -1,31 +1,27 @@
 package com.isp392.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.util.List;
 
 @Entity
+@Table(name = "topping")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "topping")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Topping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "toppingId")
-    int id;
+    int toppingId;
 
-    @Column(name = "toppingName", nullable = false)
+    @Column(name = "topping_name", nullable = false)
     String name;
 
     @Column(nullable = false)
     double calories;
-
-    @Column(name = "stockQuantity", nullable = false)
-    double quantity;
 
     @Column(nullable = false)
     double price;
@@ -34,5 +30,7 @@ public class Topping {
     double gram;
 
     @OneToMany(mappedBy = "topping")
-    List<OrderTopping> orderToppings;
+    @JsonBackReference
+    @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
+    private List<DishTopping> dishToppings;
 }

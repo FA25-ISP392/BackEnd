@@ -4,14 +4,11 @@ import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
 import com.isp392.dto.response.DishResponse;
-import com.isp392.entity.Dish;
 import com.isp392.service.DishService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,40 +23,41 @@ public class DishController {
     DishService dishService;
 
     @PostMapping
-    ApiResponse<Dish> createDish(@RequestBody @Valid DishCreationRequest request) {
-        ApiResponse<Dish> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(dishService.createDish(request));
-        return apiResponse;
+    public ApiResponse<DishResponse> createDish(@Valid @RequestBody DishCreationRequest request) {
+        return ApiResponse.<DishResponse>builder()
+                .result(dishService.createDish(request))
+                .build();
     }
 
     @GetMapping
-    ApiResponse<List<Dish>> getDishes() {
-        ApiResponse<List<Dish>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(dishService.getDishes());
-        return apiResponse;
+    public ApiResponse<List<DishResponse>> getAllDishes() {
+        return ApiResponse.<List<DishResponse>>builder()
+                .result(dishService.getAllDishes())
+                .build();
     }
 
     @GetMapping("/{dishId}")
-    ApiResponse<DishResponse> getDish(@PathVariable int dishId, @AuthenticationPrincipal Jwt jwt) {
-        String username = jwt.getClaimAsString("sub");
-        DishResponse dish = dishService.getDish(dishId, username);
-        ApiResponse<DishResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(dish);
-        return apiResponse;
+    public ApiResponse<DishResponse> getDishById(@PathVariable int dishId) {
+        return ApiResponse.<DishResponse>builder()
+                .result(dishService.getDishById(dishId))
+                .build();
     }
 
     @PutMapping("/{dishId}")
-    ApiResponse<DishResponse> updateDish(@PathVariable int dishId, @RequestBody DishUpdateRequest request) {
-        ApiResponse<DishResponse> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(dishService.updateDish(dishId, request));
-        return apiResponse;
+    public ApiResponse<DishResponse> updateDish(
+            @PathVariable int dishId,
+            @RequestBody @Valid DishUpdateRequest request
+    ) {
+        return ApiResponse.<DishResponse>builder()
+                .result(dishService.updateDish(dishId, request))
+                .build();
     }
 
     @DeleteMapping("/{dishId}")
-    ApiResponse<String> deleteDish(@PathVariable int dishId) {
+    public ApiResponse<String> deleteDish(@PathVariable int dishId) {
         dishService.deleteDish(dishId);
-        ApiResponse<String> apiResponse = new ApiResponse<>();
-        apiResponse.setResult("Delete dish successfully");
-        return apiResponse;
+        return ApiResponse.<String>builder()
+                .result("Dish deleted successfully (soft delete).")
+                .build();
     }
 }

@@ -1,7 +1,6 @@
 package com.isp392.mapper;
 
 import com.isp392.dto.request.DishToppingCreationRequest;
-import com.isp392.dto.request.DishToppingUpdateRequest;
 import com.isp392.dto.response.DishToppingResponse;
 import com.isp392.entity.Dish;
 import com.isp392.entity.DishTopping;
@@ -13,17 +12,22 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface DishToppingMapper {
 
-    DishTopping toEntity(DishToppingCreationRequest request, @Context Dish dish, @Context Topping topping);
+    @Mapping(target = "dish", source = "dish")
+    @Mapping(target = "topping", source = "topping")
+    DishTopping toEntity(DishToppingCreationRequest request, Dish dish, Topping topping);
 
-    @Mapping(target = "dishName",
-            expression = "java(entity.getDish() != null ? entity.getDish().getDishName() : null)")
-    @Mapping(target = "toppingName",
-            expression = "java(entity.getTopping() != null ? entity.getTopping().getName() : null)")
+    @Mapping(target = "toppingId", source = "topping.toppingId")
+    @Mapping(target = "toppingName", source = "topping.name") // ✅ đúng
+    @Mapping(target = "price", source = "topping.price")
+    @Mapping(target = "calories", source = "topping.calories")
+    @Mapping(target = "gram", source = "topping.gram")
     DishToppingResponse toResponse(DishTopping entity);
 
     List<DishToppingResponse> toResponseList(List<DishTopping> entities);
 
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateEntity(@MappingTarget DishTopping entity, DishToppingUpdateRequest request,
-                      @Context Dish dish, @Context Topping topping);
+    void updateEntity(@MappingTarget DishTopping entity,
+                      DishToppingCreationRequest request,
+                      Dish dish,
+                      Topping topping);
 }
+

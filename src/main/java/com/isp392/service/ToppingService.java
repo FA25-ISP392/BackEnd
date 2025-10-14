@@ -21,7 +21,7 @@ public class ToppingService {
     ToppingMapper toppingMapper;
     ToppingRepository toppingRepository;
 
-    public ToppingResponse getTopping(long toppingId) {
+    public ToppingResponse getTopping(int toppingId) {
         Topping topping = toppingRepository.findById(toppingId)
                 .orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
         return toppingMapper.toToppingResponse(topping);
@@ -38,13 +38,13 @@ public class ToppingService {
         return toppingMapper.toToppingResponse(toppingRepository.save(topping));
     }
 
-    public ToppingResponse updateTopping(long toppingId, ToppingUpdateRequest request) {
+    public ToppingResponse updateTopping(int toppingId, ToppingUpdateRequest request) {
         Topping topping = toppingRepository.findById(toppingId).orElseThrow(() -> new AppException(ErrorCode.INGREDIENT_NOT_FOUND));
         toppingMapper.updateTopping(topping, request);
         return toppingMapper.toToppingResponse(toppingRepository.save(topping));
     }
 
-    public void deleteTopping(long toppingId) {
+    public void deleteTopping(int toppingId) {
         toppingRepository.deleteById(toppingId);
     }
 }

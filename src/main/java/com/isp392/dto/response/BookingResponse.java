@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class BookingResponse {
     int bookingId;
     String customerName;
+    String customerPhone;
     int tableId;
     int seat;
     LocalDateTime bookingDate;

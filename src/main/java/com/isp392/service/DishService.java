@@ -8,53 +8,65 @@ import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.DishMapper;
 import com.isp392.repository.DishRepository;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
 public class DishService {
 
     DishRepository dishRepository;
     DishMapper dishMapper;
 
-    public Dish createDish(DishCreationRequest request) {
+    public DishResponse createDish(DishCreationRequest request) {
         if (dishRepository.existsByDishName(request.getDishName())) {
             throw new AppException(ErrorCode.DISH_EXISTED);
         }
-
         Dish dish = dishMapper.toDish(request);
         dish.setIsAvailable(true);
-        return dishRepository.save(dish);
+        Dish saved = dishRepository.save(dish);
+        return dishMapper.toDishResponse(saved);
     }
 
-
-    public List<Dish> getDishes() {
-        return dishRepository.findAll();
-    }
-
-    public DishResponse getDish(int dishId, String usernameFromJwt) {
-        Dish dish = dishRepository.findById(dishId)
-                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
-        // Add access control if needed
-        return dishMapper.toDishResponse(dish);
-    }
-
+    @Transactional
     public DishResponse updateDish(int dishId, DishUpdateRequest request) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+
+        if (request.getDishName() != null && !request.getDishName().equals(dish.getDishName())) {
+            if (dishRepository.existsByDishName(request.getDishName())) {
+                throw new AppException(ErrorCode.DISH_EXISTED);
+            }
+        }
         dishMapper.updateDish(dish, request);
-        return dishMapper.toDishResponse(dishRepository.save(dish));
+        return dishMapper.toDishResponse(dish);
     }
 
     public void deleteDish(int dishId) {
-        dishRepository.deleteById(dishId);
+        Dish dish = dishRepository.findById(dishId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+        dish.setIsAvailable(false);
+        dishRepository.save(dish);
     }
 
+    public List<DishResponse> getAllDishes() {
+        List<Dish> dishes = dishRepository.findAllWithToppings();
+        return dishes.stream()
+                .map(dishMapper::toDishResponse)
+                .toList();
+    }
 
-
+    public DishResponse getDishById(int dishId) {
+        Dish dish = dishRepository.findByIdWithToppings(dishId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+        return dishMapper.toDishResponse(dish);
+    }
 }

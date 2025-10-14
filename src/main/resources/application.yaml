@@ -4,7 +4,7 @@ server:
     context-path: /isp392
 spring:
   datasource:
-    url: jdbc:sqlserver://database.purintech.id.vn:1433;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
+    url: jdbc:sqlserver://database.purintech.id.vn:1434;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
     username: ispmaifa
     password: ispmaifa
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
