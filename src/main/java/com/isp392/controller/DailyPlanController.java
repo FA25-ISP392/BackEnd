@@ -22,55 +22,48 @@ public class DailyPlanController {
 
     DailyPlanService dailyPlanService;
 
-    // TẠO MỘT KẾ HOẠCH
     @PostMapping
-    // ✅ KIỂM TRA TRỰC TIẾP CLAIM "role" TRONG TOKEN
-    @PreAuthorize("authentication.principal.claims['role'] == 'CHEF' or authentication.principal.claims['role'] == 'MANAGER'")
+    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
     public ApiResponse<DailyPlanResponse> createDailyPlan(@RequestBody @Valid DailyPlanCreationRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.createDailyPlan(request, authentication))
                 .build();
     }
 
-    // TẠO HÀNG LOẠT KẾ HOẠCH
     @PostMapping("/batch")
-    @PreAuthorize("authentication.principal.claims['role'] == 'CHEF' or authentication.principal.claims['role'] == 'MANAGER'")
+    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
     public ApiResponse<List<DailyPlanResponse>> createDailyPlansBatch(@RequestBody @Valid List<DailyPlanCreationRequest> requests, Authentication authentication) {
         return ApiResponse.<List<DailyPlanResponse>>builder()
                 .result(dailyPlanService.createDailyPlansBatch(requests, authentication))
                 .build();
     }
 
-    // LẤY TẤT CẢ KẾ HOẠCH
     @GetMapping
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN' or authentication.principal.claims['role'] == 'MANAGER' or authentication.principal.claims['role'] == 'CHEF'")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<List<DailyPlanResponse>> getAllDailyPlans() {
         return ApiResponse.<List<DailyPlanResponse>>builder()
                 .result(dailyPlanService.getAllDailyPlans())
                 .build();
     }
 
-    // LẤY KẾ HOẠCH THEO ID
     @GetMapping("/{planId}")
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN' or authentication.principal.claims['role'] == 'MANAGER' or authentication.principal.claims['role'] == 'CHEF'")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<DailyPlanResponse> getDailyPlanById(@PathVariable int planId) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.getDailyPlanById(planId))
                 .build();
     }
 
-    // CẬP NHẬT (DUYỆT) KẾ HOẠCH
     @PutMapping("/{planId}")
-    @PreAuthorize("authentication.principal.claims['role'] == 'CHEF' or authentication.principal.claims['role'] == 'MANAGER' or authentication.principal.claims['role'] == 'ADMIN'")
+    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER', 'ADMIN')")
     public ApiResponse<DailyPlanResponse> updateDailyPlan(@PathVariable int planId, @RequestBody @Valid DailyPlanUpdateRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.updateDailyPlan(planId, request, authentication))
                 .build();
     }
 
-    // XÓA KẾ HOẠCH
     @DeleteMapping("/{planId}")
-    @PreAuthorize("authentication.principal.claims['role'] == 'ADMIN' or authentication.principal.claims['role'] == 'MANAGER' or authentication.principal.claims['role'] == 'CHEF'")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<String> deleteDailyPlan(@PathVariable int planId) {
         dailyPlanService.deleteDailyPlan(planId);
         return ApiResponse.<String>builder()
