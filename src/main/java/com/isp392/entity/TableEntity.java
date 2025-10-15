@@ -19,7 +19,7 @@ public class TableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int tableId;
 
-    @Column(length = 255, nullable = false, unique = true)
+    @Column(length = 255, nullable = false)
     String tableName;
 
     @Column(nullable = false)
