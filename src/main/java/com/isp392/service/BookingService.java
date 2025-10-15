@@ -8,6 +8,7 @@ import com.isp392.entity.Booking;
 import com.isp392.entity.Customer;
 import com.isp392.entity.TableEntity;
 import com.isp392.enums.BookingStatus;
+import com.isp392.enums.TableStatus;
 import com.isp392.mapper.BookingMapper;
 import com.isp392.repository.BookingRepository;
 import com.isp392.repository.CustomerRepository;
@@ -95,7 +96,7 @@ public class BookingService {
         }
         booking.setTable(table);
         booking.setStatus(BookingStatus.APPROVED);
-        table.setIsAvailable(false);
+        table.setStatus(TableStatus.RESERVED);
         tableRepository.save(table);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
@@ -145,7 +146,7 @@ public class BookingService {
 
         TableEntity table = booking.getTable();
         if (table != null) {
-            table.setIsAvailable(true);
+            table.setStatus(TableStatus.EMPTY);
             tableRepository.save(table);
         }
         booking.setStatus(BookingStatus.CANCELLED);
