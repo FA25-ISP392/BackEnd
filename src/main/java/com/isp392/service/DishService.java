@@ -34,7 +34,7 @@ public class DishService {
     DailyPlanRepository dailyPlanRepository;
     DishMapper dishMapper;
 
-    // ... các phương thức create, update, delete giữ nguyên ...
+
 
     @Transactional(readOnly = true)
     public DishResponse getDishById(int dishId) {
@@ -43,17 +43,14 @@ public class DishService {
 
         LocalDate today = LocalDate.now();
 
-        // Lấy kế hoạch của món ăn
         DailyPlan dishPlan = dailyPlanRepository
                 .findByItemIdAndItemTypeAndPlanDate(dish.getDishId(), ItemType.DISH, today)
                 .orElse(null);
 
-        // Thu thập ID topping tùy chọn
         List<Topping> optionalToppings = dish.getDishToppings().stream()
                 .map(dishTopping -> dishTopping.getTopping())
                 .toList();
 
-        // Lấy kế hoạch của tất cả topping tùy chọn
         Map<Integer, DailyPlan> toppingPlansMap = Collections.emptyMap();
         if (!optionalToppings.isEmpty()) {
             List<Integer> toppingIds = optionalToppings.stream().map(Topping::getToppingId).toList();
@@ -64,8 +61,6 @@ public class DishService {
         }
 
         DishResponse response = dishMapper.toDishResponse(dish);
-
-        // ✅ SỬA LẠI: Thêm điều kiện kiểm tra 'status'
         int dishRemainingQuantity = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
         response.setRemainingQuantity(dishRemainingQuantity);
 
@@ -73,10 +68,7 @@ public class DishService {
         List<ToppingWithQuantityResponse> toppingResponses = optionalToppings.stream()
                 .map(topping -> {
                     DailyPlan toppingPlan = finalToppingPlansMap.get(topping.getToppingId());
-
-                    // ✅ SỬA LẠI: Thêm điều kiện kiểm tra 'status' cho topping
                     int remaining = (toppingPlan != null && toppingPlan.getStatus()) ? toppingPlan.getRemainingQuantity() : 0;
-
                     return ToppingWithQuantityResponse.builder()
                             .toppingId(topping.getToppingId())
                             .name(topping.getName())
@@ -89,13 +81,12 @@ public class DishService {
                 .collect(Collectors.toList());
 
         response.setOptionalToppings(toppingResponses);
-
         return response;
     }
 
+    // ✅ PHIÊN BẢN TỐI ƯU - GIẢI QUYẾT VẤN ĐỀ SẬP SERVER
     @Transactional(readOnly = true)
     public List<DishResponse> getAllDishes() {
-        // Bước 1: Lấy tất cả Dish và Topping liên quan trong 1 query
         List<Dish> dishes = dishRepository.findAllWithToppings();
         if (dishes.isEmpty()) {
             return Collections.emptyList();
@@ -103,7 +94,6 @@ public class DishService {
 
         LocalDate today = LocalDate.now();
 
-        // Bước 2: Thu thập tất cả ID cần thiết
         List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
         List<Integer> allToppingIds = dishes.stream()
                 .flatMap(dish -> dish.getDishToppings().stream())
@@ -111,7 +101,6 @@ public class DishService {
                 .distinct()
                 .toList();
 
-        // Bước 3: Lấy tất cả kế hoạch của Dish và Topping trong 2 query hàng loạt
         Map<Integer, DailyPlan> dishPlansMap = dailyPlanRepository
                 .findByPlanDateAndItemTypeAndItemIdIn(today, ItemType.DISH, dishIds)
                 .stream()
@@ -125,17 +114,14 @@ public class DishService {
                     .collect(Collectors.toMap(DailyPlan::getItemId, plan -> plan));
         }
 
-        // Bước 4: Lắp ráp dữ liệu
         final Map<Integer, DailyPlan> finalToppingPlansMap = toppingPlansMap;
         return dishes.stream().map(dish -> {
             DishResponse response = dishMapper.toDishResponse(dish);
 
-            // Gán số lượng cho món ăn
             DailyPlan dishPlan = dishPlansMap.get(dish.getDishId());
             int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
             response.setRemainingQuantity(dishRemaining);
 
-            // Gán số lượng cho từng topping tùy chọn
             List<ToppingWithQuantityResponse> toppingResponses = dish.getDishToppings().stream()
                     .map(dishTopping -> {
                         Topping topping = dishTopping.getTopping();
@@ -157,7 +143,6 @@ public class DishService {
             return response;
         }).collect(Collectors.toList());
     }
-
 
     // Các phương thức còn lại (create, update, delete) không thay đổi
     public DishResponse createDish(DishCreationRequest request) {
