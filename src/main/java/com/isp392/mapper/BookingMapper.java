@@ -20,6 +20,7 @@ public interface BookingMapper {
     @Mapping(source = "customer.account.fullName", target = "customerName")
     @Mapping(source = "customer.account.phone", target = "customerPhone")
     @Mapping(source = "customer.account.email", target = "customerEmail")
+    @Mapping(source = "status", target = "status")
     BookingResponse toResponse(Booking booking);
     // Map khi cập nhật]
 
