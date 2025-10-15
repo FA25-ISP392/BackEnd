@@ -12,7 +12,9 @@ public class BookingResponse {
     int bookingId;
     String customerName;
     String customerPhone;
+    String customerEmail;
     int tableId;
     int seat;
+    LocalDateTime createdAt;
     LocalDateTime bookingDate;
 }

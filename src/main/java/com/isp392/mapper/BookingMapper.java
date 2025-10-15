@@ -19,6 +19,7 @@ public interface BookingMapper {
     @Mapping(source = "table.tableId", target = "tableId")
     @Mapping(source = "customer.account.fullName", target = "customerName")
     @Mapping(source = "customer.account.phone", target = "customerPhone")
+    @Mapping(source = "customer.account.email", target = "customerEmail")
     BookingResponse toResponse(Booking booking);
     // Map khi cập nhật]
 
