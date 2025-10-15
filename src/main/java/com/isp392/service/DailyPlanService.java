@@ -17,7 +17,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,11 +35,9 @@ public class DailyPlanService {
     StaffRepository staffRepository;
     DailyPlanMapper dailyPlanMapper;
 
-    // ... các phương thức createDailyPlan và createDailyPlansBatch sẽ hoạt động đúng ...
     @Transactional
     public DailyPlanResponse createDailyPlan(DailyPlanCreationRequest request, Authentication authentication) {
         String username = authentication.getName();
-        // Lời gọi này bây giờ sẽ đúng nhờ hàm hasAuthority đã được sửa
         boolean isManager = hasAuthority(authentication, Role.MANAGER.name());
 
         Staff planner;
@@ -71,57 +68,6 @@ public class DailyPlanService {
         return mapToResponseWithItemName(savedPlan);
     }
 
-    // Phương thức updateDailyPlan và các phương thức khác bây giờ sẽ chạy đúng
-    @Transactional
-    public DailyPlanResponse updateDailyPlan(int planId, DailyPlanUpdateRequest request, Authentication authentication) {
-        String username = authentication.getName();
-        boolean isManagerOrAdmin = hasAuthority(authentication, Role.MANAGER.name()) || hasAuthority(authentication, Role.ADMIN.name());
-
-        DailyPlan dailyPlan = dailyPlanRepository.findById(planId)
-                .orElseThrow(() -> new AppException(ErrorCode.PLAN_NOT_FOUND));
-
-        if (!isManagerOrAdmin && !dailyPlan.getPlannerStaff().getAccount().getUsername().equals(username)) {
-            throw new AppException(ErrorCode.ACCESS_DENIED);
-        }
-
-        if (!isManagerOrAdmin && dailyPlan.getStatus()) {
-            throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
-        }
-
-        if (isManagerOrAdmin) {
-            if (request.getPlannedQuantity() != null) {
-                dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
-            }
-            if (request.getRemainingQuantity() != null) {
-                dailyPlan.setRemainingQuantity(request.getRemainingQuantity());
-            }
-            if (request.getStatus() != null && request.getStatus()) {
-                Staff approver = staffRepository.findByUsernameWithAccount(username)
-                        .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-                dailyPlan.setApproverStaff(approver);
-                dailyPlan.setStatus(true);
-            }
-        } else {
-            if (request.getPlannedQuantity() != null) {
-                dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
-                dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
-            }
-        }
-
-        DailyPlan updatedPlan = dailyPlanRepository.save(dailyPlan);
-        return mapToResponseWithItemName(updatedPlan);
-    }
-
-    // ✅ **ĐÂY LÀ CHỖ SỬA**
-    // Hàm helper này bây giờ đã biết cách thêm tiền tố "ROLE_"
-    private boolean hasAuthority(Authentication authentication, String role) {
-        String roleWithPrefix = "ROLE_" + role;
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(auth -> auth.equals(roleWithPrefix));
-    }
-
-    // ... tất cả các phương thức khác được giữ nguyên ...
     @Transactional
     public List<DailyPlanResponse> createDailyPlansBatch(List<DailyPlanCreationRequest> requests, Authentication authentication) {
         if (requests == null || requests.isEmpty()) {
@@ -129,20 +75,33 @@ public class DailyPlanService {
         }
 
         String username = authentication.getName();
-        Staff planner = staffRepository.findByUsernameWithAccount(username)
-                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        boolean isManager = hasAuthority(authentication, Role.MANAGER.name());
+
+        DailyPlanCreationRequest firstRequest = requests.get(0);
+        Staff planner;
+
+        if (isManager && firstRequest.getStaffId() != null) {
+            planner = staffRepository.findByIdWithAccount(firstRequest.getStaffId())
+                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        } else {
+            planner = staffRepository.findByUsernameWithAccount(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        }
+
+        final Integer targetStaffId = planner.getStaffId();
 
         List<DailyPlan> plansToSave = requests.stream().map(request -> {
+            if (request.getStaffId() != null && !request.getStaffId().equals(targetStaffId)) {
+                throw new AppException(ErrorCode.INVALID_REQUEST);
+            }
+
             dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
                     request.getItemId(), request.getItemType(), request.getPlanDate()
             ).ifPresent(plan -> {
                 throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
             });
-            validateItemExists(request.getItemId(), request.getItemType());
 
-            if (request.getStaffId() != null && !request.getStaffId().equals(planner.getStaffId())) {
-                throw new AppException(ErrorCode.INVALID_REQUEST);
-            }
+            validateItemExists(request.getItemId(), request.getItemType());
 
             DailyPlan dailyPlan = dailyPlanMapper.toDailyPlan(request);
             dailyPlan.setPlannerStaff(planner);
@@ -164,8 +123,8 @@ public class DailyPlanService {
             return Collections.emptyList();
         }
 
-        List<Integer> dishIds = plans.stream().filter(p -> p.getItemType() == ItemType.DISH).map(DailyPlan::getItemId).toList();
-        List<Integer> toppingIds = plans.stream().filter(p -> p.getItemType() == ItemType.TOPPING).map(DailyPlan::getItemId).toList();
+        List<Integer> dishIds = plans.stream().filter(p -> p.getItemType() == ItemType.DISH).map(DailyPlan::getItemId).distinct().toList();
+        List<Integer> toppingIds = plans.stream().filter(p -> p.getItemType() == ItemType.TOPPING).map(DailyPlan::getItemId).distinct().toList();
 
         Map<Integer, String> dishNames = dishRepository.findAllById(dishIds).stream().collect(Collectors.toMap(Dish::getDishId, Dish::getDishName));
         Map<Integer, String> toppingNames = toppingRepository.findAllById(toppingIds).stream().collect(Collectors.toMap(Topping::getToppingId, Topping::getName));
@@ -187,11 +146,65 @@ public class DailyPlanService {
         return mapToResponseWithItemName(dailyPlan);
     }
 
+    @Transactional
+    public DailyPlanResponse updateDailyPlan(int planId, DailyPlanUpdateRequest request, Authentication authentication) {
+        String username = authentication.getName();
+        boolean isManagerOrAdmin = hasAuthority(authentication, Role.MANAGER.name()) || hasAuthority(authentication, Role.ADMIN.name());
+
+        DailyPlan dailyPlan = dailyPlanRepository.findByIdWithPlannerDetails(planId)
+                .orElseThrow(() -> new AppException(ErrorCode.PLAN_NOT_FOUND));
+
+        if (!isManagerOrAdmin && !dailyPlan.getPlannerStaff().getAccount().getUsername().equals(username)) {
+            throw new AppException(ErrorCode.ACCESS_DENIED);
+        }
+
+        if (!isManagerOrAdmin && dailyPlan.getStatus()) {
+            throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
+        }
+
+        // --- BẮT ĐẦU LOGIC SỬA LẠI ---
+        if (isManagerOrAdmin) {
+            if (request.getPlannedQuantity() != null) {
+                dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
+            }
+            if (request.getRemainingQuantity() != null) {
+                dailyPlan.setRemainingQuantity(request.getRemainingQuantity());
+            }
+            // Logic xử lý status cho Manager/Admin
+            if (request.getStatus() != null) {
+                if (request.getStatus()) { // Nếu đang duyệt (true)
+                    Staff approver = staffRepository.findByUsernameWithAccount(username)
+                            .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+                    dailyPlan.setApproverStaff(approver);
+                } else { // Nếu đang hủy duyệt (false)
+                    dailyPlan.setApproverStaff(null);
+                }
+                dailyPlan.setStatus(request.getStatus());
+            }
+        } else { // Là Chef
+            if (request.getPlannedQuantity() != null) {
+                dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
+                dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
+            }
+            // Chef không thể thay đổi status, nên không có logic ở đây
+        }
+
+        DailyPlan updatedPlan = dailyPlanRepository.save(dailyPlan);
+        return mapToResponseWithItemName(updatedPlan);
+    }
+
     public void deleteDailyPlan(int planId) {
         if (!dailyPlanRepository.existsById(planId)) {
             throw new AppException(ErrorCode.PLAN_NOT_FOUND);
         }
         dailyPlanRepository.deleteById(planId);
+    }
+
+    private boolean hasAuthority(Authentication authentication, String role) {
+        String roleWithPrefix = "ROLE_" + role;
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(auth -> auth.equals(roleWithPrefix));
     }
 
     private void validateItemExists(int itemId, ItemType itemType) {

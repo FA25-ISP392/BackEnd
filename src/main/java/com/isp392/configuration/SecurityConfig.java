@@ -17,10 +17,12 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -38,10 +40,9 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+        CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
 
-        // CHỈ ĐỊNH CỤ THỂ origin, KHÔNG dùng dấu *
         config.addAllowedOriginPattern("http://localhost:8080");
         config.addAllowedOriginPattern("http://localhost:5173");
         config.addAllowedOriginPattern("https://food-system-demo.vercel.app");
@@ -52,20 +53,18 @@ public class SecurityConfig {
         config.addExposedHeader("Authorization");
         config.addExposedHeader("Content-Type");
 
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
-
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-//                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                                .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .anyRequest().authenticated() // Yêu cầu xác thực cho tất cả API khác
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->
@@ -80,6 +79,11 @@ public class SecurityConfig {
     @Bean
     JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter jwtGrantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
+
+        // ✅ BƯỚC 1: BÁO CHO SPRING BIẾT PHẢI ĐỌC QUYỀN TỪ CLAIM "role"
+        jwtGrantedAuthoritiesConverter.setAuthoritiesClaimName("role");
+
+        // ✅ BƯỚC 2: GIỮ NGUYÊN VIỆC THÊM TIỀN TỐ "ROLE_"
         jwtGrantedAuthoritiesConverter.setAuthorityPrefix("ROLE_");
 
         JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
