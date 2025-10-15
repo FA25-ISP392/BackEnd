@@ -3,7 +3,6 @@ package com.isp392.dto.response;
 import com.isp392.enums.Category;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -21,5 +20,10 @@ public class DishResponse {
     Boolean isAvailable;
     String picture;
     Category category;
-    List<DishToppingResponse> dishToppings; // Chỉ chứa DTO, không reference entity
+
+    // ✅ SỐ LƯỢỢNG CÒN LẠI CỦA MÓN ĂN
+    int remainingQuantity;
+
+    // ✅ DANH SÁCH TOPPING TÙY CHỌN KÈM SỐ LƯỢNG
+    List<ToppingWithQuantityResponse> optionalToppings;
 }
