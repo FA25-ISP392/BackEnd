@@ -84,7 +84,9 @@ public class BookingService {
 
         TableEntity table = tableRepository.findById(request.getTableId())
                 .orElseThrow(() -> new RuntimeException("Table not found"));
-
+        if (booking.getSeat() > table.getSeatTable() + 1) {
+            throw new RuntimeException("Số người vượt quá sức chứa của bàn!");
+        }
         LocalDateTime startTime = booking.getBookingDate().minusHours(2);
         LocalDateTime endTime = booking.getBookingDate().plusHours(2);
         List<Booking> existing = bookingRepository.findByTableAndBookingDateBetween(table, startTime, endTime);
