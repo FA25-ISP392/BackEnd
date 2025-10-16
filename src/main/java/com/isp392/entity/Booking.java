@@ -37,6 +37,9 @@ public class Booking {
     @Column(name = "bookingDate", nullable = false)
     LocalDateTime bookingDate;
 
+    @Column(name = "wantTable")
+    String wantTable;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     LocalDateTime createdAt= LocalDateTime.now();
