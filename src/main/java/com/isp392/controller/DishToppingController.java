@@ -21,6 +21,15 @@ public class DishToppingController {
         return dishToppingService.create(request);
     }
 
+    // ✅ BỔ SUNG API UPDATE
+    @PutMapping("/{dishId}/{toppingId}")
+    public DishToppingResponse update(
+            @PathVariable int dishId,
+            @PathVariable int toppingId,
+            @RequestBody DishToppingCreationRequest request) {
+        return dishToppingService.update(dishId, toppingId, request);
+    }
+
     @GetMapping
     public List<DishToppingResponse> getAll() {
         return dishToppingService.getAll();
