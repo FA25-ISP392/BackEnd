@@ -1,6 +1,7 @@
 package com.isp392.dto.response;
 
 import com.isp392.enums.Category;
+import com.isp392.enums.DishType;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
@@ -20,7 +21,7 @@ public class DishResponse {
     Boolean isAvailable;
     String picture;
     Category category;
-
+    DishType type;
     // ✅ SỐ LƯỢỢNG CÒN LẠI CỦA MÓN ĂN
     int remainingQuantity;
 

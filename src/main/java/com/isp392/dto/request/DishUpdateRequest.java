@@ -1,6 +1,7 @@
 package com.isp392.dto.request;
 
 import com.isp392.enums.Category;
+import com.isp392.enums.DishType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -33,6 +34,8 @@ public class DishUpdateRequest {
 
     @NotNull(message = "DISH_CATEGORY_REQUIRED")
     Category category;
+
+    private DishType type;
 
     String picture;
 
