@@ -1,6 +1,5 @@
 package com.isp392.dto.request;
 
-import com.isp392.enums.TableStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -11,5 +10,4 @@ import lombok.experimental.FieldDefaults;
 public class TableUpdateRequest {
     String tableName;
     int seatTable;
-    TableStatus status;
 }

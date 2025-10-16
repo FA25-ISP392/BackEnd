@@ -8,7 +8,6 @@ import com.isp392.entity.Booking;
 import com.isp392.entity.Customer;
 import com.isp392.entity.TableEntity;
 import com.isp392.enums.BookingStatus;
-import com.isp392.enums.TableStatus;
 import com.isp392.mapper.BookingMapper;
 import com.isp392.repository.BookingRepository;
 import com.isp392.repository.CustomerRepository;
@@ -19,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -59,7 +59,6 @@ public class BookingService {
 
         Booking booking = bookingMapper.toBooking(request);
         booking.setCustomer(customer);
-        booking.setStatus(BookingStatus.PENDING);
         booking.setWantTable(request.getWantTable());
         booking.setCreatedAt(LocalDateTime.now());
 
@@ -97,8 +96,6 @@ public class BookingService {
         }
         booking.setTable(table);
         booking.setStatus(BookingStatus.APPROVED);
-        table.setStatus(TableStatus.RESERVED);
-        tableRepository.save(table);
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
@@ -147,13 +144,17 @@ public class BookingService {
         if (booking.getStatus().equals(BookingStatus.CANCELLED)) {
             throw new RuntimeException("Booking has already been cancelled!");
         }
-
-        TableEntity table = booking.getTable();
-        if (table != null) {
-            table.setStatus(TableStatus.EMPTY);
-            tableRepository.save(table);
-        }
-        booking.setStatus(BookingStatus.CANCELLED);
         return bookingMapper.toResponse(bookingRepository.save(booking));
+    }
+    @Transactional
+    public List<BookingResponse> getBookingsByDateAndTable(int tableId, LocalDate date) {
+        TableEntity table = tableRepository.findById(tableId)
+                .orElseThrow(() -> new RuntimeException("Table not found"));
+
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = startOfDay.plusDays(1);
+
+        List<Booking> ls = bookingRepository.findByTableAndBookingDateBetween(table, startOfDay, endOfDay);
+        return ls.stream().map(bookingMapper::toResponse).toList();
     }
 }

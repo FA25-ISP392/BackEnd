@@ -10,11 +10,13 @@ import com.isp392.service.BookingService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -83,6 +85,14 @@ public class BookingController {
         ApiResponse<BookingResponse> response = new ApiResponse<>();
         response.setMessage("Booking rejected successfully!");
         response.setResult(booking);
+        return response;
+    }
+
+    @GetMapping("/by_tableDate")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    public ApiResponse<List<BookingResponse>> getBookingsByDate(@RequestParam("tableId") int tableId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+        response.setResult(bookingService.getBookingsByDateAndTable(tableId, date));
         return response;
     }
 

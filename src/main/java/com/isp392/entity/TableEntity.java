@@ -1,6 +1,5 @@
 package com.isp392.entity;
 
-import com.isp392.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -26,9 +25,8 @@ public class TableEntity {
     @Column(nullable = false)
     int seatTable;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    TableStatus status= TableStatus.EMPTY;
+    @Column(name = "isAvailable", nullable = false)
+    boolean isAvailable = true;
 
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude // tránh vòng lặp khi in log
