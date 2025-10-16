@@ -60,6 +60,7 @@ public class BookingService {
         Booking booking = bookingMapper.toBooking(request);
         booking.setCustomer(customer);
         booking.setStatus(BookingStatus.PENDING);
+        booking.setWantTable(request.getWantTable());
         booking.setCreatedAt(LocalDateTime.now());
 
         return bookingMapper.toResponse(bookingRepository.save(booking));
@@ -122,6 +123,9 @@ public class BookingService {
         if (booking.getStatus().equals(BookingStatus.PENDING)) {
             booking.setSeat(request.getSeat());
             booking.setBookingDate(request.getBookingDate());
+        }
+        if (request.getWantTable() != null) {
+            booking.setWantTable(request.getWantTable());
         }
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }

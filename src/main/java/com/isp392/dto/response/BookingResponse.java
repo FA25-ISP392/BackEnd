@@ -18,5 +18,6 @@
         int seat;
         LocalDateTime createdAt;
         LocalDateTime bookingDate;
+        String wantTable;
         BookingStatus status;
     }

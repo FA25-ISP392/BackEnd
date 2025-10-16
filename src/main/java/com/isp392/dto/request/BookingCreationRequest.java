@@ -12,4 +12,5 @@ import java.time.LocalDateTime;
 public class BookingCreationRequest {
     int seat;
     LocalDateTime bookingDate;
+    String wantTable;
 }

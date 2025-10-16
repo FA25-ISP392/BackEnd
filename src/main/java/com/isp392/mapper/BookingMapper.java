@@ -14,6 +14,7 @@ public interface BookingMapper {
     @Mapping(target = "customer", ignore = true)
     @Mapping(target = "table", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
+    @Mapping(source = "wantTable", target = "wantTable")
     Booking toBooking(BookingCreationRequest request);
 
     @Mapping(source = "table.tableId", target = "tableId")
