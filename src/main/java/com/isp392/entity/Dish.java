@@ -2,6 +2,7 @@ package com.isp392.entity;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.isp392.enums.Category;
+import com.isp392.enums.DishType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -40,6 +41,10 @@ public class Dish {
     @Enumerated(EnumType.STRING)
     @Column(length = 15, nullable = false)
     Category category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20) // Không cần 'nullable = false' nữa
+    private DishType type;
 
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference

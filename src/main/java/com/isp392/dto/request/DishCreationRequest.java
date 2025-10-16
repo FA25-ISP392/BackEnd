@@ -1,6 +1,7 @@
 package com.isp392.dto.request;
 
 import com.isp392.enums.Category;
+import com.isp392.enums.DishType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -35,4 +36,6 @@ public class DishCreationRequest {
 
     @NotNull(message = "DISH_STATUS_REQUIRED")
     Boolean isAvailable;
+
+    private DishType type;
 }
