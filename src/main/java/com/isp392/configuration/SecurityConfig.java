@@ -45,7 +45,7 @@ public class SecurityConfig {
 
         config.addAllowedOriginPattern("http://localhost:8080");
         config.addAllowedOriginPattern("http://localhost:5173");
-        config.addAllowedOriginPattern("https://food-system-demo.vercel.app");
+        config.addAllowedOriginPattern("https://moncuaban.vercel.app");
         config.addAllowedOriginPattern("https://backend-production-0865.up.railway.app");
         config.addAllowedOriginPattern("https://backend2-production-00a1.up.railway.app/");
         config.addAllowedHeader("*");
