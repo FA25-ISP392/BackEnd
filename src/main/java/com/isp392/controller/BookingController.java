@@ -26,7 +26,7 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping
-    //@PreAuthorize("hasRole('CUSTOMER')")
+//    @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub"); // lấy username từ token JWT
         BookingResponse booking = bookingService.createBooking(request, username);
@@ -91,7 +91,6 @@ public class BookingController {
             @PathVariable int id,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        String username = jwt.getClaimAsString("sub");
         bookingService.cancelBooking(id);
         ApiResponse<String> response = new ApiResponse<>();
         response.setResult("Cancelled");

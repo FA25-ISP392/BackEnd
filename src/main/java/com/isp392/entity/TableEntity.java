@@ -1,5 +1,6 @@
 package com.isp392.entity;
 
+import com.isp392.enums.TableStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -19,14 +20,15 @@ public class TableEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     int tableId;
 
-    @Column(length = 255, nullable = false, unique = true)
+    @Column(length = 255, nullable = false)
     String tableName;
 
     @Column(nullable = false)
     int seatTable;
 
-    @Column(nullable = false, columnDefinition = "bit default 1")
-    Boolean isAvailable;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    TableStatus status= TableStatus.EMPTY;
 
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude // tránh vòng lặp khi in log

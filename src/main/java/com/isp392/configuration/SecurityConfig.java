@@ -64,7 +64,7 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
-                        .anyRequest().permitAll() // Yêu cầu xác thực cho tất cả API khác
+                        .anyRequest().permitAll()// Yêu cầu xác thực cho tất cả API khác
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->
