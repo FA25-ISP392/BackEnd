@@ -15,6 +15,7 @@ import com.isp392.repository.TableRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -61,6 +62,7 @@ public class OrdersService {
     public OrdersResponse getOrder(Integer orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        Hibernate.initialize(order.getOrderDetails());
         return ordersMapper.toOrdersResponse(order);
     }
 

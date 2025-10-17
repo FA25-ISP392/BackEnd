@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -18,17 +19,18 @@ public class Orders {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Integer orderId;
 
-    // 🔗 Mối quan hệ với Customer
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customerId", nullable = false)
     Customer customer;
 
-    // 🔗 Mối quan hệ với TableEntity
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tableId", nullable = false)
     TableEntity table;
 
-    // 📅 Ngày đặt hàng
     @Column(nullable = false)
     LocalDateTime orderDate;
+
+    // 🔗 Một đơn hàng có nhiều chi tiết món ăn
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    List<OrderDetail> orderDetails;
 }

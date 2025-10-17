@@ -6,10 +6,11 @@ import lombok.experimental.FieldDefaults;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderToppingResponse {
-    int orderDetailId;
-    int toppingId;
-    int quantity;
-    double toppingPrice;
+    Integer toppingId;
+    String toppingName;
+    Integer quantity;
+    Double toppingPrice;
 }

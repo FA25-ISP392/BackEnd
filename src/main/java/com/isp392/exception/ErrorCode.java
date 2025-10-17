@@ -13,6 +13,7 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),
     INVALID_ARGUMENT(1000, "Invalid request argument"),
     INVALID_KEY(1001, "Invalid message key"),
+
     NOT_BLANKED(1002, "Field cannot be empty"),
     UNAUTHENTICATED(1003, "Unauthenticated"),
     STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
@@ -28,6 +29,10 @@ public enum ErrorCode {
     PASSWORD_INVALID(1104, "Password must be between 8 and 30 characters"),
     CANNOT_DELETE_SELF(1012, "Cannot delete yourself"),
     LOGIN_REQUIRED(1013, "Login first"),
+    SEND_EMAIL_FAILED(1014, "Failed to send email"),
+    // Token
+    TOKEN_INVALID(1006, "Invalid token"),
+    TOKEN_EXPIRED(1008, "Token expired"),
     //Customer Exception
     CUSTOMER_NOT_FOUND(1300, "Customer not found"),
     //Staff
@@ -35,7 +40,7 @@ public enum ErrorCode {
 
 
     // 🔹 Topping
-    INGREDIENT_NOT_FOUND(1200, "Topping not found"),
+    TOPPING_NOT_FOUND(1200, "Topping not found"),
     INGREDIENT_ALREADY_EXISTS(1201, "Topping already exists"),
     INGREDIENT_NAME_NOT_BLANKED(1202, "Topping name cannot be blank"),
     INGREDIENT_NAME_INVALID(1203, "Topping name must be at least 3 characters long"),
@@ -66,6 +71,9 @@ public enum ErrorCode {
     TABLE_NOT_FOUND(2200, "Table not found"),
     // Orders
     ORDER_NOT_FOUND(3000, "Order notfound"),
+
+    //Order Detail
+    ORDER_DETAIL_NOT_FOUND(3001, "Order detail not found"),
 
     PLAN_NOT_FOUND(4000, "Plan not found"),
     ITEM_NOT_FOUND(4001,"can't find the dish or topping" ), INVALID_REQUEST(4002,"just only oneStaffID can fix it" ),

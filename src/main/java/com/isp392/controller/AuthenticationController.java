@@ -1,5 +1,6 @@
 package com.isp392.controller;
 
+import com.isp392.dto.request.ResetPasswordRequest;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.AuthenticationRequest;
 import com.isp392.dto.request.IntrospectRequest;
@@ -10,10 +11,7 @@ import com.nimbusds.jose.JOSEException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
 
@@ -40,4 +38,21 @@ public class AuthenticationController {
                 .result(result)
                 .build();
     }
+
+    @PostMapping("/forgot-password")
+    public ApiResponse<String> forgotPassword(@RequestParam String email) {
+        String result = authenticationService.sendResetPasswordLink(email);
+        return ApiResponse.<String>builder()
+                .result(result)
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ApiResponse<String> resetPassword(@RequestBody ResetPasswordRequest request) {
+        authenticationService.resetPassword(request.getToken(), request.getNewPassword());
+        return ApiResponse.<String>builder()
+                .result("Password has been reset successfully")
+                .build();
+    }
+
 }
