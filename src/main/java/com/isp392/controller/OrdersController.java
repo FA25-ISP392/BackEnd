@@ -46,9 +46,7 @@ public class OrdersController {
     }
 
     @PutMapping("/{orderId}")
-    public ApiResponse<OrdersResponse> updateOrder(
-            @PathVariable Integer orderId,
-            @RequestBody @Valid OrdersUpdateRequest request) {
+    public ApiResponse<OrdersResponse> updateOrder(@PathVariable Integer orderId, @RequestBody @Valid OrdersUpdateRequest request) {
         OrdersResponse result = ordersService.updateOrder(orderId, request);
         return ApiResponse.<OrdersResponse>builder()
                 .result(result)

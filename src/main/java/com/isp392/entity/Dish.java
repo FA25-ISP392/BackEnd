@@ -26,11 +26,11 @@ public class Dish {
     @Column(length = 255, nullable = false)
     String description;
 
-    @Column(precision = 10, scale = 2, nullable = false)
-    BigDecimal price;
+    @Column(nullable = false)
+    Double price;
 
-    @Column(precision = 10, scale = 2, nullable = false)
-    BigDecimal calo;
+    @Column(nullable = false)
+    Double calo;
 
     @Column(nullable = false, columnDefinition = "bit default 1")
     Boolean isAvailable;

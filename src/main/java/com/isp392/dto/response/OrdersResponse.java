@@ -3,6 +3,7 @@ package com.isp392.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,4 +15,6 @@ public class OrdersResponse {
     Integer customerId;
     Integer tableId;
     LocalDateTime orderDate;
+
+    List<OrderDetailResponse> orderDetails;
 }

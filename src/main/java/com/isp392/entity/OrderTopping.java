@@ -5,29 +5,30 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
+@Table(name = "order_topping")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "OrderTopping")
-@IdClass(OrderToppingId.class)
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderTopping {
 
-    @Id
-    @Column(name = "orderDetailId")
-    int orderDetailId;
-
-    @Id
-    @Column(name = "toppingId")
-    int toppingId;
+    @EmbeddedId
+    OrderToppingId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "toppingId", insertable = false, updatable = false)
+    @MapsId("orderDetailId")  // ánh xạ với embedded id
+    @JoinColumn(name = "order_detail_id", nullable = false)
+    OrderDetail orderDetail;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("toppingId")      // ánh xạ với embedded id
+    @JoinColumn(name = "topping_id", nullable = false)
     Topping topping;
 
     @Column(nullable = false)
-    int quantity;
+    Integer quantity;
 
     @Column(nullable = false)
-    double toppingPrice;
+    Double toppingPrice;
 }
