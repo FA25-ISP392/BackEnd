@@ -14,7 +14,8 @@ public class OpenApiConfig {
    public OpenAPI customOpenAPI() {
        return new OpenAPI()
                .servers(List.of(
-                       new Server().url("https://backend-production-0865.up.railway.app/isp392")
+//                       new Server().url("https://backend-production-0865.up.railway.app/isp392")
+                       new Server().url("https://api-monngon88.purintech.id.vn/isp392")
                ));
    }
 }
