@@ -30,6 +30,6 @@ spring:
       mail.smtp.starttls.enable: true
 app:
   frontend:
-    reset-password-url: http://localhost:8080/reset-password
+    reset-password-url: http://localhost:5173/reset-password
 jwt:
   signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
