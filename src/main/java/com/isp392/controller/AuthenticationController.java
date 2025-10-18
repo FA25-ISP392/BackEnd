@@ -11,6 +11,7 @@ import com.nimbusds.jose.JOSEException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -22,6 +23,18 @@ import java.text.ParseException;
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
+    @GetMapping("/google/success")
+    public ApiResponse<AuthenticationResponse> googleLoginSuccess(OAuth2AuthenticationToken authentication) {
+        String email = authentication.getPrincipal().getAttribute("email");
+        String name = authentication.getPrincipal().getAttribute("name");
+
+        AuthenticationResponse response = authenticationService.authenticateGoogleUser(email, name);
+
+        return ApiResponse.<AuthenticationResponse>builder()
+                .result(response)
+                .build();
+    }
+
     @PostMapping("/token")
     ApiResponse<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
         var result = authenticationService.authenticate(request);
@@ -29,6 +42,7 @@ public class AuthenticationController {
                 .result(result)
                 .build();
     }
+
 
     @PostMapping("/introspect")
     ApiResponse<IntrospectResponse> authenticate(@RequestBody IntrospectRequest request)

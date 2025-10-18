@@ -64,7 +64,10 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers("/oauth2/**", "/login/**", "/auth/google/**").permitAll()
                         .anyRequest().permitAll()
+                ).oauth2Login(oauth2 -> oauth2
+                        .defaultSuccessUrl("/auth/google/success", true)
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->

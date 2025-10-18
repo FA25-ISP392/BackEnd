@@ -31,6 +31,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +50,27 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.signerKey}")
     String SIGNER_KEY;
+
+    public AuthenticationResponse authenticateGoogleUser(String email, String name) {
+        // Kiểm tra xem user đã tồn tại chưa
+        var account = accountRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    Account newAcc = new Account();
+                    newAcc.setEmail(email);
+                    newAcc.setUsername(email); // có thể dùng email làm username
+                    newAcc.setFullName(name);
+                    newAcc.setPassword(UUID.randomUUID().toString());
+                    newAcc.setRole(Role.CUSTOMER);
+                    return accountRepository.save(newAcc);
+                });
+
+        String token = generateToken(account.getUsername(), account.getRole());
+
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
+    }
 
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
