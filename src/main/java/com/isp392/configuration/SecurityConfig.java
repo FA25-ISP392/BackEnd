@@ -48,6 +48,7 @@ public class SecurityConfig {
         config.addAllowedOriginPattern("https://moncuaban.vercel.app");
         config.addAllowedOriginPattern("https://backend-production-0865.up.railway.app");
         config.addAllowedOriginPattern("https://backend2-production-00a1.up.railway.app/");
+        config.addAllowedOriginPattern("https://api-monngon88.purintech.id.vn");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addExposedHeader("Authorization");
