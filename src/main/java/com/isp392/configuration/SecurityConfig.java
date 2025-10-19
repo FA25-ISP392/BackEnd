@@ -69,7 +69,8 @@ public class SecurityConfig {
                         .anyRequest().permitAll()
                 ).oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
-                        .defaultSuccessUrl("/auth/google/success", true)
+                                .defaultSuccessUrl("/auth/google/popup")
+//                        .defaultSuccessUrl("/auth/google/success", true)
                 )
                 .oauth2ResourceServer(oauth2 ->
                         oauth2.jwt(jwtConfigurer ->
