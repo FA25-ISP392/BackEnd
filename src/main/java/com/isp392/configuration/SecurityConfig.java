@@ -68,6 +68,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth2/**", "/login/**", "/auth/google/**").permitAll()
                         .anyRequest().permitAll()
                 ).oauth2Login(oauth2 -> oauth2
+                        .loginPage("/isp392/oauth2/authorization/google")
                         .defaultSuccessUrl("/auth/google/success", true)
                 )
                 .oauth2ResourceServer(oauth2 ->
