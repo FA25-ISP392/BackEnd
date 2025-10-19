@@ -2,6 +2,7 @@ server:
   port: 8080
   servlet:
     context-path: /isp392
+  forward-headers-strategy: framework
 spring:
   datasource:
     url: jdbc:sqlserver://database.purintech.id.vn:1433;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
