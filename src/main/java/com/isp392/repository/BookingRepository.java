@@ -17,4 +17,5 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
     );
 
     List<Booking> findByStatus(BookingStatus status);
+    List<Booking> findByCustomer_CustomerId(int id);
 }
