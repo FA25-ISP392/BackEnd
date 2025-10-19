@@ -22,8 +22,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ndnphong23@gmail.com
-    password: gasrqvtnjncwmric
+    username: moncuaban@gmail.com
+    password: horilrdteknanpiz
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -47,6 +47,6 @@ spring:
 
 app:
   frontend:
-    reset-password-url: http://localhost:8080/reset-password
+    reset-password-url: http://localhost:5173/reset-password
 jwt:
   signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
