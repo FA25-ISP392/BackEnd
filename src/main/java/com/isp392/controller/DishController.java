@@ -9,6 +9,9 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,6 +32,7 @@ public class DishController {
                 .build();
     }
 
+    // ✅ API CŨ (GET /dish) - Giữ nguyên
     @GetMapping
     public ApiResponse<List<DishResponse>> getAllDishes() {
         return ApiResponse.<List<DishResponse>>builder()
@@ -36,6 +40,21 @@ public class DishController {
                 .build();
     }
 
+    // ✅ ĐƯA API /paging LÊN TRÊN API /{dishId}
+    // Bằng cách này, Spring sẽ kiểm tra URL cố định "/paging" trước
+    @GetMapping("/paging")
+    public ApiResponse<Page<DishResponse>> getAllDishesPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ApiResponse.<Page<DishResponse>>builder()
+                .result(dishService.getAllDishesPaginated(pageable))
+                .build();
+    }
+
+    // ✅ ĐẶT API /{dishId} XUỐNG DƯỚI
+    // Spring sẽ chỉ khớp với URL này nếu nó không phải là "/paging"
     @GetMapping("/{dishId}")
     public ApiResponse<DishResponse> getDishById(@PathVariable int dishId) {
         return ApiResponse.<DishResponse>builder()

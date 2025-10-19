@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -49,5 +50,5 @@ public class Dish {
     @OneToMany(mappedBy = "dish", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     @ToString.Exclude // QUAN TRỌNG: Ngắt vòng lặp toString() tại đây
-    private List<DishTopping> dishToppings;
+    private List<DishTopping> dishToppings = new ArrayList<>();
 }
