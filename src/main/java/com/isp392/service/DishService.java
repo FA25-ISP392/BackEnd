@@ -18,11 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable; // ✅ Đảm bảo import đúng
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects; // ✅ Thêm import
 import java.util.stream.Collectors;
 
 @Service
@@ -33,8 +36,6 @@ public class DishService {
     DishRepository dishRepository;
     DailyPlanRepository dailyPlanRepository;
     DishMapper dishMapper;
-
-
 
     @Transactional(readOnly = true)
     public DishResponse getDishById(int dishId) {
@@ -47,7 +48,9 @@ public class DishService {
                 .findByItemIdAndItemTypeAndPlanDate(dish.getDishId(), ItemType.DISH, today)
                 .orElse(null);
 
+        // ✅ Thêm kiểm tra null
         List<Topping> optionalToppings = dish.getDishToppings().stream()
+                .filter(dt -> dt != null && dt.getTopping() != null) // Lọc các topping null
                 .map(dishTopping -> dishTopping.getTopping())
                 .toList();
 
@@ -84,7 +87,79 @@ public class DishService {
         return response;
     }
 
-    // ✅ PHIÊN BẢN TỐI ƯU - GIẢI QUYẾT VẤN ĐỀ SẬP SERVER
+    // PHƯƠNG THỨC MỚI DÀNH CHO PHÂN TRANG
+    @Transactional(readOnly = true)
+    public Page<DishResponse> getAllDishesPaginated(Pageable pageable) {
+        Page<Dish> dishPage = dishRepository.findAllWithToppings(pageable);
+        List<Dish> dishes = dishPage.getContent();
+
+        if (dishes.isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, dishPage.getTotalElements());
+        }
+
+        LocalDate today = LocalDate.now();
+
+        // ✅ Thêm kiểm tra null
+        List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
+        List<Integer> allToppingIds = dishes.stream()
+                .filter(dish -> dish.getDishToppings() != null)
+                .flatMap(dish -> dish.getDishToppings().stream())
+                .filter(dt -> dt != null && dt.getTopping() != null)
+                .map(dishTopping -> dishTopping.getTopping().getToppingId())
+                .distinct()
+                .toList();
+
+        Map<Integer, DailyPlan> dishPlansMap = dailyPlanRepository
+                .findByPlanDateAndItemTypeAndItemIdIn(today, ItemType.DISH, dishIds)
+                .stream()
+                .collect(Collectors.toMap(DailyPlan::getItemId, plan -> plan));
+
+        Map<Integer, DailyPlan> toppingPlansMap = Collections.emptyMap();
+        if (!allToppingIds.isEmpty()) {
+            toppingPlansMap = dailyPlanRepository
+                    .findByPlanDateAndItemTypeAndItemIdIn(today, ItemType.TOPPING, allToppingIds)
+                    .stream()
+                    .collect(Collectors.toMap(DailyPlan::getItemId, plan -> plan));
+        }
+
+        final Map<Integer, DailyPlan> finalToppingPlansMap = toppingPlansMap;
+        List<DishResponse> dishResponses = dishes.stream().map(dish -> {
+            DishResponse response = dishMapper.toDishResponse(dish);
+
+            DailyPlan dishPlan = dishPlansMap.get(dish.getDishId());
+            int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
+            response.setRemainingQuantity(dishRemaining);
+
+            // ✅ Thêm kiểm tra null
+            List<ToppingWithQuantityResponse> toppingResponses = Collections.emptyList();
+            if (dish.getDishToppings() != null) {
+                toppingResponses = dish.getDishToppings().stream()
+                        .filter(dt -> dt != null && dt.getTopping() != null)
+                        .map(dishTopping -> {
+                            Topping topping = dishTopping.getTopping();
+                            DailyPlan toppingPlan = finalToppingPlansMap.get(topping.getToppingId());
+                            int remaining = (toppingPlan != null && toppingPlan.getStatus()) ? toppingPlan.getRemainingQuantity() : 0;
+
+                            return ToppingWithQuantityResponse.builder()
+                                    .toppingId(topping.getToppingId())
+                                    .name(topping.getName())
+                                    .price(topping.getPrice())
+                                    .calories(topping.getCalories())
+                                    .gram(topping.getGram())
+                                    .remainingQuantity(remaining)
+                                    .build();
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            response.setOptionalToppings(toppingResponses);
+            return response;
+        }).collect(Collectors.toList());
+
+        return new PageImpl<>(dishResponses, pageable, dishPage.getTotalElements());
+    }
+
+    // PHIÊN BẢN CŨ (LẤY TẤT CẢ) - ĐÃ ĐƯỢC TỐI ƯU VÀ THÊM NULL CHECK
     @Transactional(readOnly = true)
     public List<DishResponse> getAllDishes() {
         List<Dish> dishes = dishRepository.findAllWithToppings();
@@ -95,8 +170,12 @@ public class DishService {
         LocalDate today = LocalDate.now();
 
         List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
+
+        // ✅ Thêm kiểm tra null
         List<Integer> allToppingIds = dishes.stream()
+                .filter(dish -> dish.getDishToppings() != null)
                 .flatMap(dish -> dish.getDishToppings().stream())
+                .filter(dt -> dt != null && dt.getTopping() != null)
                 .map(dishTopping -> dishTopping.getTopping().getToppingId())
                 .distinct()
                 .toList();
@@ -122,22 +201,27 @@ public class DishService {
             int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
             response.setRemainingQuantity(dishRemaining);
 
-            List<ToppingWithQuantityResponse> toppingResponses = dish.getDishToppings().stream()
-                    .map(dishTopping -> {
-                        Topping topping = dishTopping.getTopping();
-                        DailyPlan toppingPlan = finalToppingPlansMap.get(topping.getToppingId());
-                        int remaining = (toppingPlan != null && toppingPlan.getStatus()) ? toppingPlan.getRemainingQuantity() : 0;
+            // ✅ Thêm kiểm tra null
+            List<ToppingWithQuantityResponse> toppingResponses = Collections.emptyList();
+            if (dish.getDishToppings() != null) {
+                toppingResponses = dish.getDishToppings().stream()
+                        .filter(dt -> dt != null && dt.getTopping() != null)
+                        .map(dishTopping -> {
+                            Topping topping = dishTopping.getTopping();
+                            DailyPlan toppingPlan = finalToppingPlansMap.get(topping.getToppingId());
+                            int remaining = (toppingPlan != null && toppingPlan.getStatus()) ? toppingPlan.getRemainingQuantity() : 0;
 
-                        return ToppingWithQuantityResponse.builder()
-                                .toppingId(topping.getToppingId())
-                                .name(topping.getName())
-                                .price(topping.getPrice())
-                                .calories(topping.getCalories())
-                                .gram(topping.getGram())
-                                .remainingQuantity(remaining)
-                                .build();
-                    })
-                    .collect(Collectors.toList());
+                            return ToppingWithQuantityResponse.builder()
+                                    .toppingId(topping.getToppingId())
+                                    .name(topping.getName())
+                                    .price(topping.getPrice())
+                                    .calories(topping.getCalories())
+                                    .gram(topping.getGram())
+                                    .remainingQuantity(remaining)
+                                    .build();
+                        })
+                        .collect(Collectors.toList());
+            }
 
             response.setOptionalToppings(toppingResponses);
             return response;
