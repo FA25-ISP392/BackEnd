@@ -68,6 +68,7 @@ public class AuthenticationController {
         response.getWriter().write(html);
     }
 
+
     @GetMapping("/google/success")
     public ApiResponse<AuthenticationResponse> googleLoginSuccess(OAuth2AuthenticationToken authentication) {
         String email = authentication.getPrincipal().getAttribute("email");

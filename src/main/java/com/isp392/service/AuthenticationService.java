@@ -6,17 +6,20 @@ import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.response.AuthenticationResponse;
 import com.isp392.dto.response.IntrospectResponse;
 import com.isp392.entity.Account;
+import com.isp392.entity.Customer;
 import com.isp392.entity.PasswordResetToken;
 import com.isp392.enums.Role;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.repository.AccountRepository;
+import com.isp392.repository.CustomerRepository;
 import com.isp392.repository.PasswordResetTokenRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -40,6 +43,7 @@ public class AuthenticationService {
 
     PasswordEncoder passwordEncoder;
     AccountRepository accountRepository;
+    CustomerRepository customerRepository;
     PasswordResetTokenRepository tokenRepository;
     PasswordResetTokenService passwordResetTokenService;
     EmailService emailService;
@@ -51,6 +55,7 @@ public class AuthenticationService {
     @Value("${jwt.signerKey}")
     String SIGNER_KEY;
 
+    @Transactional
     public AuthenticationResponse authenticateGoogleUser(String email, String name) {
         // Kiểm tra xem user đã tồn tại chưa
         var account = accountRepository.findByEmail(email)
@@ -61,7 +66,12 @@ public class AuthenticationService {
                     newAcc.setFullName(name);
                     newAcc.setPassword(UUID.randomUUID().toString());
                     newAcc.setRole(Role.CUSTOMER);
-                    return accountRepository.save(newAcc);
+                    Customer customer = Customer.builder()
+                            .account(newAcc)
+                            .build();
+                    accountRepository.save(newAcc);
+                    customerRepository.save(customer);
+                    return newAcc;
                 });
 
         String token = generateToken(account.getUsername(), account.getRole());
