@@ -102,14 +102,14 @@ public class BookingController {
         return  response;
     }
 
-    @DeleteMapping("/{id}")
-    public ApiResponse<String> cancelBooking(
+    @PutMapping("{id}/cancel")
+    public ApiResponse<BookingResponse> cancelBooking(
             @PathVariable int id,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        bookingService.cancelBooking(id);
-        ApiResponse<String> response = new ApiResponse<>();
-        response.setResult("Cancelled");
+        BookingResponse booking= bookingService.cancelBooking(id);
+        ApiResponse<BookingResponse> response = new ApiResponse<>();
+        response.setResult(booking);
         return response;
     }
 }
