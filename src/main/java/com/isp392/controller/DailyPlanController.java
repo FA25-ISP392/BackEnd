@@ -23,7 +23,7 @@ public class DailyPlanController {
     DailyPlanService dailyPlanService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
+    //@PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
     public ApiResponse<DailyPlanResponse> createDailyPlan(@RequestBody @Valid DailyPlanCreationRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.createDailyPlan(request, authentication))
@@ -39,7 +39,7 @@ public class DailyPlanController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
+    //@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<List<DailyPlanResponse>> getAllDailyPlans() {
         return ApiResponse.<List<DailyPlanResponse>>builder()
                 .result(dailyPlanService.getAllDailyPlans())
@@ -47,7 +47,7 @@ public class DailyPlanController {
     }
 
     @GetMapping("/{planId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
+    //@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<DailyPlanResponse> getDailyPlanById(@PathVariable int planId) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.getDailyPlanById(planId))
@@ -55,7 +55,7 @@ public class DailyPlanController {
     }
 
     @PutMapping("/{planId}")
-    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER', 'ADMIN')")
+    //@PreAuthorize("hasAnyRole('CHEF', 'MANAGER', 'ADMIN')")
     public ApiResponse<DailyPlanResponse> updateDailyPlan(@PathVariable int planId, @RequestBody @Valid DailyPlanUpdateRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.updateDailyPlan(planId, request, authentication))
@@ -63,7 +63,7 @@ public class DailyPlanController {
     }
 
     @DeleteMapping("/{planId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
+    //@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CHEF')")
     public ApiResponse<String> deleteDailyPlan(@PathVariable int planId) {
         dailyPlanService.deleteDailyPlan(planId);
         return ApiResponse.<String>builder()
