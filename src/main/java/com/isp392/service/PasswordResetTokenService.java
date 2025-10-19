@@ -5,6 +5,7 @@ import com.isp392.repository.PasswordResetTokenRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -16,14 +17,15 @@ public class PasswordResetTokenService {
 
     PasswordResetTokenRepository tokenRepository;
 
+    @Transactional
     public void deleteOldTokenByEmail(String email) {
-        tokenRepository.deleteByEmail(email);
+        tokenRepository.deleteByEmail(email.trim());
     }
 
     public String createTokenForEmail(String email) {
         String token = UUID.randomUUID().toString();
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .email(email)
+                .email(email.trim())
                 .token(token)
                 .expiryDate(LocalDateTime.now().plusMinutes(15))
                 .build();
