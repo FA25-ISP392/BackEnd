@@ -95,6 +95,12 @@ public class BookingController {
         response.setResult(bookingService.getBookingsByDateAndTable(tableId, date));
         return response;
     }
+    @GetMapping("customer/{id}")
+    public ApiResponse<List<BookingResponse>> getBookingsByCustomer(@PathVariable int id) {
+        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+        response.setResult(bookingService.findBookingsByCusId(id));
+        return  response;
+    }
 
     @DeleteMapping("/{id}")
     public ApiResponse<String> cancelBooking(

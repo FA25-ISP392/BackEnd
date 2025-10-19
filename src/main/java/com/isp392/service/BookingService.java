@@ -160,5 +160,8 @@ public class BookingService {
         }
         return ls.stream().map(bookingMapper::toResponse).toList();
     }
-
+    public List<BookingResponse> findBookingsByCusId(int customerId) {
+        List<Booking> ls = bookingRepository.findByCustomer_CustomerId(customerId);
+        return ls.stream().map(bookingMapper::toResponse).toList();
+    }
 }
