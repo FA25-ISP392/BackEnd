@@ -1,5 +1,6 @@
 package com.isp392.service;
 
+import com.isp392.dto.request.DailyPlanBatchApproveRequest;
 import com.isp392.dto.request.DailyPlanCreationRequest;
 import com.isp392.dto.request.DailyPlanUpdateRequest;
 import com.isp392.dto.response.DailyPlanResponse;
@@ -198,6 +199,36 @@ public class DailyPlanService {
             throw new AppException(ErrorCode.PLAN_NOT_FOUND);
         }
         dailyPlanRepository.deleteById(planId);
+    }
+
+    @Transactional
+    public List<DailyPlanResponse> approveDailyPlansBatch(DailyPlanBatchApproveRequest request, Authentication authentication) {
+        String username = authentication.getName();
+
+        // 1. Lấy thông tin người duyệt (Manager/Admin)
+        Staff approver = staffRepository.findByUsernameWithAccount(username)
+                .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+
+        // 2. Lấy tất cả các kế hoạch cần duyệt
+        List<DailyPlan> plansToApprove = dailyPlanRepository.findAllById(request.getPlanIds());
+
+        // 3. Lặp qua và cập nhật từng kế hoạch
+        for (DailyPlan plan : plansToApprove) {
+            // Chỉ duyệt nếu kế hoạch đang ở trạng thái "chưa duyệt"
+            if (!plan.getStatus()) {
+                plan.setStatus(true);
+                plan.setApproverStaff(approver);
+            }
+            // (Bạn có thể thêm logic báo lỗi nếu plan không tìm thấy hoặc đã được duyệt)
+        }
+
+        // 4. Lưu tất cả thay đổi xuống DB
+        List<DailyPlan> savedPlans = dailyPlanRepository.saveAll(plansToApprove);
+
+        // 5. Trả về danh sách các kế hoạch đã được cập nhật
+        return savedPlans.stream()
+                .map(this::mapToResponseWithItemName)
+                .collect(Collectors.toList());
     }
 
     private boolean hasAuthority(Authentication authentication, String role) {

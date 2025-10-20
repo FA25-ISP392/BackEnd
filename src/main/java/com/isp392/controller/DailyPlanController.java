@@ -1,5 +1,6 @@
 package com.isp392.controller;
 
+import com.isp392.dto.request.DailyPlanBatchApproveRequest;
 import com.isp392.dto.request.DailyPlanCreationRequest;
 import com.isp392.dto.request.DailyPlanUpdateRequest;
 import com.isp392.dto.response.ApiResponse;
@@ -59,6 +60,18 @@ public class DailyPlanController {
     public ApiResponse<DailyPlanResponse> updateDailyPlan(@PathVariable int planId, @RequestBody @Valid DailyPlanUpdateRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.updateDailyPlan(planId, request, authentication))
+                .build();
+    }
+
+    // ✅ API MỚI: DUYỆT HÀNG LOẠT
+    @PutMapping("/batch-approve")
+//    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ApiResponse<List<DailyPlanResponse>> approveDailyPlansBatch(
+            @RequestBody @Valid DailyPlanBatchApproveRequest request,
+            Authentication authentication
+    ) {
+        return ApiResponse.<List<DailyPlanResponse>>builder()
+                .result(dailyPlanService.approveDailyPlansBatch(request, authentication))
                 .build();
     }
 
