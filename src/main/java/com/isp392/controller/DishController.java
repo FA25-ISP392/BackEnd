@@ -37,7 +37,8 @@ public class DishController {
 //    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish, @RequestPart("image") MultipartFile imageFile) {
+    public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish,
+                                                @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         return ApiResponse.<DishResponse>builder()
                 .result(dishService.createDish(dish, imageFile))
                 .build();
@@ -74,13 +75,13 @@ public class DishController {
                 .build();
     }
 
-    @PutMapping("/{dishId}")
+    @PutMapping(value = "/{dishId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<DishResponse> updateDish(
             @PathVariable int dishId,
-            @RequestBody @Valid DishUpdateRequest request
-    ) {
+            @Valid @RequestPart("dish") DishUpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         return ApiResponse.<DishResponse>builder()
-                .result(dishService.updateDish(dishId, request))
+                .result(dishService.updateDish(dishId, request, imageFile))
                 .build();
     }
 

@@ -248,7 +248,7 @@ public class DishService {
     }
 
     @Transactional
-    public DishResponse updateDish(int dishId, DishUpdateRequest request) {
+    public DishResponse updateDish(int dishId, DishUpdateRequest request, MultipartFile imageFile) {
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
 
@@ -257,7 +257,14 @@ public class DishService {
                 throw new AppException(ErrorCode.DISH_EXISTED);
             }
         }
+
         dishMapper.updateDish(dish, request);
+
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String newImageUrl = cloudinaryService.uploadImage(imageFile);
+            dish.setPicture(newImageUrl);
+        }
+
         return dishMapper.toDishResponse(dish);
     }
 
