@@ -32,10 +32,8 @@ public class DishCreationRequest {
     @NotNull(message = "DISH_CATEGORY_REQUIRED")
     Category category;
 
-    String picture;
-
     @NotNull(message = "DISH_STATUS_REQUIRED")
     Boolean isAvailable;
 
-    private DishType type;
+    DishType type;
 }

@@ -48,5 +48,12 @@ spring:
 app:
   frontend:
     reset-password-url: http://localhost:5173/reset-password
+
 jwt:
   signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
+
+cloudinary:
+  cloud-name: dvcosaetb
+  api-key: 298672844131261
+  api-secret: 1eczGsocRPNluh28DuDUy1SxUfM
+

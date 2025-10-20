@@ -1,5 +1,7 @@
 package com.isp392.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
@@ -12,7 +14,9 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,12 +29,20 @@ public class DishController {
 
     DishService dishService;
 
-    @PostMapping
-    public ApiResponse<DishResponse> createDish(@Valid @RequestBody DishCreationRequest request) {
+//    @PostMapping
+//    public ApiResponse<DishResponse> createDish(@Valid @RequestBody DishCreationRequest request) {
+//        return ApiResponse.<DishResponse>builder()
+//                .result(dishService.createDish(request))
+//                .build();
+//    }
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish, @RequestPart("image") MultipartFile imageFile) {
         return ApiResponse.<DishResponse>builder()
-                .result(dishService.createDish(request))
+                .result(dishService.createDish(dish, imageFile))
                 .build();
     }
+
 
     // ✅ API CŨ (GET /dish) - Giữ nguyên
     @GetMapping
