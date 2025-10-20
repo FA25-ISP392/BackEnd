@@ -142,9 +142,6 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(BookingStatus.CANCELLED);
-        if (booking.getStatus().equals(BookingStatus.CANCELLED)) {
-            throw new RuntimeException("Booking has already been cancelled!");
-        }
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
     @Transactional
