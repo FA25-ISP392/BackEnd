@@ -33,4 +33,7 @@ public class Orders {
     // 🔗 Một đơn hàng có nhiều chi tiết món ăn
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     List<OrderDetail> orderDetails;
+
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
+    Payment payment;
 }

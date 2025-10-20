@@ -5,7 +5,7 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(name = "paymet")
+@Table(name = "payment")
 @Getter
 @Setter
 @ToString
@@ -18,8 +18,9 @@ public class Payment {
     @Column(name = "payemtId")
     int id;
 
-    @Column(name = "orderId",  nullable = false)
-    int orderId;
+    @OneToOne
+    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    Orders order;
 
     @Column(name = "method",  nullable = false)
     String method;
