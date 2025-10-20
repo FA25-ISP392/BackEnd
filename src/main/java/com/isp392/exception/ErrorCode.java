@@ -65,6 +65,7 @@ public enum ErrorCode {
     DISH_STATUS_REQUIRED(2107, "Status is required"),
     DISH_CALO_REQUIRED(2108, "Calo is required"),
     DISH_CALO_NEGATIVE(2109, "Calo must be greater than or equal to 0"),
+    IMAGE_UPLOAD_FAILED(2110, "Image upload failed"),
 
 
     //Table

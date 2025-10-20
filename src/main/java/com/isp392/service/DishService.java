@@ -21,11 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable; // ✅ Đảm bảo import đúng
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects; // ✅ Thêm import
 import java.util.stream.Collectors;
 
 @Service
@@ -36,6 +37,7 @@ public class DishService {
     DishRepository dishRepository;
     DailyPlanRepository dailyPlanRepository;
     DishMapper dishMapper;
+    CloudinaryService cloudinaryService;
 
     @Transactional(readOnly = true)
     public DishResponse getDishById(int dishId) {
@@ -228,13 +230,19 @@ public class DishService {
         }).collect(Collectors.toList());
     }
 
-    // Các phương thức còn lại (create, update, delete) không thay đổi
-    public DishResponse createDish(DishCreationRequest request) {
+    public DishResponse createDish(DishCreationRequest request, MultipartFile imageFile) {
         if (dishRepository.existsByDishName(request.getDishName())) {
             throw new AppException(ErrorCode.DISH_EXISTED);
         }
+
         Dish dish = dishMapper.toDish(request);
+
+        // Upload ảnh lên Cloudinary
+        String imageUrl = cloudinaryService.uploadImage(imageFile);
+        dish.setPicture(imageUrl);
+
         dish.setIsAvailable(true);
+
         Dish saved = dishRepository.save(dish);
         return dishMapper.toDishResponse(saved);
     }
