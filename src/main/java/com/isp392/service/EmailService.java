@@ -81,5 +81,26 @@ public class EmailService {
         send(email, subject, body);
         log.info("Reset password email sent to {}", email);
     }
+    public void sendVerificationEmail(String email, String name, String verifyLink) {
+        String subject = "Xác thực tài khoản của bạn";
+        String body = String.format("""
+            <div style="font-family: Arial, sans-serif; padding: 20px;">
+                <h2 style="color: #333;">Chào mừng bạn, %s!</h2>
+                <p>Cảm ơn bạn đã đăng ký. Vui lòng nhấn vào link bên dưới để xác thực email của bạn:</p>
+                <p>
+                    <a href="%s" 
+                       style="display: inline-block; background-color: #007bff; color: #fff; 
+                              padding: 10px 15px; border-radius: 5px; text-decoration: none; 
+                              font-weight: bold;">
+                        Xác thực tài khoản
+                    </a>
+                </p>
+                <p style="color: #777; font-size: 13px;">(Link có hiệu lực trong 24 giờ)</p>
+            </div>
+        """, name, verifyLink);
+
+        send(email, subject, body);
+        log.info("Verification email sent to {}", email);
+    }
 
 }

@@ -7,12 +7,14 @@ import com.isp392.dto.response.AuthenticationResponse;
 import com.isp392.dto.response.IntrospectResponse;
 import com.isp392.entity.Account;
 import com.isp392.entity.Customer;
+import com.isp392.entity.EmailVerificationToken;
 import com.isp392.entity.PasswordResetToken;
 import com.isp392.enums.Role;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.repository.AccountRepository;
 import com.isp392.repository.CustomerRepository;
+import com.isp392.repository.EmailVerificationTokenRepository;
 import com.isp392.repository.PasswordResetTokenRepository;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
@@ -46,6 +48,7 @@ public class AuthenticationService {
     CustomerRepository customerRepository;
     PasswordResetTokenRepository tokenRepository;
     PasswordResetTokenService passwordResetTokenService;
+    EmailVerificationTokenRepository emailTokenRepository;
     EmailService emailService;
     @Value("${app.frontend.reset-password-url}")
     @NonFinal
@@ -185,4 +188,31 @@ public class AuthenticationService {
         tokenRepository.delete(resetToken);
     }
 
+    @Transactional
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = emailTokenRepository.findByToken(token)
+                .orElseThrow(() -> new AppException(ErrorCode.TOKEN_INVALID));
+
+        if (verificationToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            emailTokenRepository.delete(verificationToken);
+            throw new AppException(ErrorCode.TOKEN_EXPIRED);
+        }
+
+        // Lấy email từ token và tìm account (giống logic reset pass)
+        String email = verificationToken.getEmail();
+        Account account = accountRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        if (account.isVerified()) {
+            emailTokenRepository.delete(verificationToken);
+            //có thể thêm ErrorCode.EMAIL_ALREADY_VERIFIED nếu cần
+            throw new AppException(ErrorCode.INVALID_ARGUMENT);
+        }
+
+        account.setVerified(true);
+        accountRepository.save(account);
+
+        // Xóa token sau khi dùng
+        emailTokenRepository.delete(verificationToken);
+    }
 }

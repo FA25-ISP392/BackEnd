@@ -5,21 +5,28 @@ import com.isp392.dto.request.CustomerUpdateRequest;
 import com.isp392.dto.response.CustomerResponse;
 import com.isp392.entity.Account;
 import com.isp392.entity.Customer;
+import com.isp392.entity.EmailVerificationToken;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.CustomerMapper;
 import com.isp392.repository.CustomerRepository;
+import com.isp392.repository.EmailVerificationTokenRepository;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +35,11 @@ public class CustomerService {
     CustomerRepository customerRepository;
     CustomerMapper customerMapper;
     AccountService accountService;
+    EmailVerificationTokenRepository emailTokenRepository;
+    EmailService emailService;
+    @NonFinal
+    @Value("http://localhost:5173/verify-email") // ✅ Thêm config này ở Bước 4
+    String frontendVerifyEmailUrl;
 
     @Transactional
     public CustomerResponse createCustomer(@Valid CustomerCreationRequest request) {
@@ -35,6 +47,20 @@ public class CustomerService {
         Customer customer = customerMapper.toCustomer(request);
         customer.setAccount(account);
         customerRepository.save(customer);
+        emailTokenRepository.deleteByEmail(account.getEmail());
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = EmailVerificationToken.builder()
+                .email(account.getEmail())
+                .token(token)
+                .expiryDate(LocalDateTime.now().plusHours(24))
+                .build();
+        emailTokenRepository.save(verificationToken);
+        // Tạo link xác thực
+        String verifyLink = frontendVerifyEmailUrl + "?token=" + token;
+
+        // Gửi email (Bạn cần thêm method này ở Bước 5)
+        emailService.sendVerificationEmail(account.getEmail(), account.getFullName(), verifyLink);
+
         return customerMapper.toCustomerResponse(customer);
     }
 
