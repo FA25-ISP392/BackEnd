@@ -30,6 +30,9 @@ public class Orders {
     @Column(nullable = false)
     LocalDateTime orderDate;
 
+    @Column(name="isPaid", columnDefinition = "BIT DEFAULT 0" )
+    boolean isPaid;
+
     // 🔗 Một đơn hàng có nhiều chi tiết món ăn
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     List<OrderDetail> orderDetails;
