@@ -77,13 +77,20 @@ public enum ErrorCode {
     //Order Detail
     ORDER_DETAIL_NOT_FOUND(3001, "Order detail not found"),
 
+
+    ITEM_NOT_FOUND(4001,"can't find the dish or topping" ),
+    INVALID_REQUEST(4002,"just only oneStaffID can fix it" ),
+
+    // Daily Plan
+    ACCESS_DENIED(1007, "You do not have permission"),
     PLAN_NOT_FOUND(4000, "Plan not found"),
-    ITEM_NOT_FOUND(4001,"can't find the dish or topping" ), INVALID_REQUEST(4002,"just only oneStaffID can fix it" ),
-    PLAN_ALREADY_EXISTS_BATCH(4002,"Already exits" ), PLAN_ALREADY_EXISTS(4003,"already exits" ),
-
-    ACCESS_DENIED(1007, "You do not have permission"), PLAN_ALREADY_APPROVED(4005,"PLAN_ALREADY_APPROVED" ),
-
+    PLAN_ALREADY_EXISTS_BATCH(4002,"Already exits" ),
+    PLAN_ALREADY_EXISTS(4003,"already exits" ),
+    PLAN_ALREADY_APPROVED(4005,"PLAN_ALREADY_APPROVED" ),
+    NOT_ENOUGH_QUANTITY(4004, "Not enough quantity in daily plan"),
     BATCH_PLAN_INCONSISTENT(2205, "All plans in a batch must be for the same staff member.");
+
+
     final int code;
     final String message;
 
