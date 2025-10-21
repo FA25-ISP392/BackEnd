@@ -38,7 +38,7 @@ public class CustomerService {
     EmailVerificationTokenRepository emailTokenRepository;
     EmailService emailService;
     @NonFinal
-    @Value("http://localhost:5173/verify-email") // ✅ Thêm config này ở Bước 4
+    @Value("${app.frontend.verify-email-url:http://localhost:5173/verify-email}") // Thêm config này ở Bước 4
     String frontendVerifyEmailUrl;
 
     @Transactional

@@ -29,7 +29,7 @@ public class AuthenticationController {
 
     @GetMapping("/verify-email")
     public ApiResponse<String> verifyEmail(@RequestParam String token) {
-        authenticationService.verifyEmail(token); // Logic sẽ được thêm ở Bước 7
+        authenticationService.verifyEmail(token);
         return ApiResponse.<String>builder()
                 .result("Email verified successfully")
                 .build();
