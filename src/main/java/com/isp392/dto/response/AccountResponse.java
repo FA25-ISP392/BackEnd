@@ -20,6 +20,7 @@ public class AccountResponse {
     String phone;
     LocalDate dob;
     Role role;
+    Boolean isVerified;
 
     public AccountResponse(Account account) {
     }

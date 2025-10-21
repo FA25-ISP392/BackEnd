@@ -27,6 +27,14 @@ import java.util.Optional;
 public class AuthenticationController {
     AuthenticationService authenticationService;
 
+    @GetMapping("/verify-email")
+    public ApiResponse<String> verifyEmail(@RequestParam String token) {
+        authenticationService.verifyEmail(token);
+        return ApiResponse.<String>builder()
+                .result("Email verified successfully")
+                .build();
+    }
+
     @GetMapping("/google/popup")
     public void googleLoginPopup(
             HttpServletRequest request,

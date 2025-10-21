@@ -48,7 +48,8 @@ spring:
 app:
   frontend:
     reset-password-url: http://localhost:5173/reset-password
-
+#    verify-email-url: http://localhost:5173/verify-email
+    verify-email-url: ${FRONTEND_VERIFY_EMAIL_URL:http://localhost:5173/verify-email}
 jwt:
   signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
 
