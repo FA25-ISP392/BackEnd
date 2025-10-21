@@ -5,6 +5,7 @@ import com.isp392.dto.request.OrderDetailUpdateRequest;
 import com.isp392.dto.response.OrderDetailResponse;
 import com.isp392.dto.response.OrderToppingResponse;
 import com.isp392.entity.*;
+import com.isp392.enums.ItemType;
 import com.isp392.enums.OrderDetailStatus;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -17,6 +18,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,41 +35,33 @@ public class OrderDetailService {
     ToppingRepository toppingRepository;
     DishRepository dishRepository;
     OrderDetailMapper orderDetailMapper;
+    DailyPlanRepository dailyPlanRepository;
 
     @Transactional
     public OrderDetailResponse createOrderDetail(OrderDetailCreationRequest request) {
-        Orders order = ordersRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        Dish dish = dishRepository.findById(request.getDishId())
-                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+        Orders order = getOrderById(request.getOrderId());
+        Dish dish = getDishById(request.getDishId());
 
+        // 1️⃣ Trừ số lượng món trong daily plan
+        decrementDishDailyPlan(dish, 1);
+
+        // 2️⃣ Tạo order detail
+        OrderDetail orderDetail = buildOrderDetail(order, dish, request.getNote());
         double totalPrice = dish.getPrice();
 
-        OrderDetail orderDetail = OrderDetail.builder()
-                .order(order)
-                .dish(dish)
-                .status(OrderDetailStatus.PENDING)
-                .note(request.getNote())
-                .build();
-
+        // 3️⃣ Xử lý topping nếu có
         List<OrderTopping> orderToppings = new ArrayList<>();
-
         if (request.getToppings() != null) {
             for (OrderDetailCreationRequest.ToppingSelection t : request.getToppings()) {
-                Topping topping = toppingRepository.findById(t.getToppingId())
-                        .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND));
+                Topping topping = getToppingById(t.getToppingId());
+
+                // Trừ số lượng topping
+                decrementToppingDailyPlan(topping, t.getQuantity());
 
                 double toppingPrice = topping.getPrice() * t.getQuantity();
                 totalPrice += toppingPrice;
 
-                OrderTopping orderTopping = OrderTopping.builder()
-                        .id(new OrderToppingId(null, t.getToppingId())) // orderDetailId sẽ được Hibernate set tự động
-                        .orderDetail(orderDetail)
-                        .topping(topping)
-                        .quantity(t.getQuantity())
-                        .toppingPrice(toppingPrice)
-                        .build();
-
+                OrderTopping orderTopping = buildOrderTopping(orderDetail, topping, t.getQuantity(), toppingPrice);
                 orderToppings.add(orderTopping);
             }
         }
@@ -75,12 +69,74 @@ public class OrderDetailService {
         orderDetail.setOrderToppings(orderToppings);
         orderDetail.setTotalPrice(totalPrice);
 
-        // Save một lần, cascade sẽ tự insert orderDetail trước rồi insert orderTopping
+        // Lưu order detail và topping
         orderDetailRepository.save(orderDetail);
 
         List<OrderToppingResponse> toppingResponses = orderDetailMapper.toToppingResponseList(orderToppings);
         return orderDetailMapper.toResponse(orderDetail, toppingResponses);
     }
+
+// ================== Helper methods ==================
+
+    private Orders getOrderById(Integer orderId) {
+        return ordersRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    private Dish getDishById(Integer dishId) {
+        return dishRepository.findById(dishId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+    }
+
+    private Topping getToppingById(Integer toppingId) {
+        return toppingRepository.findById(toppingId)
+                .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND));
+    }
+
+    private void decrementDishDailyPlan(Dish dish, int quantity) {
+        DailyPlan dailyPlan = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(dish.getDishId(), ItemType.DISH, LocalDate.now())
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+
+        if (dailyPlan.getRemainingQuantity() < quantity) {
+            throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
+        }
+
+        dailyPlan.setRemainingQuantity(dailyPlan.getRemainingQuantity() - quantity);
+        dailyPlanRepository.save(dailyPlan);
+    }
+
+    private void decrementToppingDailyPlan(Topping topping, int quantity) {
+        DailyPlan dailyPlan = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(topping.getToppingId(),ItemType.TOPPING, LocalDate.now())
+                .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND));
+
+        if (dailyPlan.getRemainingQuantity() < quantity) {
+            throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
+        }
+
+        dailyPlan.setRemainingQuantity(dailyPlan.getRemainingQuantity() - quantity);
+        dailyPlanRepository.save(dailyPlan);
+    }
+
+    private OrderDetail buildOrderDetail(Orders order, Dish dish, String note) {
+        return OrderDetail.builder()
+                .order(order)
+                .dish(dish)
+                .status(OrderDetailStatus.PENDING)
+                .note(note)
+                .build();
+    }
+
+    private OrderTopping buildOrderTopping(OrderDetail orderDetail, Topping topping, int quantity, double toppingPrice) {
+        return OrderTopping.builder()
+                .id(new OrderToppingId(null, topping.getToppingId()))
+                .orderDetail(orderDetail)
+                .topping(topping)
+                .quantity(quantity)
+                .toppingPrice(toppingPrice)
+                .build();
+    }
+
+// =========================
 
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(int orderDetailId) {
