@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -66,22 +68,21 @@ public class OrdersService {
         return ordersMapper.toOrdersResponse(order);
     }
 
+    @Transactional
     public OrdersResponse updateOrder(Integer orderId, OrdersUpdateRequest request) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // Nếu có tableId, fetch table và set
         if (request.getTableId() != null) {
             TableEntity table = tableRepository.findById(request.getTableId())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
             order.setTable(table);
         }
 
-        if (request.getOrderDate() != null) {
-            order.setOrderDate(request.getOrderDate());
-        }
+        ordersMapper.updateOrder(order, request);
 
-        Orders updated = ordersRepository.save(order);
-        return ordersMapper.toOrdersResponse(updated);
+        return ordersMapper.toOrdersResponse(order);
     }
 
     public void deleteOrder(Integer orderId) {

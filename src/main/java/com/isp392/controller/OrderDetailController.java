@@ -4,11 +4,14 @@ import com.isp392.dto.request.OrderDetailCreationRequest;
 import com.isp392.dto.request.OrderDetailUpdateRequest;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.response.OrderDetailResponse;
+import com.isp392.enums.OrderDetailStatus;
 import com.isp392.service.OrderDetailService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/order-details")
@@ -35,13 +38,20 @@ public class OrderDetailController {
                 .build();
     }
 
-//    @PostMapping("/{orderDetailId}/toppings")
-//    public ApiResponse<OrderDetailResponse> addTopping(@PathVariable Integer orderDetailId, @RequestBody OrderDetailUpdateRequest request) {
-//
-//        OrderDetailResponse response = orderDetailService.updateOrderDetail(orderDetailId, request);
-//        return ApiResponse.<OrderDetailResponse>builder()
-//                .result(response)
-//                .build();
-//    }
+    @GetMapping("/status/{status}")
+    public ApiResponse<List<OrderDetailResponse>> getByStatus(@PathVariable OrderDetailStatus status) {
+        List<OrderDetailResponse> result = orderDetailService.getOrderDetailsByStatus(status);
+        return ApiResponse.<List<OrderDetailResponse>>builder()
+                .result(result)
+                .build();
+    }
+
+    @PutMapping("/{orderDetailId}")
+    public ApiResponse<OrderDetailResponse> update(@RequestBody @Valid OrderDetailUpdateRequest request) {
+        OrderDetailResponse result = orderDetailService.updateOrderDetail(request);
+        return ApiResponse.<OrderDetailResponse>builder()
+                .result(result)
+                .build();
+    }
 
 }
