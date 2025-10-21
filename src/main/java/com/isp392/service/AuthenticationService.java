@@ -106,7 +106,12 @@ public class AuthenticationService {
         var account = accountRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        // 2️⃣ Kiểm tra mật khẩu
+        // 2️⃣ Kiểm tra verified
+        if (!account.isVerified()) {  // hoặc account.getVerified() nếu dùng Boolean
+            throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        // 3️⃣ Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), account.getPassword())) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
