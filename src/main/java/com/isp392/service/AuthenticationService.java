@@ -203,13 +203,13 @@ public class AuthenticationService {
         Account account = accountRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        if (account.isVerified()) {
+        if (account.getIsVerified()==true) {
             emailTokenRepository.delete(verificationToken);
             //có thể thêm ErrorCode.EMAIL_ALREADY_VERIFIED nếu cần
             throw new AppException(ErrorCode.INVALID_ARGUMENT);
         }
 
-        account.setVerified(true);
+        account.setIsVerified(true);
         accountRepository.save(account);
 
         // Xóa token sau khi dùng

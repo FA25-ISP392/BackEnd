@@ -42,5 +42,5 @@ public class Account {
     Role role;
 
     @Column(name = "isVerified", columnDefinition = "bit default 0")
-    private boolean isVerified = false;
+    private Boolean isVerified = false;
 }
