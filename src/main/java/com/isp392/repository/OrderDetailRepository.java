@@ -1,10 +1,12 @@
 package com.isp392.repository;
 
 import com.isp392.entity.OrderDetail;
+import com.isp392.enums.OrderDetailStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Integer> {
@@ -13,4 +15,6 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
             "LEFT JOIN FETCH ot.topping " +
             "WHERE od.orderDetailId = :id")
     Optional<OrderDetail> findByIdWithToppings(@Param("id") Integer id);
+
+    List<OrderDetail> findByStatus(OrderDetailStatus status);
 }

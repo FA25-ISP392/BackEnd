@@ -100,5 +100,42 @@ public class OrderDetailService {
         return orderDetailMapper.toResponse(orderDetail, toppings);
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderDetailResponse> getOrderDetailsByStatus(OrderDetailStatus status) {
+        List<OrderDetail> details = orderDetailRepository.findByStatus(status);
+        return details.stream()
+                .map(orderDetailMapper::toOrderDetailResponse)
+                .toList();
+    }
+
+    @Transactional
+    public OrderDetailResponse updateOrderDetail(OrderDetailUpdateRequest request) {
+        OrderDetail detail = orderDetailRepository.findById(request.getOrderDetailId())
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
+
+        orderDetailMapper.updateOrderDetail(detail, request);
+
+        // Cập nhật topping nếu FE gửi
+        if (request.getToppings() != null) {
+            detail.getOrderToppings().clear();
+            List<OrderTopping> newToppings = request.getToppings().stream().map(t -> {
+                OrderTopping ot = new OrderTopping();
+                ot.setOrderDetail(detail);
+                ot.setTopping(toppingRepository.findById(t.getToppingId())
+                        .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND)));
+                ot.setQuantity(t.getQuantity());
+                return ot;
+            }).toList();
+            detail.getOrderToppings().addAll(newToppings);
+        }
+
+        double toppingsPrice = detail.getOrderToppings().stream()
+                .mapToDouble(ot -> ot.getQuantity() * ot.getTopping().getPrice())
+                .sum();
+        detail.setTotalPrice(detail.getDish().getPrice() + toppingsPrice);
+
+        return orderDetailMapper.toOrderDetailResponse(detail);
+    }
+
 }
 

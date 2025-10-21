@@ -6,9 +6,7 @@ import com.isp392.dto.response.OrderToppingResponse;
 import com.isp392.entity.OrderDetail;
 import com.isp392.entity.OrderTopping;
 import jakarta.validation.Valid;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
+import org.mapstruct.*;
 import org.mapstruct.factory.Mappers;
 
 import java.util.List;
@@ -38,8 +36,10 @@ public interface OrderDetailMapper {
 
     List<OrderToppingResponse> toToppingResponseList(List<OrderTopping> orderToppings);
 
-    void updateOrderDetail(@Valid OrderDetailUpdateRequest request, @MappingTarget OrderDetail orderDetail);
-
-//    Boolean updateOrderDetail(@Valid OrderDetailUpdateRequest request, OrderDetail orderDetail);
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "dish", ignore = true) // Nếu muốn đổi dish, xử lý riêng
+    @Mapping(target = "order", ignore = true)
+    @Mapping(target = "orderToppings", ignore = true) // Xử lý topping riêng
+    void updateOrderDetail(@MappingTarget OrderDetail entity, OrderDetailUpdateRequest request);
 
 }
