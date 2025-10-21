@@ -30,6 +30,7 @@ public enum ErrorCode {
     CANNOT_DELETE_SELF(1012, "Cannot delete yourself"),
     LOGIN_REQUIRED(1013, "Login first"),
     SEND_EMAIL_FAILED(1014, "Failed to send email"),
+    EMAIL_NOT_VERIFIED(1015, "Email not verified"),
     // Token
     TOKEN_INVALID(1006, "Invalid token"),
     TOKEN_EXPIRED(1008, "Token expired"),
