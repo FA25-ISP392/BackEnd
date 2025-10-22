@@ -75,4 +75,6 @@ jobs:
           echo "Checking status of container ${IMAGE_NAME}..."
           docker ps -f "name=${IMAGE_NAME}"
       - name: Show container logs
-        run: docker logs $IMAGE_NAME || true
+        run: |
+          echo "=== Reading app.log from container ==="
+          docker exec $IMAGE_NAME cat /app/logs/app.log || true
