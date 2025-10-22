@@ -64,3 +64,4 @@ payos:
   checksum-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
+  webhook-key: YOUR_WEBHOOK_KEY_HERE
