@@ -15,7 +15,7 @@ import lombok.experimental.FieldDefaults;
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "payemtId")
+    @Column(name = "paymentId")
     int id;
 
     @OneToOne

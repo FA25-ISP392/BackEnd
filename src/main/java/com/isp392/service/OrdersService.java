@@ -4,6 +4,7 @@ import com.isp392.dto.request.OrdersCreationRequest;
 import com.isp392.dto.request.OrdersUpdateRequest;
 import com.isp392.dto.response.OrdersResponse;
 import com.isp392.entity.Customer;
+import com.isp392.entity.OrderDetail;
 import com.isp392.entity.Orders;
 import com.isp392.entity.TableEntity;
 import com.isp392.exception.AppException;
@@ -53,20 +54,29 @@ public class OrdersService {
         return ordersMapper.toOrdersResponse(saved);
     }
 
-
-//    public List<OrdersResponse> getOrder() {
-//        return ordersRepository.findAll()
-//                .stream()
-//                .map(ordersMapper::toOrdersResponse)
-//                .toList();
+//    public OrdersResponse getOrder(Integer orderId) {
+//        Orders order = ordersRepository.findById(orderId)
+//                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+//        Hibernate.initialize(order.getOrderDetails());
+//        return ordersMapper.toOrdersResponse(order);
 //    }
+public OrdersResponse getOrder(Integer orderId) {
+    Orders order = ordersRepository.findById(orderId)
+            .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-    public OrdersResponse getOrder(Integer orderId) {
-        Orders order = ordersRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        Hibernate.initialize(order.getOrderDetails());
-        return ordersMapper.toOrdersResponse(order);
-    }
+    // Load chi tiết order
+    Hibernate.initialize(order.getOrderDetails());
+
+    // Tính tổng giá đơn hàng = tổng totalPrice của từng orderDetail
+    double totalOrderPrice = order.getOrderDetails().stream()
+            .mapToDouble(OrderDetail::getTotalPrice)
+            .sum();
+
+    // Map sang response
+    OrdersResponse response = ordersMapper.toOrdersResponse(order);
+    response.setTotalPrice(totalOrderPrice); // thêm trường này trong OrdersResponse
+    return response;
+}
 
     @Transactional
     public OrdersResponse updateOrder(Integer orderId, OrdersUpdateRequest request) {
