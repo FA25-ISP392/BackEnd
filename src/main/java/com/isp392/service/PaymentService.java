@@ -1,5 +1,7 @@
 package com.isp392.service;
 
+import com.isp392.dto.request.PayOSWebhookBody;
+import com.isp392.dto.request.PayOSWebhookData;
 import com.isp392.dto.request.PaymentCreationRequest;
 import com.isp392.dto.response.PaymentResponse;
 import com.isp392.entity.OrderDetail;
@@ -64,6 +66,20 @@ public class PaymentService {
     public PaymentResponse createPayment(PaymentCreationRequest request) {
         Orders order = ordersRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        Optional<Payment> existingPaymentOpt = paymentRepository.findByOrder_OrderId(request.getOrderId());
+        if (existingPaymentOpt.isPresent()) {
+            Payment existingPayment = existingPaymentOpt.get();
+            if (existingPayment.getStatus() == PaymentStatus.COMPLETED) {
+                throw new RuntimeException("Order is already paid.");
+            }
+            if (existingPayment.getStatus() == PaymentStatus.PENDING && existingPayment.getCheckoutUrl() != null) {
+                log.warn("Payment for order {} already exists with status PENDING. Returning existing checkout URL.", request.getOrderId());
+                PaymentResponse response = paymentMapper.toPaymentResponse(existingPayment);
+                response.setCheckoutUrl(existingPayment.getCheckoutUrl());
+                response.setQrCode(existingPayment.getQrCode());
+                return response;
+            }
+        }
         if (order.getPaid() != null && order.getPaid()) {
             throw new RuntimeException("Order is already paid.");
         }
@@ -101,7 +117,7 @@ public class PaymentService {
             payment.setStatus(PaymentStatus.PENDING);
 
             try {
-                long payosOrderCode = System.currentTimeMillis() % 1000000000;
+                long payosOrderCode = order.getOrderId();
                 List<PaymentLinkItem> items = List.of(
                         PaymentLinkItem.builder()
                                 .name("Meal Order")
@@ -167,52 +183,70 @@ public class PaymentService {
         }
 
         // 2. Parse JSON body
-        WebhookData webhookData;
+        PayOSWebhookData webhookData;
         try {
-            webhookData = objectMapper.readValue(rawBody, WebhookData.class);
+            webhookData = objectMapper.readValue(rawBody, PayOSWebhookData.class); // <-- THAY ĐỔI
         } catch (Exception e) {
-            log.error("Failed to parse PayOS webhook JSON body: {}", e.getMessage());
+            log.error("Failed to parse PayOS webhook JSON body: {}", e.getMessage(), e);
             throw new RuntimeException("Invalid webhook body format");
         }
 
-        // 3. Lấy thông tin
-        long payosOrderCode = webhookData.getOrderCode();
-        String status = webhookData.getCode(); // Mã trạng thái từ PayOS (String)
-        String description = webhookData.getDesc();
-
-        log.info("Processing webhook for PayOS order code: {}, Status: {}, Description: {}", payosOrderCode, status, description);
-
-        // 4. Tìm Payment
-        Payment payment = paymentRepository.findByPayosOrderCode(payosOrderCode);
-        // 5. Kiểm tra PENDING
-        if (payment.getStatus() != PaymentStatus.PENDING) {
-            return;
+        // 3. Lấy đối tượng "data" bên trong
+        PayOSWebhookBody transactionData = webhookData.getData(); // <-- THÊM MỚI
+        if (transactionData == null) {
+            log.error("Webhook 'data' object is null in the received payload.");
+            throw new RuntimeException("Webhook data object is null");
         }
 
-        // 6. Cập nhật trạng thái Payment và Order dựa trên mã trạng thái PayOS
-        // Thay vì dùng PayOSCode.SUCCESS.getCode(), so sánh trực tiếp với "00"
-        if ("00".equals(status)) {
-            // Thanh toán thành công
-            log.info("Payment SUCCESSFUL for PayOS order code: {}", payosOrderCode);
+        // 4. Lấy thông tin từ transactionData
+        long orderCodeFromWebhook = transactionData.getOrderCode(); // <-- Lấy từ data
+        String status = transactionData.getCode();                   // <-- Lấy từ data
+        String description = transactionData.getDescription();       // <-- Lấy từ data
+
+        log.info("Processing webhook for order code: {}, Status: {}, Description: {}", orderCodeFromWebhook, status, description);
+
+        // 5. Tìm Payment bằng Order ID (orderCodeFromWebhook)
+        // ===== THAY ĐỔI CÁCH TÌM PAYMENT =====
+        Optional<Payment> paymentOpt = paymentRepository.findByOrder_OrderId((int) orderCodeFromWebhook);
+        // HOẶC Optional<Payment> paymentOpt = paymentRepository.findByPayosOrderCode(orderCodeFromWebhook); (Nếu bạn lưu Order ID vào cột payos_order_code)
+        // =====================================
+
+        if (paymentOpt.isEmpty()) { // <-- THÊM KIỂM TRA isEmpty
+            log.error("Webhook Error: Payment not found for order code: {}", orderCodeFromWebhook);
+            return; // Trả về OK để PayOS không gửi lại
+        }
+        Payment payment = paymentOpt.get();
+
+        // 6. Kiểm tra trạng thái hiện tại của Payment
+        // ===== THÊM KIỂM TRA TRẠNG THÁI =====
+        if (payment.getStatus() != PaymentStatus.PENDING) {
+            log.warn("Webhook ignored: Payment for order code {} is already processed. Current status: {}",
+                    orderCodeFromWebhook, payment.getStatus());
+            return; // Đã xử lý rồi
+        }
+        // =====================================
+
+        // 7. Cập nhật trạng thái Payment và Order
+        if ("00".equals(status)) { // <-- So sánh status lấy từ transactionData
+            log.info("Payment SUCCESSFUL for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
 
-            // Tìm và cập nhật Order liên quan
             Orders order = payment.getOrder();
             if (order != null) {
-                order.setPaid(true); // Đánh dấu đã thanh toán
+                order.setPaid(true); // <-- CHỈ SET PAID KHI THÀNH CÔNG
                 ordersRepository.save(order);
                 log.info("Order ID {} marked as paid.", order.getOrderId());
             } else {
-                log.error("Critical: Order not found for Payment ID {} (PayOS code {})", payment.getId(), payosOrderCode);
+                log.error("Critical Error: Order relationship not found...");
             }
         } else {
-            // Thanh toán thất bại hoặc bị hủy (các mã lỗi khác 00)
-            log.warn("Payment FAILED or CANCELLED for PayOS order code: {}. PayOS Status Code: {}, Description: {}",
-                    payosOrderCode, status, description);
-            payment.setStatus(PaymentStatus.CANCELLED);
+            log.warn("Payment FAILED or CANCELLED for order code: {}...", orderCodeFromWebhook, status, description);
+            payment.setStatus(PaymentStatus.CANCELLED); // Hoặc FAILED tùy logic
         }
+
+        // 8. Lưu thay đổi của Payment
         paymentRepository.save(payment);
-        log.info("Updated Payment status to {} for PayOS order code: {}", payment.getStatus(), payosOrderCode);
+        log.info("Updated Payment status to {} for order code: {}", payment.getStatus(), orderCodeFromWebhook);
     }
 
     // --- HÀM HỖ TRỢ TÍNH HMAC-SHA256 ---
