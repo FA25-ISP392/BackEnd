@@ -75,4 +75,4 @@ jobs:
           echo "Checking status of container ${IMAGE_NAME}..."
           docker ps -f "name=${IMAGE_NAME}"
       - name: Show container logs
-        run: docker logs isp392_backend_1 || true
+        run: docker logs $IMAGE_NAME || true
