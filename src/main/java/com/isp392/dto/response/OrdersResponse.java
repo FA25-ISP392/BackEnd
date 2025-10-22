@@ -15,6 +15,7 @@ public class OrdersResponse {
     Integer customerId;
     Integer tableId;
     LocalDateTime orderDate;
+    double totalPrice;
     boolean paid;
 
     List<OrderDetailResponse> orderDetails;
