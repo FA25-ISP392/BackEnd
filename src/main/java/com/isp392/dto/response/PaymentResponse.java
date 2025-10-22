@@ -14,4 +14,9 @@ public class PaymentResponse {
     int orderId;
     String method;
     double total;
+    String status;
+    Long payosOrderCode;
+    String paymentLinkId;
+    String checkoutUrl;
+    String qrCode;
 }

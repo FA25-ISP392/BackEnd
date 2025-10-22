@@ -13,4 +13,10 @@ public class PaymentCreationRequest {
     int orderId;
     String method;
     double total;
+    String description;
+    String buyerName;
+    String buyerEmail;
+    String buyerPhone;
+    String returnUrl;
+    String cancelUrl;
 }
