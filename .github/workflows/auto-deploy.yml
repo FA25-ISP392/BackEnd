@@ -66,6 +66,7 @@ jobs:
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
+            -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
             $IMAGE_NAME:latest
           echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
 
