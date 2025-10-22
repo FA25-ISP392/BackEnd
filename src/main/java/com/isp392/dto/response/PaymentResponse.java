@@ -1,5 +1,6 @@
 package com.isp392.dto.response;
 
+import com.isp392.enums.PaymentStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -14,7 +15,7 @@ public class PaymentResponse {
     int orderId;
     String method;
     double total;
-    String status;
+    PaymentStatus status;
     Long payosOrderCode;
     String paymentLinkId;
     String checkoutUrl;
