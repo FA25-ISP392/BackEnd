@@ -84,19 +84,40 @@ public class EmailService {
     public void sendVerificationEmail(String email, String name, String verifyLink) {
         String subject = "Xác thực tài khoản của bạn";
         String body = String.format("""
-            <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+            <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
+                        box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: center;">
+                
+                <img src="https://cdn-icons-png.flaticon.com/512/992/992648.png" alt="Logo" 
+                     style="width: 80px; margin-bottom: 20px;">
+                
                 <h2 style="color: #333;">Chào mừng bạn, %s!</h2>
-                <p>Cảm ơn bạn đã đăng ký. Vui lòng nhấn vào link bên dưới để xác thực email của bạn:</p>
-                <p>
-                    <a href="%s" 
-                       style="display: inline-block; background-color: #007bff; color: #fff; 
-                              padding: 10px 15px; border-radius: 5px; text-decoration: none; 
-                              font-weight: bold;">
-                        Xác thực tài khoản
-                    </a>
+                
+                <p style="color: #555; font-size: 15px; line-height: 1.6;">
+                    Cảm ơn bạn đã đăng ký với chúng tôi.<br>
+                    Vui lòng nhấn vào nút bên dưới để hoàn tất việc xác thực tài khoản.<br>
+                    (Liên kết có hiệu lực trong <b>24 giờ</b>).
                 </p>
-                <p style="color: #777; font-size: 13px;">(Link có hiệu lực trong 24 giờ)</p>
+
+                <a href="%s" 
+                   style="display: inline-block; background-color: #007bff; color: #fff; 
+                          padding: 12px 25px; border-radius: 5px; text-decoration: none; 
+                          font-weight: bold; margin: 20px 0;">
+                    ✅ Xác thực tài khoản
+                </a>
+
+                <p style="color: #777; font-size: 13px;">
+                    Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email.<br>
+                    Cảm ơn bạn!
+                </p>
+
+                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+                <p style="color: #999; font-size: 12px;">
+                    © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
+                </p>
             </div>
+        </div>
         """, name, verifyLink);
 
         send(email, subject, body);

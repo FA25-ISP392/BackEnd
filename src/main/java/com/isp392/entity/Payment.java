@@ -1,6 +1,7 @@
 package com.isp392.entity;
 
 import com.isp392.enums.PaymentMethod;
+import com.isp392.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -30,8 +31,9 @@ public class Payment {
     @Column(name = "total", nullable = false)
     double total;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    String status;
+    PaymentStatus status;
 
     @Column(name = "payos_order_code")
     Long payosOrderCode;

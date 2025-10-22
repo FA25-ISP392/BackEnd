@@ -210,7 +210,6 @@ public class AuthenticationService {
 
         if (account.isVerified()) {
             emailTokenRepository.delete(verificationToken);
-            //có thể thêm ErrorCode.EMAIL_ALREADY_VERIFIED nếu cần
             throw new AppException(ErrorCode.INVALID_ARGUMENT);
         }
 
