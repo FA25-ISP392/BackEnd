@@ -6,6 +6,8 @@ import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
 import com.isp392.dto.response.DishResponse;
+import com.isp392.enums.Category;
+import com.isp392.enums.DishType;
 import com.isp392.service.DishService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -45,24 +47,28 @@ public class DishController {
     }
 
 
-    // ✅ API CŨ (GET /dish) - Giữ nguyên
+    // ✅ SỬA LẠI: Thêm tham số filter (tùy chọn)
     @GetMapping
-    public ApiResponse<List<DishResponse>> getAllDishes() {
+    public ApiResponse<List<DishResponse>> getAllDishes(
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) DishType type
+    ) {
         return ApiResponse.<List<DishResponse>>builder()
-                .result(dishService.getAllDishes())
+                .result(dishService.getAllDishes(category, type))
                 .build();
     }
 
-    // ✅ ĐƯA API /paging LÊN TRÊN API /{dishId}
-    // Bằng cách này, Spring sẽ kiểm tra URL cố định "/paging" trước
+    // ✅ SỬA LẠI: Thêm tham số filter (tùy chọn)
     @GetMapping("/paging")
     public ApiResponse<Page<DishResponse>> getAllDishesPaginated(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) DishType type
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return ApiResponse.<Page<DishResponse>>builder()
-                .result(dishService.getAllDishesPaginated(pageable))
+                .result(dishService.getAllDishesPaginated(pageable, category, type))
                 .build();
     }
 
