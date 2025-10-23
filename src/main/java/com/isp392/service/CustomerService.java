@@ -58,7 +58,7 @@ public class CustomerService {
         // Tạo link xác thực
         String verifyLink = frontendVerifyEmailUrl + "?token=" + token;
 
-        // Gửi email (Bạn cần thêm method này ở Bước 5)
+        // Gửi email
         emailService.sendVerificationEmail(account.getEmail(), account.getFullName(), verifyLink);
 
         return customerMapper.toCustomerResponse(customer);

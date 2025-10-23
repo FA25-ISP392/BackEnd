@@ -42,4 +42,13 @@ public class PaymentController {
                 .result(paymentService.getPaymentById(id))
                 .build();
     }
+    @PostMapping("/cancel/{orderId}")
+    public ApiResponse<String> cancelPayment(@PathVariable int orderId) {
+        paymentService.cancelPayment(orderId);
+        return ApiResponse.<String>builder()
+                .code(200)
+                .message("Payment Cancelled")
+                .build();
+    }
+
 }

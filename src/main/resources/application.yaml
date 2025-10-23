@@ -62,5 +62,12 @@ payos:
   client-id: 67c71da0-2783-4017-b92c-253309ccc9d0
   api-key: f8cab22b-6837-4578-b72a-dc2cd15ba941
   checksum-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
-#  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
-#  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
+  return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
+  cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
+  webhook-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
+logging:
+  file:
+    name: /app/logs/app.log
+  level:
+    root: INFO
+    com.isp392: DEBUG
