@@ -54,4 +54,11 @@ public class OrderDetailController {
                 .build();
     }
 
+    @DeleteMapping("/{orderDetailId}")
+    public ApiResponse<String> delete(@PathVariable Integer orderDetailId) {
+        orderDetailService.deleteOrderDetail(orderDetailId);
+        return ApiResponse.<String>builder()
+                .result("Delete Successfully!")
+                .build();
+    }
 }

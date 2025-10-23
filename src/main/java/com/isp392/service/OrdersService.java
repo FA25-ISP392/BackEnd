@@ -33,33 +33,19 @@ public class OrdersService {
     OrdersMapper ordersMapper;
 
     public OrdersResponse createOrder(OrdersCreationRequest request) {
-        // 1. Kiểm tra customer và table có tồn tại không
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
 
         TableEntity table = tableRepository.findById(request.getTableId())
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
 
-        // 2. Tạo order (map thủ công hoặc mapper chỉ map field đơn giản)
-        Orders order = Orders.builder()
-                .orderDate(request.getOrderDate())
-                .customer(customer)
-                .table(table)
-                .build();
+        Orders order = ordersMapper.toOrders(request, customer, table);
 
-        // 3. Lưu DB
         Orders saved = ordersRepository.save(order);
 
-        // 4. Trả response
         return ordersMapper.toOrdersResponse(saved);
     }
 
-//    public OrdersResponse getOrder(Integer orderId) {
-//        Orders order = ordersRepository.findById(orderId)
-//                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-//        Hibernate.initialize(order.getOrderDetails());
-//        return ordersMapper.toOrdersResponse(order);
-//    }
 public OrdersResponse getOrder(Integer orderId) {
     Orders order = ordersRepository.findById(orderId)
             .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));

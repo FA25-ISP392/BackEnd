@@ -76,17 +76,19 @@ public enum ErrorCode {
 
     //Order Detail
     ORDER_DETAIL_NOT_FOUND(3001, "Order detail not found"),
+    ORDER_DETAIL_CANNOT_BE_CANCELLED(3002, "Order detail is being prepared, cannot be deleted"),
+    ORDER_DETAIL_CANNOT_BE_UPDATED(3003, "Order detail is being prepared or served, cannot be updated"),
 
 
-    ITEM_NOT_FOUND(4001,"can't find the dish or topping" ),
-    INVALID_REQUEST(4002,"just only oneStaffID can fix it" ),
+    ITEM_NOT_FOUND(4001, "can't find the dish or topping"),
+    INVALID_REQUEST(4002, "just only oneStaffID can fix it"),
 
     // Daily Plan
     ACCESS_DENIED(1007, "You do not have permission"),
     PLAN_NOT_FOUND(4000, "Plan not found"),
-    PLAN_ALREADY_EXISTS_BATCH(4002,"Already exits" ),
-    PLAN_ALREADY_EXISTS(4003,"already exits" ),
-    PLAN_ALREADY_APPROVED(4005,"PLAN_ALREADY_APPROVED" ),
+    PLAN_ALREADY_EXISTS_BATCH(4002, "Already exits"),
+    PLAN_ALREADY_EXISTS(4003, "already exits"),
+    PLAN_ALREADY_APPROVED(4005, "PLAN_ALREADY_APPROVED"),
     NOT_ENOUGH_QUANTITY(4004, "Not enough quantity in daily plan"),
     BATCH_PLAN_INCONSISTENT(2205, "All plans in a batch must be for the same staff member.");
 
