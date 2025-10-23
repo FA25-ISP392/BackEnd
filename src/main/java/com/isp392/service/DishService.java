@@ -243,6 +243,7 @@ public class DishService {
 
         dish.setIsAvailable(true);
         Dish saved = dishRepository.save(dish);
+        dishRepository.flush();
         return dishMapper.toDishResponse(saved);
     }
 
