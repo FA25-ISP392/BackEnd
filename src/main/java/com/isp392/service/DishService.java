@@ -7,6 +7,8 @@ import com.isp392.dto.response.ToppingWithQuantityResponse;
 import com.isp392.entity.DailyPlan;
 import com.isp392.entity.Dish;
 import com.isp392.entity.Topping;
+import com.isp392.enums.Category; // ✅ Thêm import
+import com.isp392.enums.DishType; // ✅ Thêm import
 import com.isp392.enums.ItemType;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -16,17 +18,18 @@ import com.isp392.repository.DishRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable; // ✅ Đảm bảo import đúng
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,9 +53,8 @@ public class DishService {
                 .findByItemIdAndItemTypeAndPlanDate(dish.getDishId(), ItemType.DISH, today)
                 .orElse(null);
 
-        // ✅ Thêm kiểm tra null
         List<Topping> optionalToppings = dish.getDishToppings().stream()
-                .filter(dt -> dt != null && dt.getTopping() != null) // Lọc các topping null
+                .filter(dt -> dt != null && dt.getTopping() != null)
                 .map(dishTopping -> dishTopping.getTopping())
                 .toList();
 
@@ -89,10 +91,10 @@ public class DishService {
         return response;
     }
 
-    // PHƯƠNG THỨC MỚI DÀNH CHO PHÂN TRANG
+    // ✅ SỬA LẠI: Thêm tham số filter
     @Transactional(readOnly = true)
-    public Page<DishResponse> getAllDishesPaginated(Pageable pageable) {
-        Page<Dish> dishPage = dishRepository.findAllWithToppings(pageable);
+    public Page<DishResponse> getAllDishesPaginated(Pageable pageable, Category category, DishType type) {
+        Page<Dish> dishPage = dishRepository.findAllWithToppings(pageable, category, type);
         List<Dish> dishes = dishPage.getContent();
 
         if (dishes.isEmpty()) {
@@ -101,7 +103,6 @@ public class DishService {
 
         LocalDate today = LocalDate.now();
 
-        // ✅ Thêm kiểm tra null
         List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
         List<Integer> allToppingIds = dishes.stream()
                 .filter(dish -> dish.getDishToppings() != null)
@@ -132,7 +133,6 @@ public class DishService {
             int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
             response.setRemainingQuantity(dishRemaining);
 
-            // ✅ Thêm kiểm tra null
             List<ToppingWithQuantityResponse> toppingResponses = Collections.emptyList();
             if (dish.getDishToppings() != null) {
                 toppingResponses = dish.getDishToppings().stream()
@@ -161,10 +161,10 @@ public class DishService {
         return new PageImpl<>(dishResponses, pageable, dishPage.getTotalElements());
     }
 
-    // PHIÊN BẢN CŨ (LẤY TẤT CẢ) - ĐÃ ĐƯỢC TỐI ƯU VÀ THÊM NULL CHECK
+    // ✅ SỬA LẠI: Thêm tham số filter
     @Transactional(readOnly = true)
-    public List<DishResponse> getAllDishes() {
-        List<Dish> dishes = dishRepository.findAllWithToppings();
+    public List<DishResponse> getAllDishes(Category category, DishType type) {
+        List<Dish> dishes = dishRepository.findAllWithToppings(category, type);
         if (dishes.isEmpty()) {
             return Collections.emptyList();
         }
@@ -173,7 +173,6 @@ public class DishService {
 
         List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
 
-        // ✅ Thêm kiểm tra null
         List<Integer> allToppingIds = dishes.stream()
                 .filter(dish -> dish.getDishToppings() != null)
                 .flatMap(dish -> dish.getDishToppings().stream())
@@ -203,7 +202,6 @@ public class DishService {
             int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
             response.setRemainingQuantity(dishRemaining);
 
-            // ✅ Thêm kiểm tra null
             List<ToppingWithQuantityResponse> toppingResponses = Collections.emptyList();
             if (dish.getDishToppings() != null) {
                 toppingResponses = dish.getDishToppings().stream()
@@ -234,15 +232,16 @@ public class DishService {
         if (dishRepository.existsByDishName(request.getDishName())) {
             throw new AppException(ErrorCode.DISH_EXISTED);
         }
-
         Dish dish = dishMapper.toDish(request);
 
-        // Upload ảnh lên Cloudinary
-        String imageUrl = cloudinaryService.uploadImage(imageFile);
-        dish.setPicture(imageUrl);
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadImage(imageFile);
+            dish.setPicture(imageUrl);
+        } else {
+            dish.setPicture("loading"); // Gán giá trị mặc định nếu không có ảnh
+        }
 
         dish.setIsAvailable(true);
-
         Dish saved = dishRepository.save(dish);
         return dishMapper.toDishResponse(saved);
     }
@@ -265,7 +264,8 @@ public class DishService {
             dish.setPicture(newImageUrl);
         }
 
-        return dishMapper.toDishResponse(dish);
+        Dish updatedDish = dishRepository.save(dish); // ✅ Save lại sau khi đã update
+        return dishMapper.toDishResponse(updatedDish);
     }
 
     public void deleteDish(int dishId) {
