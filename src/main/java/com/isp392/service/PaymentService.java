@@ -152,7 +152,7 @@ public class PaymentService {
             }
 
         } else if (method == PaymentMethod.CASH) {
-            // 💵 Thanh toán tiền mặt
+            // Thanh toán tiền mặt
             payment.setStatus(PaymentStatus.COMPLETED);
             order.setPaid(true);
             paymentRepository.save(payment);
@@ -217,30 +217,47 @@ public class PaymentService {
         Payment payment = paymentOpt.get();
 
         // 6. Kiểm tra trạng thái hiện tại của Payment
-        // ===== THÊM KIỂM TRA TRẠNG THÁI =====
         if (payment.getStatus() != PaymentStatus.PENDING) {
             log.warn("Webhook ignored: Payment for order code {} is already processed. Current status: {}",
                     orderCodeFromWebhook, payment.getStatus());
             return; // Đã xử lý rồi
         }
-        // =====================================
 
         // 7. Cập nhật trạng thái Payment và Order
-        if ("00".equals(status)) { // <-- So sánh status lấy từ transactionData
+        String paymentStatus = transactionData.getStatus();   // status có thể là "PAID", "CANCELLED", "FAILED"
+        boolean isCancelled = "true".equalsIgnoreCase(transactionData.getCancel());
+
+        log.info("Webhook status from PayOS: status={}, code={}, cancel={}, orderCode={}",
+                paymentStatus, status, isCancelled, orderCodeFromWebhook);
+
+// --- Thanh toán thành công ---
+        if ("PAID".equalsIgnoreCase(paymentStatus) || "SUCCESS".equalsIgnoreCase(paymentStatus)) {
             log.info("Payment SUCCESSFUL for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
 
             Orders order = payment.getOrder();
             if (order != null) {
-                order.setPaid(true); // <-- CHỈ SET PAID KHI THÀNH CÔNG
+                order.setPaid(true);
                 ordersRepository.save(order);
                 log.info("Order ID {} marked as paid.", order.getOrderId());
             } else {
-                log.error("Critical Error: Order relationship not found...");
+                log.error("Critical Error: Order relationship not found for order code {}", orderCodeFromWebhook);
             }
+
+// ---  Khách hủy hoặc PayOS hủy giao dịch ---
+        } else if (isCancelled || "CANCELLED".equalsIgnoreCase(paymentStatus)) {
+            log.info("Payment CANCELLED by user for order code: {}", orderCodeFromWebhook);
+            payment.setStatus(PaymentStatus.CANCELLED);
+
+// ---  Giao dịch thất bại hoặc hết hạn ---
+        } else if ("FAILED".equalsIgnoreCase(paymentStatus) || "EXPIRED".equalsIgnoreCase(paymentStatus)) {
+            log.warn("Payment FAILED/EXPIRED for order code: {}", orderCodeFromWebhook);
+            payment.setStatus(PaymentStatus.FAILED);
+
+// ---Trạng thái khác ---
         } else {
-            log.warn("Payment FAILED or CANCELLED for order code: {}...", orderCodeFromWebhook, status, description);
-            payment.setStatus(PaymentStatus.CANCELLED); // Hoặc FAILED tùy logic
+            log.warn("Unknown payment status from PayOS: {} for order code {}", paymentStatus, orderCodeFromWebhook);
+            payment.setStatus(PaymentStatus.PENDING);
         }
 
         // 8. Lưu thay đổi của Payment

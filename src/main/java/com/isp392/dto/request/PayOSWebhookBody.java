@@ -13,6 +13,9 @@ public class PayOSWebhookBody {
     @JsonProperty("code")
     private String code; // Mã "00" (thành công) của giao dịch
 
+    @JsonProperty("status")
+    private String status; // "PAID", "CANCELLED", "FAILED", "EXPIRED"
+
     @JsonProperty("desc")
     private String description; // Mô tả giao dịch (có thể khác description bạn gửi đi)
 
