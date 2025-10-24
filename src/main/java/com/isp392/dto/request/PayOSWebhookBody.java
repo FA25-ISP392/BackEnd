@@ -29,9 +29,8 @@ public class PayOSWebhookBody {
     private String description; // Mô tả giao dịch (có thể khác description bạn gửi đi)
 
     @JsonProperty("cancel")
-    private String cancel;
+    private Boolean cancel;
 
-    // Thêm các trường khác nếu cần (vd: transactionDateTime, reference,...)
 
 
 }
