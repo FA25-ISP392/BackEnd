@@ -20,7 +20,9 @@ public class PayOSWebhookController {
     public ResponseEntity<String> handlePayOSWebhook(
             @RequestBody String rawBody, // <-- Nhận JSON dạng String
             @RequestHeader(value = "x-payos-signature", required = false) String signature) { // Header chứa chữ ký
-
+        log.info("--- NỘI DUNG WEBHOOK TỪ PAYOS ---");
+        log.info(rawBody); // In toàn bộ nội dung JSON ra log
+        log.info("--- KẾT THÚC NỘI DUNG WEBHOOK ---");
         log.info("Received PayOS Webhook Raw Body."); // Che log body để tránh lộ sensitive data
         if (signature == null || signature.isEmpty()) {
             log.warn("Missing x-payos-signature header");

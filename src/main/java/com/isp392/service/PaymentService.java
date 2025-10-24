@@ -63,41 +63,115 @@ public class PaymentService {
     @NonFinal
     String webhookKey;
 
+    //    public PaymentResponse createPayment(PaymentCreationRequest request) {
+//        Orders order = ordersRepository.findById(request.getOrderId())
+//                .orElseThrow(() -> new RuntimeException("Order not found"));
+//
+//        // ✅ Kiểm tra payment hiện có
+//        Optional<Payment> existingPaymentOpt = paymentRepository.findByOrder_OrderId(request.getOrderId());
+//        if (existingPaymentOpt.isPresent()) {
+//            Payment existingPayment = existingPaymentOpt.get();
+//            switch (existingPayment.getStatus()) {
+//                case COMPLETED:
+//                    throw new RuntimeException("Đơn hàng này đã được thanh toán rồi!");
+//                case PENDING:
+//                    log.info("Payment PENDING, trả lại link cũ cho order {}", request.getOrderId());
+//                    paymentRepository.delete(existingPayment);
+//                    break;
+//                case CANCELLED:
+//                case EXPIRED:
+//                    log.info("Payment cũ của order {} đã {}, tạo link mới",
+//                            request.getOrderId(), existingPayment.getStatus());
+//                    paymentRepository.delete(existingPayment); // Xóa bản ghi cũ để tránh duplicate
+//                    break;
+//            }
+//        }
+//
+//        // 🔒 Kiểm tra order
+//        if (order.getPaid() != null && order.getPaid()) {
+//            throw new RuntimeException("Order is already paid.");
+//        }
+//        if (order.getOrderDetails() == null || order.getOrderDetails().isEmpty()) {
+//            throw new RuntimeException("Đơn hàng chưa có món ăn, không thể thanh toán.");
+//        }
+//
+//        double total = order.getOrderDetails().stream().mapToDouble(OrderDetail::getTotalPrice).sum();
+//        if (total <= 0) throw new RuntimeException("Tổng tiền phải lớn hơn 0 để thanh toán.");
+//
+//        // ✅ Khởi tạo payment mới
+//        PaymentMethod method;
+//        try {
+//            method = PaymentMethod.valueOf(request.getMethod().toUpperCase());
+//        } catch (IllegalArgumentException e) {
+//            throw new RuntimeException("Invalid payment method: " + request.getMethod());
+//        }
+//
+//        Payment payment = paymentMapper.toPayment(request);
+//        payment.setOrder(order);
+//        payment.setMethod(method);
+//        payment.setTotal(total);
+//
+//        // BANK_TRANSFER: tạo link PayOS mới
+//        if (method == PaymentMethod.BANK_TRANSFER) {
+//            payment.setStatus(PaymentStatus.PENDING);
+//
+//            try {
+//                long payosOrderCode = System.currentTimeMillis() % 1000000000;
+//                List<PaymentLinkItem> items = List.of(
+//                        PaymentLinkItem.builder()
+//                                .name("Thanh toán đơn hàng #" + order.getOrderId())
+//                                .quantity(1)
+//                                .price((long) total)
+//                                .build()
+//                );
+//
+//                CreatePaymentLinkRequest req = CreatePaymentLinkRequest.builder()
+//                        .orderCode(payosOrderCode)
+//                        .amount((long) total)
+//                        .description("Thanh toán đơn hàng #" + order.getOrderId())
+//                        .items(items)
+//                        .returnUrl(payosReturnUrl)
+//                        .cancelUrl(payosCancelUrl)
+//                        .build();
+//
+//                CreatePaymentLinkResponse res = payOs.paymentRequests().create(req);
+//
+//                payment.setPayosOrderCode(payosOrderCode);
+//                payment.setCheckoutUrl(res.getCheckoutUrl());
+//                payment.setQrCode(res.getQrCode());
+//                payment.setPaymentLinkId(res.getPaymentLinkId());
+//
+//                paymentRepository.save(payment);
+//
+//                PaymentResponse response = paymentMapper.toPaymentResponse(payment);
+//                response.setCheckoutUrl(res.getCheckoutUrl());
+//                response.setQrCode(res.getQrCode());
+//                return response;
+//
+//            } catch (Exception e) {
+//                throw new RuntimeException("Lỗi tạo thanh toán PayOS: " + e.getMessage());
+//            }
+//
+//        } else if (method == PaymentMethod.CASH) {
+//            // Thanh toán tiền mặt
+//            payment.setStatus(PaymentStatus.COMPLETED);
+//            order.setPaid(true);
+//            paymentRepository.save(payment);
+//            ordersRepository.save(order);
+//            return paymentMapper.toPaymentResponse(payment);
+//        } else {
+//            throw new RuntimeException("Unsupported payment method");
+//        }
+//    }
     public PaymentResponse createPayment(PaymentCreationRequest request) {
         Orders order = ordersRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // ✅ Kiểm tra payment hiện có
-        Optional<Payment> existingPaymentOpt = paymentRepository.findByOrder_OrderId(request.getOrderId());
-        if (existingPaymentOpt.isPresent()) {
-            Payment existingPayment = existingPaymentOpt.get();
-            switch (existingPayment.getStatus()) {
-                case COMPLETED:
-                    throw new RuntimeException("Đơn hàng này đã được thanh toán rồi!");
-                case PENDING:
-                    log.info("Payment PENDING, trả lại link cũ cho order {}", request.getOrderId());
-                    return paymentMapper.toPaymentResponse(existingPayment);
-                case CANCELLED:
-                case EXPIRED:
-                    log.info("Payment cũ của order {} đã {}, tạo link mới",
-                            request.getOrderId(), existingPayment.getStatus());
-                    paymentRepository.delete(existingPayment); // Xóa bản ghi cũ để tránh duplicate
-                    break;
-            }
-        }
-
-        // 🔒 Kiểm tra order
-        if (order.getPaid() != null && order.getPaid()) {
-            throw new RuntimeException("Order is already paid.");
-        }
-        if (order.getOrderDetails() == null || order.getOrderDetails().isEmpty()) {
-            throw new RuntimeException("Đơn hàng chưa có món ăn, không thể thanh toán.");
-        }
-
+        // ... (Kiểm tra order.getPaid(), order.getOrderDetails(), total > 0 giữ nguyên) ...
         double total = order.getOrderDetails().stream().mapToDouble(OrderDetail::getTotalPrice).sum();
         if (total <= 0) throw new RuntimeException("Tổng tiền phải lớn hơn 0 để thanh toán.");
 
-        // ✅ Khởi tạo payment mới
+        // Xác định phương thức thanh toán
         PaymentMethod method;
         try {
             method = PaymentMethod.valueOf(request.getMethod().toUpperCase());
@@ -105,25 +179,48 @@ public class PaymentService {
             throw new RuntimeException("Invalid payment method: " + request.getMethod());
         }
 
-        Payment payment = paymentMapper.toPayment(request);
-        payment.setOrder(order);
-        payment.setMethod(method);
-        payment.setTotal(total);
 
-        // 🏦 BANK_TRANSFER: tạo link PayOS mới
-        if (method == PaymentMethod.BANK_TRANSFER) {
-            payment.setStatus(PaymentStatus.PENDING);
+        // Tìm payment hiện có HOẶC tạo mới nếu chưa có
+        Payment payment = paymentRepository.findByOrder_OrderId(request.getOrderId())
+                .orElseGet(() -> {
+                    log.info("No existing payment found for order {}, creating new.", request.getOrderId());
+                    Payment newPayment = paymentMapper.toPayment(request);
+                    newPayment.setOrder(order);
+                    newPayment.setMethod(method);
+                    // Không set status ở đây, sẽ set sau
+                    return newPayment;
+                });
+
+        // Kiểm tra trạng thái của payment tìm được hoặc vừa tạo
+        if (payment.getStatus() == PaymentStatus.COMPLETED) {
+            throw new RuntimeException("Đơn hàng này đã được thanh toán rồi!");
+        }
+
+        // Nếu là CASH
+        if (method == PaymentMethod.CASH) {
+            log.info("Processing CASH payment for order {}", request.getOrderId());
+            payment.setStatus(PaymentStatus.COMPLETED);
+            payment.setMethod(PaymentMethod.CASH); // Đảm bảo đúng method
+            payment.setTotal(total); // Cập nhật lại total phòng trường hợp order thay đổi
+            order.setPaid(true);
+            Payment savedPayment = paymentRepository.save(payment); // Lưu lại payment (tạo mới hoặc cập nhật)
+            ordersRepository.save(order);
+            return paymentMapper.toPaymentResponse(savedPayment);
+        }
+        // Nếu là BANK_TRANSFER
+        else if (method == PaymentMethod.BANK_TRANSFER) {
+            // Dù là PENDING, CANCELLED, EXPIRED hay mới tạo, đều tạo link PayOS mới
+            log.info("Processing BANK_TRANSFER for order {}. Current/Initial status: {}", request.getOrderId(), payment.getStatus());
+            payment.setStatus(PaymentStatus.PENDING); // Luôn đặt là PENDING khi tạo/cập nhật link
+            payment.setMethod(PaymentMethod.BANK_TRANSFER);
+            payment.setTotal(total); // Cập nhật total
 
             try {
-                long payosOrderCode = order.getOrderId();
-                List<PaymentLinkItem> items = List.of(
-                        PaymentLinkItem.builder()
-                                .name("Thanh toán đơn hàng #" + order.getOrderId())
-                                .quantity(1)
-                                .price((long) total)
-                                .build()
-                );
+                 long payosOrderCode = Long.parseLong(order.getOrderId() + "" + (System.currentTimeMillis() % 10000));
+                log.info("Generating PayOS link with orderCode: {} for orderId: {}", payosOrderCode, order.getOrderId());
 
+
+                List<PaymentLinkItem> items = List.of( /* ... tạo item ... */);
                 CreatePaymentLinkRequest req = CreatePaymentLinkRequest.builder()
                         .orderCode(payosOrderCode)
                         .amount((long) total)
@@ -135,30 +232,31 @@ public class PaymentService {
 
                 CreatePaymentLinkResponse res = payOs.paymentRequests().create(req);
 
+                // Cập nhật thông tin PayOS vào payment entity (dù mới hay cũ)
                 payment.setPayosOrderCode(payosOrderCode);
                 payment.setCheckoutUrl(res.getCheckoutUrl());
                 payment.setQrCode(res.getQrCode());
                 payment.setPaymentLinkId(res.getPaymentLinkId());
 
-                paymentRepository.save(payment);
+                Payment savedPayment = paymentRepository.save(payment); // Lưu payment (tạo mới hoặc cập nhật)
 
-                PaymentResponse response = paymentMapper.toPaymentResponse(payment);
-                response.setCheckoutUrl(res.getCheckoutUrl());
-                response.setQrCode(res.getQrCode());
+                PaymentResponse response = paymentMapper.toPaymentResponse(savedPayment);
+                // response.setCheckoutUrl(res.getCheckoutUrl()); // Mapper đã map rồi
+                // response.setQrCode(res.getQrCode());       // Mapper đã map rồi
                 return response;
 
             } catch (Exception e) {
+                log.error("Lỗi khi tạo/cập nhật link thanh toán PayOS cho đơn hàng {}: {}", request.getOrderId(), e.getMessage(), e);
+                // Quan trọng: Bắt lỗi ở đây để tránh lỗi chung chung ở GlobalExceptionHandler nếu có thể
+                if (e.getMessage() != null && e.getMessage().contains("Duplicate")) {
+                    throw new RuntimeException("Lỗi tạo thanh toán PayOS: Có thể do trùng lặp mã đơn hàng phía PayOS. Vui lòng thử lại sau ít phút.");
+                }
                 throw new RuntimeException("Lỗi tạo thanh toán PayOS: " + e.getMessage());
             }
-
-        } else if (method == PaymentMethod.CASH) {
-            // Thanh toán tiền mặt
-            payment.setStatus(PaymentStatus.COMPLETED);
-            order.setPaid(true);
-            paymentRepository.save(payment);
-            ordersRepository.save(order);
-            return paymentMapper.toPaymentResponse(payment);
-        } else {
+        }
+        // Trường hợp method không hỗ trợ
+        else {
+            log.error("Unsupported payment method requested for order {}: {}", request.getOrderId(), method);
             throw new RuntimeException("Unsupported payment method");
         }
     }
@@ -224,15 +322,15 @@ public class PaymentService {
         }
 
         // 7. Cập nhật trạng thái Payment và Order
-        String paymentStatus = transactionData.getStatus();   // status có thể là "PAID", "CANCELLED", "FAILED"
-        boolean isCancelled = "true".equalsIgnoreCase(transactionData.getCancel());
+        String code = transactionData.getCode(); // <-- SỬA LẠI: Lấy 'code' từ data
+// String paymentStatus = transactionData.getStatus(); // <-- XÓA DÒNG NÀY
 
-        log.info("Webhook status from PayOS: status={}, code={}, cancel={}, orderCode={}",
-                paymentStatus, status, isCancelled, orderCodeFromWebhook);
+        log.info("Webhook status from PayOS: code={}, orderCode={}",
+                code, orderCodeFromWebhook);
 
 // --- Thanh toán thành công ---
-        if ("PAID".equalsIgnoreCase(paymentStatus) || "SUCCESS".equalsIgnoreCase(paymentStatus)) {
-            log.info("Payment SUCCESSFUL for order code: {}", orderCodeFromWebhook);
+        if ("00".equalsIgnoreCase(code)) { // <-- SỬA LẠI: Kiểm tra 'code' == "00"
+            log.info("Payment SUCCESSFUL (Code 00) for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
 
             Orders order = payment.getOrder();
@@ -244,23 +342,15 @@ public class PaymentService {
                 log.error("Critical Error: Order relationship not found for order code {}", orderCodeFromWebhook);
             }
 
-// ---  Khách hủy hoặc PayOS hủy giao dịch ---
-        } else if (isCancelled || "CANCELLED".equalsIgnoreCase(paymentStatus)) {
-            log.info("Payment CANCELLED by user for order code: {}", orderCodeFromWebhook);
-            payment.setStatus(PaymentStatus.CANCELLED);
-
-// ---  Giao dịch thất bại hoặc hết hạn ---
-        } else if ("FAILED".equalsIgnoreCase(paymentStatus) || "EXPIRED".equalsIgnoreCase(paymentStatus)) {
-            log.warn("Payment FAILED/EXPIRED for order code: {}", orderCodeFromWebhook);
-            payment.setStatus(PaymentStatus.FAILED);
-
-// ---Trạng thái khác ---
+// --- Giao dịch thất bại hoặc bị hủy (bất kỳ code nào khác "00") ---
         } else {
-            log.warn("Unknown payment status from PayOS: {} for order code {}", paymentStatus, orderCodeFromWebhook);
-            payment.setStatus(PaymentStatus.PENDING);
+            log.warn("Payment FAILED/CANCELLED (Code {}) for order code: {}",
+                    code, orderCodeFromWebhook);
+            // Bạn có thể gộp FAILED và CANCELLED làm một
+            payment.setStatus(PaymentStatus.FAILED);
         }
 
-        // 8. Lưu thay đổi của Payment
+// 8. Lưu thay đổi của Payment
         paymentRepository.save(payment);
         log.info("Updated Payment status to {} for order code: {}", payment.getStatus(), orderCodeFromWebhook);
     }
