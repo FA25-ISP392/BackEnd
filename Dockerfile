@@ -18,6 +18,7 @@ FROM amazoncorretto:21.0.8-al2023
 
 # Đặt thư mục làm việc trong container
 WORKDIR /app
+RUN mkdir -p /app/logs
 
 # Sao chép file JAR đã build từ giai đoạn 'build' vào giai đoạn hiện tại
 COPY --from=build /app/target/*.jar app.jar
