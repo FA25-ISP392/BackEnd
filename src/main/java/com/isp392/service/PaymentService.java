@@ -207,7 +207,8 @@ public class PaymentService {
         log.info("Processing webhook for order code: {}, Status: {}, Description: {}", orderCodeFromWebhook, status, description);
 
         // 5. Tìm Payment bằng Order ID (orderCodeFromWebhook)
-        Optional<Payment> paymentOpt = paymentRepository.findByOrder_OrderId((int) orderCodeFromWebhook);
+        Optional<Payment> paymentOpt = paymentRepository.findByPayosOrderCode(orderCodeFromWebhook);
+
 
         if (paymentOpt.isEmpty()) {
             log.error("Webhook Error: Payment not found for order code: {}", orderCodeFromWebhook);
