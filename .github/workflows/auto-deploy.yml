@@ -68,7 +68,10 @@ jobs:
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
+            -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
             -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
+            -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
+            -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} \
             $IMAGE_NAME:latest
           echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
 
