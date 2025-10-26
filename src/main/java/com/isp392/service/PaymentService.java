@@ -105,6 +105,7 @@ public class PaymentService {
             payment.setStatus(PaymentStatus.COMPLETED);
             payment.setMethod(PaymentMethod.CASH); // Đảm bảo đúng method
             payment.setTotal(total); // Cập nhật lại total phòng trường hợp order thay đổi
+            payment.setPaidAt(LocalDateTime.now());
             order.setPaid(true);
             Payment savedPayment = paymentRepository.save(payment); // Lưu lại payment (tạo mới hoặc cập nhật)
             ordersRepository.save(order);
