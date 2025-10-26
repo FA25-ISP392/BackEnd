@@ -31,6 +31,9 @@ public class PayOSWebhookBody {
     @JsonProperty("cancel")
     private Boolean cancel;
 
+    @JsonProperty("transactionDateTime")
+    private String transactionDateTime;
+
 
 
 }
