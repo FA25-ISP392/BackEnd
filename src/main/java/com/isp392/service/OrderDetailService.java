@@ -98,10 +98,10 @@ public class OrderDetailService {
                 .findByIdWithToppings(request.getOrderDetailId())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
 
-        // 2. KIỂM TRA STATUS PENDING
-        if (detail.getStatus() != OrderDetailStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_UPDATED);
-        }
+//        // 2. KIỂM TRA STATUS PENDING
+//        if (detail.getStatus() != OrderDetailStatus.PENDING) {
+//            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_UPDATED);
+//        }
 
         // 3. Map các trường đơn giản (note...)
         orderDetailMapper.updateOrderDetail(detail, request);
