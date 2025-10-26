@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "payment")
 @Getter
@@ -46,4 +48,7 @@ public class Payment {
 
     @Column(name = "qr_code", columnDefinition = "TEXT")
     String qrCode;
+
+    @Column(name = "paid_at")
+    LocalDateTime paidAt;
 }

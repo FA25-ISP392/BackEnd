@@ -33,6 +33,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Optional;
@@ -234,6 +236,16 @@ public class PaymentService {
         if ("00".equalsIgnoreCase(code)) { // <-- SỬA LẠI: Kiểm tra 'code' == "00"
             log.info("Payment SUCCESSFUL (Code 00) for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
+
+            try {
+                if (transactionData.getTransactionDateTime() != null) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    payment.setPaidAt(LocalDateTime.parse(transactionData.getTransactionDateTime(), formatter));
+                }
+            } catch (Exception e) {
+                log.warn("Không thể parse transactionDateTime: {}", transactionData.getTransactionDateTime());
+                payment.setPaidAt(LocalDateTime.now()); // fallback
+            }
 
             Orders order = payment.getOrder();
             if (order != null) {
