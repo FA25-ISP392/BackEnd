@@ -6,9 +6,11 @@ import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.response.OrderDetailResponse;
 import com.isp392.enums.OrderDetailStatus;
 import com.isp392.service.OrderDetailService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/order-details")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class OrderDetailController {
 
@@ -23,6 +26,7 @@ public class OrderDetailController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<OrderDetailResponse> create(@RequestBody @Valid OrderDetailCreationRequest request) {
         OrderDetailResponse result = orderDetailService.createOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()
@@ -47,6 +51,7 @@ public class OrderDetailController {
     }
 
     @PutMapping("/{orderDetailId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER')")
     public ApiResponse<OrderDetailResponse> update(@RequestBody @Valid OrderDetailUpdateRequest request) {
         OrderDetailResponse result = orderDetailService.updateOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()
@@ -55,6 +60,7 @@ public class OrderDetailController {
     }
 
     @DeleteMapping("/{orderDetailId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER')")
     public ApiResponse<String> delete(@PathVariable Integer orderDetailId) {
         orderDetailService.deleteOrderDetail(orderDetailId);
         return ApiResponse.<String>builder()

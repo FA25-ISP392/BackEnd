@@ -5,10 +5,12 @@ import com.isp392.dto.request.ToppingCreationRequest;
 import com.isp392.dto.request.ToppingUpdateRequest;
 import com.isp392.dto.response.ToppingResponse;
 import com.isp392.service.ToppingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,12 +18,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/topping")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ToppingController {
 
     ToppingService toppingService;
 
     @PostMapping
+    @PreAuthorize("hasRole('MANAGER')")
     ApiResponse<ToppingResponse> create(@RequestBody @Valid ToppingCreationRequest request) {
         ApiResponse<ToppingResponse> response = new ApiResponse<>();
         response.setResult(toppingService.createTopping(request));
@@ -43,6 +47,7 @@ public class ToppingController {
     }
 
     @PutMapping("/{toppingId}")
+    @PreAuthorize("hasRole('MANAGER')")
     ApiResponse<ToppingResponse> updateTopping(@RequestBody @Valid ToppingUpdateRequest request, @PathVariable int toppingId) {
         ApiResponse<ToppingResponse> response = new ApiResponse<>();
         response.setResult(toppingService.updateTopping(toppingId, request));
@@ -50,6 +55,7 @@ public class ToppingController {
     }
 
     @DeleteMapping("/{toppingID}")
+    @PreAuthorize("hasRole('MANAGER')")
     ApiResponse<String> deleteTopping(@PathVariable int toppingID) {
         toppingService.deleteTopping(toppingID);
         ApiResponse<String> response = new ApiResponse<>();

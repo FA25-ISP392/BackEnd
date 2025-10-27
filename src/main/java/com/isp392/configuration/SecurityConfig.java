@@ -22,17 +22,31 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private final String[] PUBLIC_ENDPOINTS = {
-            "/users",
+    private final String[] POST_PUBLIC_ENDPOINTS = {
             "/auth/token",
-            "/auth/introspect"
+            "/auth/introspect",
+            "/customer",
+    };
+
+    private final String[] GET_PUBLIC_ENDPOINTS = {
+            "/booking/**",
+            "/dish/**",
+            "/dish-topping/**",
+            "/order-details/**",
+            "/orders/**",
+            "/topping/**",
+    };
+
+    private final String[] SWAGGER_ENDPOINTS = {
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-ui.html"
     };
 
     @Value("${jwt.signerKey}")
@@ -64,9 +78,12 @@ public class SecurityConfig {
         httpSecurity
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(SWAGGER_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.POST, POST_PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, GET_PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers("/oauth2/**", "/login/**", "/auth/google/**").permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS,"/**").permitAll()
+                        .anyRequest().authenticated()
                 ).oauth2Login(oauth2 -> oauth2
                         .loginPage("/oauth2/authorization/google")
                                 .defaultSuccessUrl("/auth/google/popup")
