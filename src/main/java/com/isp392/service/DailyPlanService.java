@@ -160,8 +160,13 @@ public class DailyPlanService {
         }
 
         if (!isManagerOrAdmin && dailyPlan.getStatus()) {
+        // ✅ Nếu đã duyệt mà vẫn còn hàng thì chặn
+        if (dailyPlan.getRemainingQuantity() > 0) {
             throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
         }
+        // ✅ Còn nếu đã hết hàng (remaining = 0) thì cho phép Chef gửi lại
+        }
+
 
         // --- BẮT ĐẦU LOGIC SỬA LẠI ---
         if (isManagerOrAdmin) {
