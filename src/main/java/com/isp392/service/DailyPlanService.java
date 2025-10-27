@@ -191,6 +191,11 @@ public class DailyPlanService {
             if (request.getPlannedQuantity() != null) {
                 dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
                 dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
+
+                // ✅ Cho phép Chef gửi lại nếu plan đã duyệt nhưng đã hết hàng
+                if (dailyPlan.getStatus() && dailyPlan.getRemainingQuantity() == 0) {
+                    dailyPlan.setStatus(false);
+                }
             }
             // Chef không thể thay đổi status, nên không có logic ở đây
         }
