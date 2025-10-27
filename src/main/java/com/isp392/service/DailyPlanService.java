@@ -152,8 +152,6 @@ public class DailyPlanService {
             validateItemExists(request.getItemId(), request.getItemType());
 
             // --- BẮT ĐẦU LOGIC MỚI ---
-
-            // 1. Tìm plan hiện có
             DailyPlan planToSave;
             var existingPlanOpt = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
                     request.getItemId(), request.getItemType(), request.getPlanDate()
@@ -163,18 +161,29 @@ public class DailyPlanService {
                 // 2. Nếu plan tồn tại
                 DailyPlan existingPlan = existingPlanOpt.get();
 
-                // 2a. Kiểm tra nếu plan cũ vẫn còn hàng
-//                if (existingPlan.getRemainingQuantity() > 0) {
-//                    throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
-//                }
+                // ✅ LOGIC MỚI: chỉ cập nhật nếu có thay đổi plannedQuantity
+                int oldPlanned = existingPlan.getPlannedQuantity() == 0 ? 0 : existingPlan.getPlannedQuantity();
+                int oldRemaining = existingPlan.getRemainingQuantity() == 0 ? 0 : existingPlan.getRemainingQuantity();
+                int newPlanned = request.getPlannedQuantity();
 
-                // 2b. Nếu remainingQuantity == 0 -> Cập nhật (tái lập kế hoạch)
-                planToSave = existingPlan; // Dùng lại plan cũ
-                planToSave.setPlannedQuantity(request.getPlannedQuantity());
-                planToSave.setRemainingQuantity(request.getPlannedQuantity()); // Reset số lượng
-                planToSave.setStatus(false); // Đặt lại trạng thái chờ duyệt
-                planToSave.setApproverStaff(null); // Xóa người duyệt cũ
-                planToSave.setPlannerStaff(planner); // Cập nhật người lên kế hoạch
+                // ⚙️ Nếu planned không thay đổi thì bỏ qua (đỡ ghi DB vô ích)
+                if (newPlanned == oldPlanned) {
+                    continue;
+                }
+
+                // ✅ Công thức tính mới:
+                // remaining_new = remaining_old + (newPlanned - oldPlanned)
+                int newRemaining = oldRemaining + (newPlanned - oldPlanned);
+                if (newRemaining < 0) newRemaining = 0; // tránh âm
+
+                // ✅ Cập nhật lại plan cũ
+                existingPlan.setPlannedQuantity(newPlanned);
+                existingPlan.setRemainingQuantity(newRemaining);
+                existingPlan.setStatus(false);           // reset chờ duyệt lại
+                existingPlan.setApproverStaff(null);     // xóa người duyệt cũ
+                existingPlan.setPlannerStaff(planner);   // cập nhật người lập kế hoạch
+
+                planToSave = existingPlan;
 
             } else {
                 // 3. Nếu plan không tồn tại -> Tạo mới
@@ -189,6 +198,7 @@ public class DailyPlanService {
             // --- KẾT THÚC LOGIC MỚI ---
         }
 
+        // ✅ Lưu toàn bộ thay đổi
         List<DailyPlan> savedPlans = dailyPlanRepository.saveAll(plansToSave);
         return savedPlans.stream()
                 .map(this::mapToResponseWithItemName)
