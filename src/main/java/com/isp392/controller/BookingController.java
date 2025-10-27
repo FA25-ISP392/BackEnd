@@ -7,6 +7,7 @@ import com.isp392.dto.request.BookingUpdateRequest;
 import com.isp392.dto.response.BookingResponse;
 import com.isp392.enums.BookingStatus;
 import com.isp392.service.BookingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -23,6 +24,7 @@ import java.util.List;
 @RequestMapping("/booking")
 @RequiredArgsConstructor
 @CrossOrigin("*")
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class BookingController {
     BookingService bookingService;
@@ -56,6 +58,7 @@ public class BookingController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> updateBooking(
             @PathVariable int id,
             @RequestBody BookingUpdateRequest request,
