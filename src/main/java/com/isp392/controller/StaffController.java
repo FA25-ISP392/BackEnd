@@ -36,7 +36,7 @@ public class StaffController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER','CHEF')")
     public ApiResponse<List<StaffResponse>> getStaff(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         List<StaffResponse> staffList = staffService.getStaff(page, size);
         return ApiResponse.<List<StaffResponse>>builder()
