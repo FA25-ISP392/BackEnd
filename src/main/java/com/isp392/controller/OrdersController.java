@@ -5,23 +5,25 @@ import com.isp392.dto.request.OrdersCreationRequest;
 import com.isp392.dto.request.OrdersUpdateRequest;
 import com.isp392.dto.response.OrdersResponse;
 import com.isp392.service.OrdersService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrdersController {
 
     OrdersService ordersService;
 
     @PostMapping
+    @PreAuthorize("hasRole('CUSTOMER')")
     public ApiResponse<OrdersResponse> createOrder(@RequestBody @Valid OrdersCreationRequest request) {
         OrdersResponse result = ordersService.createOrder(request);
         return ApiResponse.<OrdersResponse>builder()

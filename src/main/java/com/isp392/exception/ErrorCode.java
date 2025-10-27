@@ -13,10 +13,9 @@ public enum ErrorCode {
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error"),
     INVALID_ARGUMENT(1000, "Invalid request argument"),
     INVALID_KEY(1001, "Invalid message key"),
-
     NOT_BLANKED(1002, "Field cannot be empty"),
     UNAUTHENTICATED(1003, "Unauthenticated"),
-    STAFF_ACCESS_FORBIDDEN(1004, "Access denied"),
+    STAFF_ACCESS_FORBIDDEN(1004, "Staff access forbidden"),
     DTO_NOT_FOUND(1005, "DTO class not found"),
     USER_EXISTED(1100, "User already exists"),
     USER_NOT_EXISTED(1102, "User not existed"),

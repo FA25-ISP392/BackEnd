@@ -7,21 +7,24 @@ import com.isp392.entity.Account;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.service.AccountService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/accounts")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class AccountController {
 
     AccountService accountService;
 
     @PostMapping("/create")
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<AccountResponse> createAccount(@Valid @RequestBody Object request) {
         Account account;
         if (request instanceof StaffCreationRequest) {
@@ -37,7 +40,7 @@ public class AccountController {
     }
 
     @PutMapping("/{accountId}")
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<AccountResponse> updateAccount(@PathVariable Integer accountId, @Valid @RequestBody Object request) {
         Account account = accountService.findById(accountId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
@@ -56,7 +59,7 @@ public class AccountController {
     }
 
     @DeleteMapping("/{accountId}")
-//    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<Void> deleteAccount(@PathVariable Integer accountId) {
         accountService.deleteAccount(accountId);
         return ApiResponse.<Void>builder()

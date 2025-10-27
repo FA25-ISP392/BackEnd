@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,6 +70,55 @@ public class DailyPlanService {
         return mapToResponseWithItemName(savedPlan);
     }
 
+//    @Transactional
+//    public List<DailyPlanResponse> createDailyPlansBatch(List<DailyPlanCreationRequest> requests, Authentication authentication) {
+//        if (requests == null || requests.isEmpty()) {
+//            return new ArrayList<>();
+//        }
+//
+//        String username = authentication.getName();
+//        boolean isManager = hasAuthority(authentication, Role.MANAGER.name());
+//
+//        DailyPlanCreationRequest firstRequest = requests.get(0);
+//        Staff planner;
+//
+//        if (isManager && firstRequest.getStaffId() != null) {
+//            planner = staffRepository.findByIdWithAccount(firstRequest.getStaffId())
+//                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+//        } else {
+//            planner = staffRepository.findByUsernameWithAccount(username)
+//                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+//        }
+//
+//        final Integer targetStaffId = planner.getStaffId();
+//
+//        List<DailyPlan> plansToSave = requests.stream().map(request -> {
+//            if (request.getStaffId() != null && !request.getStaffId().equals(targetStaffId)) {
+//                throw new AppException(ErrorCode.INVALID_REQUEST);
+//            }
+//
+//            dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
+//                    request.getItemId(), request.getItemType(), request.getPlanDate()
+//            ).ifPresent(plan -> {
+//                throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
+//            });
+//
+//            validateItemExists(request.getItemId(), request.getItemType());
+//
+//            DailyPlan dailyPlan = dailyPlanMapper.toDailyPlan(request);
+//            dailyPlan.setPlannerStaff(planner);
+//            dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
+//            dailyPlan.setStatus(false);
+//            dailyPlan.setPlanDate(request.getPlanDate());
+//            return dailyPlan;
+//        }).collect(Collectors.toList());
+//
+//        List<DailyPlan> savedPlans = dailyPlanRepository.saveAll(plansToSave);
+//        return savedPlans.stream()
+//                .map(this::mapToResponseWithItemName)
+//                .collect(Collectors.toList());
+//    }
+
     @Transactional
     public List<DailyPlanResponse> createDailyPlansBatch(List<DailyPlanCreationRequest> requests, Authentication authentication) {
         if (requests == null || requests.isEmpty()) {
@@ -91,26 +141,53 @@ public class DailyPlanService {
 
         final Integer targetStaffId = planner.getStaffId();
 
-        List<DailyPlan> plansToSave = requests.stream().map(request -> {
+        // Dùng List để lưu các plan cần được save (cả mới và cập nhật)
+        List<DailyPlan> plansToSave = new ArrayList<>();
+
+        for (DailyPlanCreationRequest request : requests) {
             if (request.getStaffId() != null && !request.getStaffId().equals(targetStaffId)) {
                 throw new AppException(ErrorCode.INVALID_REQUEST);
             }
 
-            dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
-                    request.getItemId(), request.getItemType(), request.getPlanDate()
-            ).ifPresent(plan -> {
-                throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
-            });
-
             validateItemExists(request.getItemId(), request.getItemType());
 
-            DailyPlan dailyPlan = dailyPlanMapper.toDailyPlan(request);
-            dailyPlan.setPlannerStaff(planner);
-            dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
-            dailyPlan.setStatus(false);
-            dailyPlan.setPlanDate(request.getPlanDate());
-            return dailyPlan;
-        }).collect(Collectors.toList());
+            // --- BẮT ĐẦU LOGIC MỚI ---
+
+            // 1. Tìm plan hiện có
+            DailyPlan planToSave;
+            var existingPlanOpt = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
+                    request.getItemId(), request.getItemType(), request.getPlanDate()
+            );
+
+            if (existingPlanOpt.isPresent()) {
+                // 2. Nếu plan tồn tại
+                DailyPlan existingPlan = existingPlanOpt.get();
+
+                // 2a. Kiểm tra nếu plan cũ vẫn còn hàng
+                if (existingPlan.getRemainingQuantity() > 0) {
+                    throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
+                }
+
+                // 2b. Nếu remainingQuantity == 0 -> Cập nhật (tái lập kế hoạch)
+                planToSave = existingPlan; // Dùng lại plan cũ
+                planToSave.setPlannedQuantity(request.getPlannedQuantity());
+                planToSave.setRemainingQuantity(request.getPlannedQuantity()); // Reset số lượng
+                planToSave.setStatus(false); // Đặt lại trạng thái chờ duyệt
+                planToSave.setApproverStaff(null); // Xóa người duyệt cũ
+                planToSave.setPlannerStaff(planner); // Cập nhật người lên kế hoạch
+
+            } else {
+                // 3. Nếu plan không tồn tại -> Tạo mới
+                planToSave = dailyPlanMapper.toDailyPlan(request);
+                planToSave.setPlannerStaff(planner);
+                planToSave.setRemainingQuantity(request.getPlannedQuantity());
+                planToSave.setStatus(false);
+                planToSave.setPlanDate(request.getPlanDate());
+            }
+
+            plansToSave.add(planToSave);
+            // --- KẾT THÚC LOGIC MỚI ---
+        }
 
         List<DailyPlan> savedPlans = dailyPlanRepository.saveAll(plansToSave);
         return savedPlans.stream()
@@ -160,11 +237,11 @@ public class DailyPlanService {
         }
 
         if (!isManagerOrAdmin && dailyPlan.getStatus()) {
-        // ✅ Nếu đã duyệt mà vẫn còn hàng thì chặn
-        if (dailyPlan.getRemainingQuantity() > 0) {
-            throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
-        }
-        // ✅ Còn nếu đã hết hàng (remaining = 0) thì cho phép Chef gửi lại
+            // ✅ Nếu đã duyệt mà vẫn còn hàng thì chặn
+            if (dailyPlan.getRemainingQuantity() > 0) {
+                throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
+            }
+            // ✅ Còn nếu đã hết hàng (remaining = 0) thì cho phép Chef gửi lại
         }
 
 
