@@ -36,7 +36,7 @@ public class StaffController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER','CHEF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER','CHEF','STAFF')")
     public ApiResponse<List<StaffResponse>> getStaff(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         List<StaffResponse> staffList = staffService.getStaff(page, size);
         return ApiResponse.<List<StaffResponse>>builder()
@@ -45,7 +45,7 @@ public class StaffController {
     }
 
     @GetMapping("/{staffId}")
-    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN','CHEF')")
     public ApiResponse<StaffResponse> getStaff(@PathVariable Integer staffId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
         StaffResponse staff = staffService.getStaff(staffId, username);
