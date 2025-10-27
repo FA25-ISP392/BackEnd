@@ -35,7 +35,7 @@ public class CustomerController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ApiResponse<List<CustomerResponse>> getCustomers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         List<CustomerResponse> customers = customerService.getCustomer(page, size);
         return ApiResponse.<List<CustomerResponse>>builder()
@@ -48,6 +48,15 @@ public class CustomerController {
     public ApiResponse<CustomerResponse> getCustomer(@PathVariable Integer customerId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
         CustomerResponse customer = customerService.getCustomer(customerId, username);
+        return ApiResponse.<CustomerResponse>builder()
+                .result(customer)
+                .build();
+    }
+
+    @GetMapping("/by-username/{username}")
+    @PreAuthorize("isAuthenticated() and (#username == principal.subject or hasRole('ADMIN'))")
+    public ApiResponse<CustomerResponse> getCustomerByUsername(@PathVariable String username) {
+        CustomerResponse customer = customerService.getCustomerByUsername(username);
         return ApiResponse.<CustomerResponse>builder()
                 .result(customer)
                 .build();
