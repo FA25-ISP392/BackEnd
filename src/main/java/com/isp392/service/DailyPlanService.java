@@ -160,8 +160,13 @@ public class DailyPlanService {
         }
 
         if (!isManagerOrAdmin && dailyPlan.getStatus()) {
+        // ✅ Nếu đã duyệt mà vẫn còn hàng thì chặn
+        if (dailyPlan.getRemainingQuantity() > 0) {
             throw new AppException(ErrorCode.PLAN_ALREADY_APPROVED);
         }
+        // ✅ Còn nếu đã hết hàng (remaining = 0) thì cho phép Chef gửi lại
+        }
+
 
         // --- BẮT ĐẦU LOGIC SỬA LẠI ---
         if (isManagerOrAdmin) {
@@ -186,6 +191,11 @@ public class DailyPlanService {
             if (request.getPlannedQuantity() != null) {
                 dailyPlan.setPlannedQuantity(request.getPlannedQuantity());
                 dailyPlan.setRemainingQuantity(request.getPlannedQuantity());
+
+                // ✅ Cho phép Chef gửi lại nếu plan đã duyệt nhưng đã hết hàng
+                if (dailyPlan.getStatus() && dailyPlan.getRemainingQuantity() == 0) {
+                    dailyPlan.setStatus(false);
+                }
             }
             // Chef không thể thay đổi status, nên không có logic ở đây
         }

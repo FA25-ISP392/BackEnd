@@ -57,7 +57,6 @@ public class PaymentController {
     @GetMapping("/cancel")
     public ApiResponse<String> cancelPayment(
             @RequestParam String id,
-            @RequestParam String orderCode,
             @RequestParam(required = false) String status) {
 
         Payment payment = paymentRepository.findByPaymentLinkId(id);
