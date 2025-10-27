@@ -16,12 +16,15 @@ import com.isp392.repository.TableRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -32,37 +35,54 @@ public class OrdersService {
     TableRepository tableRepository;
     OrdersMapper ordersMapper;
 
+//    public OrdersResponse createOrder(OrdersCreationRequest request) {
+//        Customer customer = customerRepository.findById(request.getCustomerId())
+//                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+//
+//        TableEntity table = tableRepository.findById(request.getTableId())
+//                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
+//
+//        Orders order = ordersMapper.toOrders(request, customer, table);
+//
+//        Orders saved = ordersRepository.save(order);
+//
+//        return ordersMapper.toOrdersResponse(saved);
+//    }
+
+    @Transactional
     public OrdersResponse createOrder(OrdersCreationRequest request) {
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+        // 1. Tìm đơn hàng đang hoạt động (chưa thanh toán) trước
+        Optional<Orders> existingOrderOpt = ordersRepository.findActiveOrderByCustomerAndTable(
+                request.getCustomerId(),
+                request.getTableId()
+        );
 
-        TableEntity table = tableRepository.findById(request.getTableId())
-                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
+        // 2. Nếu tìm thấy -> xử lý và trả về đơn đó
+        if (existingOrderOpt.isPresent()) {
+            return handleExistingOrder(existingOrderOpt.get(), request.getCustomerId(), request.getTableId());
+        }
 
-        Orders order = ordersMapper.toOrders(request, customer, table);
-
-        Orders saved = ordersRepository.save(order);
-
-        return ordersMapper.toOrdersResponse(saved);
+        // 3. Nếu không tìm thấy -> tạo đơn hàng mới
+        return createNewOrder(request);
     }
 
-public OrdersResponse getOrder(Integer orderId) {
-    Orders order = ordersRepository.findById(orderId)
-            .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+    public OrdersResponse getOrder(Integer orderId) {
+        Orders order = ordersRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-    // Load chi tiết order
-    Hibernate.initialize(order.getOrderDetails());
+        // Load chi tiết order
+        Hibernate.initialize(order.getOrderDetails());
 
-    // Tính tổng giá đơn hàng = tổng totalPrice của từng orderDetail
-    double totalOrderPrice = order.getOrderDetails().stream()
-            .mapToDouble(OrderDetail::getTotalPrice)
-            .sum();
+        // Tính tổng giá đơn hàng = tổng totalPrice của từng orderDetail
+        double totalOrderPrice = order.getOrderDetails().stream()
+                .mapToDouble(OrderDetail::getTotalPrice)
+                .sum();
 
-    // Map sang response
-    OrdersResponse response = ordersMapper.toOrdersResponse(order);
-    response.setTotalPrice(totalOrderPrice); // thêm trường này trong OrdersResponse
-    return response;
-}
+        // Map sang response
+        OrdersResponse response = ordersMapper.toOrdersResponse(order);
+        response.setTotalPrice(totalOrderPrice); // thêm trường này trong OrdersResponse
+        return response;
+    }
 
     @Transactional
     public OrdersResponse updateOrder(Integer orderId, OrdersUpdateRequest request) {
@@ -87,4 +107,71 @@ public OrdersResponse getOrder(Integer orderId) {
         }
         ordersRepository.deleteById(orderId);
     }
+
+    // HELPER METHODS
+
+    /**
+     * (HELPER) Xử lý khi tìm thấy một đơn hàng đang hoạt động.
+     * @param existingOrder Đơn hàng đã tìm thấy.
+     * @param customerId ID khách hàng (dùng để log).
+     * @param tableId ID bàn (dùng để log).
+     * @return OrdersResponse của đơn hàng hiện có.
+     */
+    private OrdersResponse handleExistingOrder(Orders existingOrder, Integer customerId, Integer tableId) {
+        log.info("Found existing active order (ID: {}) for customer {} at table {}",
+                existingOrder.getOrderId(), customerId, tableId);
+
+        // Load chi tiết đơn hàng (nếu chưa load) và tính tổng tiền
+        Hibernate.initialize(existingOrder.getOrderDetails());
+        double totalOrderPrice = calculateTotalOrderPrice(existingOrder);
+
+        // Map sang response và cập nhật tổng tiền
+        OrdersResponse response = ordersMapper.toOrdersResponse(existingOrder);
+        response.setTotalPrice(totalOrderPrice);
+        return response;
+    }
+
+    /**
+     * (HELPER) Tạo một đơn hàng mới khi không tìm thấy đơn hàng đang hoạt động.
+     * @param request Dữ liệu yêu cầu tạo đơn hàng.
+     * @return OrdersResponse của đơn hàng vừa tạo.
+     */
+    private OrdersResponse createNewOrder(OrdersCreationRequest request) {
+        log.info("No active order found for customer {} at table {}. Creating a new order.",
+                request.getCustomerId(), request.getTableId());
+
+        // Lấy thông tin Customer và Table
+        Customer customer = customerRepository.findById(request.getCustomerId())
+                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+        TableEntity table = tableRepository.findById(request.getTableId())
+                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
+
+        // Tạo entity Orders mới
+        Orders newOrder = ordersMapper.toOrders(request, customer, table);
+        // paid mặc định là false khi tạo mới (đã cấu hình trong mapper)
+
+        // Lưu vào DB
+        Orders savedOrder = ordersRepository.save(newOrder);
+
+        // Map sang response, đơn mới chưa có chi tiết nên tổng tiền là 0
+        OrdersResponse response = ordersMapper.toOrdersResponse(savedOrder);
+        response.setTotalPrice(0.0);
+        return response;
+    }
+
+    /**
+     * (HELPER) Tính tổng tiền của một đơn hàng dựa trên các chi tiết đơn hàng.
+     * @param order Đơn hàng cần tính tổng tiền.
+     * @return Tổng tiền của đơn hàng.
+     */
+    private double calculateTotalOrderPrice(Orders order) {
+        // Đảm bảo orderDetails đã được load (có thể thêm Hibernate.initialize nếu cần)
+        if (order.getOrderDetails() == null) {
+            return 0.0;
+        }
+        return order.getOrderDetails().stream()
+                .mapToDouble(OrderDetail::getTotalPrice) // Giả sử OrderDetail có getter getTotalPrice()
+                .sum();
+    }
+
 }

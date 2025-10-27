@@ -125,81 +125,27 @@ public class DailyPlanService {
             return new ArrayList<>();
         }
 
-        String username = authentication.getName();
-        boolean isManager = hasAuthority(authentication, Role.MANAGER.name());
-
-        DailyPlanCreationRequest firstRequest = requests.get(0);
-        Staff planner;
-
-        if (isManager && firstRequest.getStaffId() != null) {
-            planner = staffRepository.findByIdWithAccount(firstRequest.getStaffId())
-                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-        } else {
-            planner = staffRepository.findByUsernameWithAccount(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
-        }
-
+        // 1. Xác định người lập kế hoạch cho cả lô
+        Staff planner = getPlannerForBatch(requests.get(0), authentication);
         final Integer targetStaffId = planner.getStaffId();
 
-        // Dùng List để lưu các plan cần được save (cả mới và cập nhật)
         List<DailyPlan> plansToSave = new ArrayList<>();
 
+        // 2. Xử lý từng yêu cầu
         for (DailyPlanCreationRequest request : requests) {
-            if (request.getStaffId() != null && !request.getStaffId().equals(targetStaffId)) {
-                throw new AppException(ErrorCode.INVALID_REQUEST);
+            // 3. Xử lý logic cho một plan (bao gồm validation)
+            // Phương thức này sẽ trả về null nếu plan không cần được save (ví dụ: không thay đổi)
+            DailyPlan planToSave = processSinglePlanRequest(request, planner, targetStaffId);
+
+            if (planToSave != null) {
+                plansToSave.add(planToSave);
             }
-
-            validateItemExists(request.getItemId(), request.getItemType());
-
-            // --- BẮT ĐẦU LOGIC MỚI ---
-            DailyPlan planToSave;
-            var existingPlanOpt = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
-                    request.getItemId(), request.getItemType(), request.getPlanDate()
-            );
-
-            if (existingPlanOpt.isPresent()) {
-                // 2. Nếu plan tồn tại
-                DailyPlan existingPlan = existingPlanOpt.get();
-
-                // ✅ LOGIC MỚI: chỉ cập nhật nếu có thay đổi plannedQuantity
-                int oldPlanned = existingPlan.getPlannedQuantity() == 0 ? 0 : existingPlan.getPlannedQuantity();
-                int oldRemaining = existingPlan.getRemainingQuantity() == 0 ? 0 : existingPlan.getRemainingQuantity();
-                int newPlanned = request.getPlannedQuantity();
-
-                // ⚙️ Nếu planned không thay đổi thì bỏ qua (đỡ ghi DB vô ích)
-                if (newPlanned == oldPlanned) {
-                    continue;
-                }
-
-                // ✅ Công thức tính mới:
-                // remaining_new = remaining_old + (newPlanned - oldPlanned)
-                int newRemaining = oldRemaining + (newPlanned - oldPlanned);
-                if (newRemaining < 0) newRemaining = 0; // tránh âm
-
-                // ✅ Cập nhật lại plan cũ
-                existingPlan.setPlannedQuantity(newPlanned);
-                existingPlan.setRemainingQuantity(newRemaining);
-                existingPlan.setStatus(false);           // reset chờ duyệt lại
-                existingPlan.setApproverStaff(null);     // xóa người duyệt cũ
-                existingPlan.setPlannerStaff(planner);   // cập nhật người lập kế hoạch
-
-                planToSave = existingPlan;
-
-            } else {
-                // 3. Nếu plan không tồn tại -> Tạo mới
-                planToSave = dailyPlanMapper.toDailyPlan(request);
-                planToSave.setPlannerStaff(planner);
-                planToSave.setRemainingQuantity(request.getPlannedQuantity());
-                planToSave.setStatus(false);
-                planToSave.setPlanDate(request.getPlanDate());
-            }
-
-            plansToSave.add(planToSave);
-            // --- KẾT THÚC LOGIC MỚI ---
         }
 
-        // ✅ Lưu toàn bộ thay đổi
+        // 4. Lưu tất cả thay đổi
         List<DailyPlan> savedPlans = dailyPlanRepository.saveAll(plansToSave);
+
+        // 5. Chuyển đổi sang DTO
         return savedPlans.stream()
                 .map(this::mapToResponseWithItemName)
                 .collect(Collectors.toList());
@@ -326,6 +272,95 @@ public class DailyPlanService {
         return savedPlans.stream()
                 .map(this::mapToResponseWithItemName)
                 .collect(Collectors.toList());
+    }
+
+
+    // HELPER METHODS
+
+    /**
+     * (HELPER) Xác định Staff lập kế hoạch dựa trên request đầu tiên của batch.
+     */
+    private Staff getPlannerForBatch(DailyPlanCreationRequest firstRequest, Authentication authentication) {
+        String username = authentication.getName();
+        boolean isManager = hasAuthority(authentication, Role.MANAGER.name());
+
+        if (isManager && firstRequest.getStaffId() != null) {
+            return staffRepository.findByIdWithAccount(firstRequest.getStaffId())
+                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        } else {
+            return staffRepository.findByUsernameWithAccount(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+        }
+    }
+
+    /**
+     * (HELPER) Xử lý logic tạo mới hoặc cập nhật cho một yêu cầu DailyPlan.
+     * Trả về entity DailyPlan đã sẵn sàng để save, hoặc null nếu không cần save.
+     */
+    private DailyPlan processSinglePlanRequest(DailyPlanCreationRequest request, Staff planner, Integer targetStaffId) {
+        // 3a. Kiểm tra tính nhất quán của StaffId (nếu có)
+        if (request.getStaffId() != null && !request.getStaffId().equals(targetStaffId)) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        // 3b. Kiểm tra item tồn tại
+        validateItemExists(request.getItemId(), request.getItemType());
+
+        // 3c. Tìm plan đã tồn tại
+        var existingPlanOpt = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(
+                request.getItemId(), request.getItemType(), request.getPlanDate()
+        );
+
+        if (existingPlanOpt.isPresent()) {
+            // 3d. Nếu plan tồn tại -> Cập nhật
+            return prepareUpdatedPlan(existingPlanOpt.get(), request, planner);
+        } else {
+            // 3e. Nếu plan không tồn tại -> Tạo mới
+            return prepareNewPlan(request, planner);
+        }
+    }
+
+    /**
+     * (HELPER) Cập nhật một DailyPlan đã tồn tại.
+     * Trả về null nếu không có gì thay đổi (plannedQuantity bằng nhau).
+     */
+    private DailyPlan prepareUpdatedPlan(DailyPlan existingPlan, DailyPlanCreationRequest request, Staff planner) {
+        int oldPlanned = existingPlan.getPlannedQuantity();
+        int newPlanned = request.getPlannedQuantity();
+
+        // Nếu planned không thay đổi thì bỏ qua (không cần save)
+        if (newPlanned == oldPlanned) {
+            return null;
+        }
+
+        int oldRemaining = existingPlan.getRemainingQuantity();
+
+        // Công thức tính: remaining_new = remaining_old + (newPlanned - oldPlanned)
+        int newRemaining = oldRemaining + (newPlanned - oldPlanned);
+        if (newRemaining < 0) {
+            newRemaining = 0; // Đảm bảo số lượng còn lại không bị âm
+        }
+
+        // Cập nhật lại plan cũ
+        existingPlan.setPlannedQuantity(newPlanned);
+        existingPlan.setRemainingQuantity(newRemaining);
+        existingPlan.setStatus(false);           // reset chờ duyệt lại
+        existingPlan.setApproverStaff(null);     // xóa người duyệt cũ
+        existingPlan.setPlannerStaff(planner);   // cập nhật người lập kế hoạch (có thể là người khác)
+
+        return existingPlan;
+    }
+
+    /**
+     * (HELPER) Tạo một entity DailyPlan mới (chưa save).
+     */
+    private DailyPlan prepareNewPlan(DailyPlanCreationRequest request, Staff planner) {
+        DailyPlan newPlan = dailyPlanMapper.toDailyPlan(request);
+        newPlan.setPlannerStaff(planner);
+        newPlan.setRemainingQuantity(request.getPlannedQuantity()); // Số lượng còn lại = số lượng kế hoạch
+        newPlan.setStatus(false); // Chờ duyệt
+        newPlan.setPlanDate(request.getPlanDate());
+        return newPlan;
     }
 
     private boolean hasAuthority(Authentication authentication, String role) {

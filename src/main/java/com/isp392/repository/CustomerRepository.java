@@ -6,11 +6,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import java.util.Optional;
 
 
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
-    @Query("SELECT c FROM Customer c WHERE c.account.username = :username")
+//    @Query("SELECT c FROM Customer c WHERE c.account.username = :username")
+//    Optional<Customer> findByUsername(@Param("username") String username);
+
+    @Query("SELECT c FROM Customer c JOIN FETCH c.account a WHERE a.username = :username")
     Optional<Customer> findByUsername(@Param("username") String username);
 
     // Thêm method phân trang
