@@ -164,9 +164,9 @@ public class DailyPlanService {
                 DailyPlan existingPlan = existingPlanOpt.get();
 
                 // 2a. Kiểm tra nếu plan cũ vẫn còn hàng
-                if (existingPlan.getRemainingQuantity() > 0) {
-                    throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
-                }
+//                if (existingPlan.getRemainingQuantity() > 0) {
+//                    throw new AppException(ErrorCode.PLAN_ALREADY_EXISTS_BATCH);
+//                }
 
                 // 2b. Nếu remainingQuantity == 0 -> Cập nhật (tái lập kế hoạch)
                 planToSave = existingPlan; // Dùng lại plan cũ
