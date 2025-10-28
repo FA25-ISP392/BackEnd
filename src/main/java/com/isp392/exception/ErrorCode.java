@@ -89,8 +89,9 @@ public enum ErrorCode {
     PLAN_ALREADY_EXISTS(4003, "already exits"),
     PLAN_ALREADY_APPROVED(4005, "PLAN_ALREADY_APPROVED"),
     NOT_ENOUGH_QUANTITY(4004, "Not enough quantity in daily plan"),
-    BATCH_PLAN_INCONSISTENT(2205, "All plans in a batch must be for the same staff member.");
+    BATCH_PLAN_INCONSISTENT(2205, "All plans in a batch must be for the same staff member."),
 
+    INCOMPLETE_PROFILE(1301, "Customer profile is missing required information (height, weight, sex, or dob)");
 
     final int code;
     final String message;

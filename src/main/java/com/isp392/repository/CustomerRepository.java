@@ -17,6 +17,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     @Query("SELECT c FROM Customer c JOIN FETCH c.account a WHERE a.username = :username")
     Optional<Customer> findByUsername(@Param("username") String username);
 
+    @Query("SELECT c FROM Customer c JOIN FETCH c.account WHERE c.account.username = :username")
+    Optional<Customer> findByUsernameForSuggestion(@Param("username") String username);
+
     // Thêm method phân trang
     @Query("SELECT s FROM Customer s")
     Page<Customer> findAll(Pageable pageable);
