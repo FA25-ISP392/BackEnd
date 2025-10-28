@@ -95,7 +95,15 @@ public class BookingController {
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<List<BookingResponse>> getBookingsByDate(@RequestParam("tableId") int tableId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+        if(date == null){
+            response.setMessage("Date parameter is missing or invalid.");
+            response.setResult(List.of());
+            return response;
+        }
         response.setResult(bookingService.getBookingsByDateAndTable(tableId, date));
+        if(response.getResult().isEmpty()){
+            response.setMessage("No bookings found for the specified table and date.");
+        }
         return response;
     }
     @GetMapping("customer/{id}")

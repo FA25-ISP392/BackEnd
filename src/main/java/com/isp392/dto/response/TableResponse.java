@@ -11,4 +11,5 @@ public class TableResponse {
     int tableId;
     String tableName;
     int seatTable;
+    boolean isServing;
 }

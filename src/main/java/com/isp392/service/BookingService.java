@@ -153,9 +153,9 @@ public class BookingService {
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
         List<Booking> ls = bookingRepository.findByTableAndBookingDateBetween(table, startOfDay, endOfDay);
-        if(ls.isEmpty()) {
-            throw new RuntimeException("Can't find any bookings for this date!");
-        }
+//        if(ls.isEmpty()) {
+//            throw new RuntimeException("Can't find any bookings for this date!");
+//        }
         return ls.stream().map(bookingMapper::toResponse).toList();
     }
     public List<BookingResponse> findBookingsByCusId(int customerId) {
