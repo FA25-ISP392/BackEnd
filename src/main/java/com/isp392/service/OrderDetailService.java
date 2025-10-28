@@ -39,12 +39,19 @@ public class OrderDetailService {
 
     // ⭐ THÊM DÒNG NÀY ĐỂ SỬA LỖI StaleObjectStateException
     EntityManager entityManager;
+    TableRepository tableRepository;
 
     @Transactional
     public OrderDetailResponse createOrderDetail(OrderDetailCreationRequest request) {
         Orders order = getOrderById(request.getOrderId());
         Dish dish = getDishById(request.getDishId());
 
+        TableEntity table = order.getTable();
+        if (table == null || !table.isAvailable()) {
+            throw new RuntimeException("Table is not available for ordering.");
+        }
+        table.setServing(true);
+        tableRepository.save(table);
         // 1️⃣ Trừ số lượng món trong daily plan
         decrementDishDailyPlan(dish, 1);
 
@@ -60,6 +67,7 @@ public class OrderDetailService {
 
         // 5️⃣ Lưu order detail và topping
         orderDetailRepository.save(orderDetail);
+
 
         List<OrderToppingResponse> toppingResponses = orderDetailMapper.toToppingResponseList(orderToppings);
         return orderDetailMapper.toResponse(orderDetail, toppingResponses);
@@ -98,10 +106,10 @@ public class OrderDetailService {
                 .findByIdWithToppings(request.getOrderDetailId())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
 
-        // 2. KIỂM TRA STATUS PENDING
-        if (detail.getStatus() != OrderDetailStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_UPDATED);
-        }
+//        // 2. KIỂM TRA STATUS PENDING
+//        if (detail.getStatus() != OrderDetailStatus.PENDING) {
+//            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_UPDATED);
+//        }
 
         // 3. Map các trường đơn giản (note...)
         orderDetailMapper.updateOrderDetail(detail, request);

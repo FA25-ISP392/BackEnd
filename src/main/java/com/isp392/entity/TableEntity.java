@@ -28,6 +28,9 @@ public class TableEntity {
     @Column(name = "isAvailable", nullable = false)
     boolean isAvailable = true;
 
+    @Column(name ="isServing", nullable = false, columnDefinition = "bit default 0")
+    boolean isServing;
+
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude // tránh vòng lặp khi in log
     @EqualsAndHashCode.Exclude

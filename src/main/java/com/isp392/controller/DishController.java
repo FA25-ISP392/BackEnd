@@ -1,7 +1,5 @@
 package com.isp392.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.request.DishCreationRequest;
 import com.isp392.dto.request.DishUpdateRequest;
@@ -9,6 +7,7 @@ import com.isp392.dto.response.DishResponse;
 import com.isp392.enums.Category;
 import com.isp392.enums.DishType;
 import com.isp392.service.DishService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/dish")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DishController {
 
@@ -39,6 +40,7 @@ public class DishController {
 //    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish,
                                                 @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         return ApiResponse.<DishResponse>builder()
@@ -82,6 +84,7 @@ public class DishController {
     }
 
     @PutMapping(value = "/{dishId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<DishResponse> updateDish(
             @PathVariable int dishId,
             @Valid @RequestPart("dish") DishUpdateRequest request,
@@ -92,6 +95,7 @@ public class DishController {
     }
 
     @DeleteMapping("/{dishId}")
+    @PreAuthorize("hasRole('MANAGER')")
     public ApiResponse<String> deleteDish(@PathVariable int dishId) {
         dishService.deleteDish(dishId);
         return ApiResponse.<String>builder()

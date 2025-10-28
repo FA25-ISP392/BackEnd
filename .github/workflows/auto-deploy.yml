@@ -24,6 +24,8 @@ jobs:
       # Ví dụ:
       # DATABASE_URL: ${{ secrets.DATABASE_URL }}
       # API_KEY: ${{ secrets.API_KEY }}
+      FRONTEND_RESET_PASSWORD_URL: ${{ secrets.FRONTEND_RESET_PASSWORD_URL }}
+      FRONTEND_VERIFY_EMAIL_URL: ${{ secrets.FRONTEND_VERIFY_EMAIL_URL }}
 
     steps:
       - name: Checkout code
@@ -50,23 +52,17 @@ jobs:
           docker stop $IMAGE_NAME || true
           docker rm $IMAGE_NAME || true
           echo "Old container stopped and removed (if it existed)."
-
-      # --- Bước bổ sung: Xóa image cũ (tùy chọn nhưng được khuyến nghị để tiết kiệm dung lượng) ---
-      - name: Clean up old Docker Image (optional)
-        run: |
-          echo "Cleaning up old Docker image ${IMAGE_NAME}:<previous_tag> (if any not in use)..."
-          # Lệnh này sẽ xóa các image không được sử dụng bởi bất kỳ container nào.
-          # Cẩn thận nếu bạn muốn giữ lại các phiên bản image cũ để rollback.
-          docker image prune -f || true
-          echo "Docker images cleaned up."
-
+          
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
+            -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
             -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
+            -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
+            -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} \
             $IMAGE_NAME:latest
           echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
 

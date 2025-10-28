@@ -65,6 +65,13 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
+    public CustomerResponse getCustomerByUsername(String username) {
+        Customer customer = customerRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+        return customerMapper.toCustomerResponse(customer);
+    }
+
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getCustomer(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("customerId").ascending());
         Page<Customer> customerPage = customerRepository.findAll(pageable);
@@ -91,9 +98,12 @@ public class CustomerService {
 
         // Update Account riêng
         Account account = customer.getAccount();
-        accountService.updateAccount(account, request);
+        accountService.updateAccount(account, request); // Giả sử AccountService có xử lý update từ CustomerUpdateRequest
 
-        return customerMapper.toCustomerResponse(customer);
+        // Cần lưu lại Customer sau khi Account (có thể) đã thay đổi
+        Customer savedCustomer = customerRepository.save(customer);
+
+        return customerMapper.toCustomerResponse(savedCustomer);
     }
 
 
