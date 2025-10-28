@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+
 import com.isp392.repository.projection.DishSalesProjection;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
