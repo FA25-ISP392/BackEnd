@@ -20,6 +20,8 @@ FROM amazoncorretto:21.0.8-al2023
 WORKDIR /app
 RUN mkdir -p /app/logs
 
+ENV TZ=Asia/Ho_Chi_Minh
+
 # Sao chép file JAR đã build từ giai đoạn 'build' vào giai đoạn hiện tại
 COPY --from=build /app/target/*.jar app.jar
 
