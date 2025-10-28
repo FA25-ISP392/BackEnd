@@ -30,7 +30,7 @@ public class BookingController {
     BookingService bookingService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> createBooking(@RequestBody BookingCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub"); // lấy username từ token JWT
         BookingResponse booking = bookingService.createBooking(request, username);
@@ -40,7 +40,7 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<List<BookingResponse>> findAllBookings() {
         List<BookingResponse> list = bookingService.findAllBookings();
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
@@ -49,7 +49,7 @@ public class BookingController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<List<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status) {
         List<BookingResponse> list = bookingService.findBookingStatus(status);
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
@@ -72,7 +72,7 @@ public class BookingController {
     }
 
     @PutMapping("{id}/approved")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> approveBooking(@PathVariable int id, @RequestBody BookingApprovalRequest request, @AuthenticationPrincipal Jwt jwt) {
         BookingResponse booking = bookingService.approvedBooking(request, id);
         ApiResponse<BookingResponse> response = new ApiResponse<>();
@@ -82,7 +82,7 @@ public class BookingController {
     }
 
     @PutMapping("{id}/reject")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> rejectBooking(@PathVariable int id, @AuthenticationPrincipal Jwt jwt) {
         BookingResponse booking = bookingService.rejectBooking(id);
         ApiResponse<BookingResponse> response = new ApiResponse<>();
@@ -107,6 +107,7 @@ public class BookingController {
         return response;
     }
     @GetMapping("customer/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<List<BookingResponse>> getBookingsByCustomer(@PathVariable int id) {
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
         response.setResult(bookingService.findBookingsByCusId(id));
@@ -114,6 +115,7 @@ public class BookingController {
     }
 
     @PutMapping("{id}/cancel")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> cancelBooking(
             @PathVariable int id,
             @AuthenticationPrincipal Jwt jwt
