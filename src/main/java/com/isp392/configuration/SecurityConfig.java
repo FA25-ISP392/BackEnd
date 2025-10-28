@@ -43,6 +43,7 @@ public class SecurityConfig {
             "/topping/**",
             "/staff/**",
             "/customer?page=0&size=1000",
+            "/statistics/**",
     };
 
     private final String[] SWAGGER_ENDPOINTS = {
