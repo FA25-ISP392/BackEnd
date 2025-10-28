@@ -20,4 +20,5 @@ public class PaymentResponse {
     String paymentLinkId;
     String checkoutUrl;
     String qrCode;
+    String paidAt;
 }
