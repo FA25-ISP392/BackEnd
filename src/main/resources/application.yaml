@@ -50,6 +50,7 @@ app:
     reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/reset-password}
     # reset-password-url: ${http://moncuaban.vercel.app/reset-password}
     verify-email-url: ${FRONTEND_VERIFY_EMAIL_URL:http://localhost:5173/verify-email}
+    google-callback-url: ${FRONTEND_GOOGLE_CALLBACK_URL:https://moncuaban.vercel.app/auth/callback}
 jwt:
   signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
 

@@ -28,6 +28,7 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
@@ -57,6 +58,50 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.signerKey}")
     String SIGNER_KEY;
+
+    @Value("${app.frontend.google-callback-url}")
+    @NonFinal
+    String frontendGoogleCallbackUrl;
+
+    @Transactional
+    public String handleGoogleLoginSuccess(OAuth2AuthenticationToken authentication) {
+        // 1. Lấy thông tin người dùng từ Google
+        String email = authentication.getPrincipal().getAttribute("email");
+        String name = authentication.getPrincipal().getAttribute("name");
+
+        // 2. Tìm hoặc tạo Account và Customer (Logic "Find or Create")
+        Account account = accountRepository.findByEmail(email)
+                .orElseGet(() -> createGoogleUserAccountAndCustomer(email, name)); // Gọi hàm helper
+
+        // 3. Tạo JWT token cho người dùng (dù mới hay cũ)
+        String token = generateToken(account.getUsername(), account.getRole());
+
+        // 4. Tạo URL redirect về frontend với token trong fragment (#)
+        // Ví dụ: https://moncuaban.vercel.app/auth/callback#token=xxxx
+        return frontendGoogleCallbackUrl + "#token=" + token;
+    }
+
+    private Account createGoogleUserAccountAndCustomer(String email, String name) {
+        // Tạo Account mới (CHƯA LƯU)
+        Account newAcc = new Account();
+        newAcc.setEmail(email);
+        newAcc.setUsername(email); // Sử dụng email làm username
+        newAcc.setFullName(name);
+        newAcc.setRole(Role.CUSTOMER);
+        newAcc.setPassword(UUID.randomUUID().toString()); // Mật khẩu ngẫu nhiên
+        newAcc.setVerified(true); // User Google coi như đã xác thực email
+
+        // Tạo Customer và liên kết với Account
+        Customer newCustomer = Customer.builder()
+                .account(newAcc)
+                .build();
+
+        // CHỈ LƯU CUSTOMER (Cascade sẽ tự lưu Account)
+        customerRepository.save(newCustomer);
+
+        // Trả về Account đã được quản lý bởi JPA
+        return newCustomer.getAccount();
+    }
 
     @Transactional // Đảm bảo toàn bộ là một giao dịch
 public AuthenticationResponse authenticateGoogleUser(String email, String name) {
