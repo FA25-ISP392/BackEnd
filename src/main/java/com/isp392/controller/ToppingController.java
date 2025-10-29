@@ -10,7 +10,9 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @RestController
@@ -32,6 +34,25 @@ public class ToppingController {
     ApiResponse<List<ToppingResponse>> findAll() {
         ApiResponse<List<ToppingResponse>> response = new ApiResponse<>();
         response.setResult(toppingService.getAllToppings());
+        return response;
+    }
+
+    // ⭐ MỚI: Get all toppings with pagination
+    @GetMapping("/paging")
+    ApiResponse<Page<ToppingResponse>> findAllPaginated(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        ApiResponse<Page<ToppingResponse>> response = new ApiResponse<>();
+        response.setResult(toppingService.getAllToppingsPaginated(pageable));
+        return response;
+    }
+
+    // ⭐ SỬA LẠI: Get toppings containing name
+    @GetMapping("/by-name/{name}")
+    ApiResponse<List<ToppingResponse>> findByNameContaining(@PathVariable String name) { // Đổi tên và kiểu trả về
+        ApiResponse<List<ToppingResponse>> response = new ApiResponse<>();
+        response.setResult(toppingService.getToppingsByNameContaining(name)); // Gọi service method mới
         return response;
     }
 

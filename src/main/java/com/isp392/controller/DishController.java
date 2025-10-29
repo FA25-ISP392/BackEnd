@@ -72,6 +72,14 @@ public class DishController {
                 .build();
     }
 
+    // ⭐ SỬA LẠI: Get dishes containing name
+    @GetMapping("/by-name/{dishName}")
+    public ApiResponse<List<DishResponse>> getDishesByNameContaining(@PathVariable String dishName) { // Đổi tên và kiểu trả về
+        return ApiResponse.<List<DishResponse>>builder()
+                .result(dishService.getDishesByNameContaining(dishName)) // Gọi service method mới
+                .build();
+    }
+
     // ✅ ĐẶT API /{dishId} XUỐNG DƯỚI
     // Spring sẽ chỉ khớp với URL này nếu nó không phải là "/paging"
     @GetMapping("/{dishId}")
