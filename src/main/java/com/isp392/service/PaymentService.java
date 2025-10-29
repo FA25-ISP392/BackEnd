@@ -299,7 +299,7 @@ public class PaymentService {
     }
 
     public Page<PaymentResponse> getPaymentByCusId(int customerId, Pageable pageable) {
-        Page<Payment> payment =  paymentRepository.findByCustomer_CustomerId(customerId, pageable);
+        Page<Payment> payment =  paymentRepository.findByOrder_Customer_CustomerId(customerId, pageable);
 
         return payment.map(paymentMapper::toPaymentResponse);
     }
