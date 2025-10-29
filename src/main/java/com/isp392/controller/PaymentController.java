@@ -11,6 +11,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,9 +37,10 @@ public class PaymentController {
     }
 
     @GetMapping
-    public ApiResponse<List<PaymentResponse>> getAllPayments() {
-        return ApiResponse.<List<PaymentResponse>>builder()
-                .result(paymentService.getAllPayments())
+    public ApiResponse<Page<PaymentResponse>> getAllPayments(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("paidAt").descending());
+        return ApiResponse.<Page<PaymentResponse>>builder()
+                .result(paymentService.getAllPayments(pageable))
                 .build();
     }
 
@@ -46,6 +51,15 @@ public class PaymentController {
                 .result(paymentService.getPaymentById(id))
                 .build();
     }
+
+    @GetMapping("/{customerId}")
+    public ApiResponse<Page<PaymentResponse>> getPaymentByCusId(@PathVariable int customerId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        return ApiResponse.<Page<PaymentResponse>>builder()
+                .result(paymentService.getPaymentByCusId(customerId, PageRequest.of(page, size, Sort.by("paidAt").descending())))
+                .build();
+    }
+
+
     @PostMapping("/cancel/{orderId}")
     public ApiResponse<String> cancelPayment(@PathVariable int orderId) {
         paymentService.cancelPayment(orderId);
