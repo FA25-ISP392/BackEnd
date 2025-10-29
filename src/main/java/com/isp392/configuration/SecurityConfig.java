@@ -46,6 +46,9 @@ public class SecurityConfig {
             "/customer?page=0&size=1000",
             "/statistics/**",
             "/payment/**",
+            "/auth/verify-email",
+            "/auth/reset-password",
+            "/auth/forgot-password"
     };
 
     private final String[] SWAGGER_ENDPOINTS = {
