@@ -4,6 +4,7 @@ import com.isp392.dto.request.SuggestionRequest;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.response.MenuSuggestion;
 import com.isp392.service.SuggestionService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/suggestions")
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class SuggestionController {
 
@@ -27,9 +29,7 @@ public class SuggestionController {
 
     @PostMapping("/menu")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ApiResponse<List<MenuSuggestion>> getMenuSuggestions(
-            @RequestBody @Valid SuggestionRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<List<MenuSuggestion>> getMenuSuggestions(@RequestBody @Valid SuggestionRequest request, @AuthenticationPrincipal Jwt jwt) {
 
         String username = jwt.getClaimAsString("sub");
         List<MenuSuggestion> suggestions = suggestionService.getSuggestionsForCustomer(username, request);
