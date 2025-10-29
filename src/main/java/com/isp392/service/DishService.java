@@ -247,6 +247,95 @@ public class DishService {
         return dishMapper.toDishResponse(saved);
     }
 
+    // ⭐ SỬA LẠI: Lấy danh sách dish chứa tên
+    @Transactional(readOnly = true)
+    public List<DishResponse> getDishesByNameContaining(String dishName) { // Đổi tên và kiểu trả về
+        List<Dish> dishes = dishRepository.findByDishNameContainingWithToppings(dishName);
+        if (dishes.isEmpty()) {
+            return Collections.emptyList(); // Trả về danh sách rỗng nếu không tìm thấy
+        }
+        // Gọi hàm helper để map danh sách Dish sang List<DishResponse>
+        // Hàm này sẽ lấy thông tin daily plan cho cả dish và topping
+        return mapDishListToResponseListWithDetails(dishes);
+    }
+
+    // ================== Helper Methods ==================
+    // (Giữ nguyên các helper methods khác nếu có)
+
+    /**
+     * (HELPER) Map một danh sách Dish entity sang List<DishResponse> và bổ sung thông tin
+     * số lượng còn lại từ DailyPlan (hiệu quả hơn khi xử lý nhiều món).
+     * -> Hàm này đã bao gồm logic lấy thông tin topping và số lượng còn lại của topping.
+     */
+    private List<DishResponse> mapDishListToResponseListWithDetails(List<Dish> dishes) {
+        LocalDate today = LocalDate.now();
+
+        // Lấy ID của tất cả món ăn và topping trong danh sách
+        List<Integer> dishIds = dishes.stream().map(Dish::getDishId).toList();
+        List<Integer> allToppingIds = dishes.stream()
+                .filter(dish -> dish.getDishToppings() != null)
+                .flatMap(dish -> dish.getDishToppings().stream())
+                .filter(dt -> dt != null && dt.getTopping() != null)
+                .map(dishTopping -> dishTopping.getTopping().getToppingId())
+                .distinct()
+                .toList();
+
+        // Lấy DailyPlan cho tất cả món ăn trong một query
+        Map<Integer, DailyPlan> dishPlansMap = dailyPlanRepository
+                .findByPlanDateAndItemTypeAndItemIdIn(today, ItemType.DISH, dishIds)
+                .stream()
+                .collect(Collectors.toMap(DailyPlan::getItemId, plan -> plan));
+
+        // Lấy DailyPlan cho tất cả topping trong một query
+        Map<Integer, DailyPlan> toppingPlansMap = Collections.emptyMap();
+        if (!allToppingIds.isEmpty()) {
+            toppingPlansMap = dailyPlanRepository
+                    .findByPlanDateAndItemTypeAndItemIdIn(today, ItemType.TOPPING, allToppingIds)
+                    .stream()
+                    .collect(Collectors.toMap(DailyPlan::getItemId, plan -> plan));
+        }
+
+        // Map từng Dish sang DishResponse
+        final Map<Integer, DailyPlan> finalToppingPlansMap = toppingPlansMap; // Biến final cho lambda
+        return dishes.stream().map(dish -> {
+            DishResponse response = dishMapper.toDishResponse(dish);
+
+            // Lấy số lượng còn lại của món ăn từ map
+            DailyPlan dishPlan = dishPlansMap.get(dish.getDishId());
+            int dishRemaining = (dishPlan != null && dishPlan.getStatus()) ? dishPlan.getRemainingQuantity() : 0;
+            response.setRemainingQuantity(dishRemaining);
+
+            // Xử lý topping (Phần này đảm bảo thông tin topping được kèm theo)
+            List<ToppingWithQuantityResponse> toppingResponses = Collections.emptyList();
+            if (dish.getDishToppings() != null) {
+                toppingResponses = dish.getDishToppings().stream()
+                        .filter(dt -> dt != null && dt.getTopping() != null)
+                        .map(dishTopping -> {
+                            Topping topping = dishTopping.getTopping();
+                            // Lấy số lượng còn lại của topping từ map
+                            DailyPlan toppingPlan = finalToppingPlansMap.get(topping.getToppingId());
+                            int remaining = (toppingPlan != null && toppingPlan.getStatus()) ? toppingPlan.getRemainingQuantity() : 0;
+
+                            // Tạo đối tượng ToppingWithQuantityResponse bao gồm cả số lượng còn lại
+                            return ToppingWithQuantityResponse.builder()
+                                    .toppingId(topping.getToppingId())
+                                    .name(topping.getName())
+                                    .price(topping.getPrice())
+                                    .calories(topping.getCalories())
+                                    .gram(topping.getGram())
+                                    .remainingQuantity(remaining) // <-- Số lượng còn lại của topping
+                                    .build();
+                        })
+                        .collect(Collectors.toList());
+            }
+
+            response.setOptionalToppings(toppingResponses); // Gán danh sách topping vào response
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    // (Giữ nguyên hàm helper mapDishToResponseWithDetails nếu bạn vẫn dùng nó cho getDishById)
+
     @Transactional
     public DishResponse updateDish(int dishId, DishUpdateRequest request, MultipartFile imageFile) {
         Dish dish = dishRepository.findById(dishId)

@@ -42,4 +42,9 @@ public interface DishRepository extends JpaRepository<Dish, Integer> {
 
     @Query("SELECT d FROM Dish d LEFT JOIN FETCH d.dishToppings dt LEFT JOIN FETCH dt.topping WHERE d.dishId = :dishId AND d.isAvailable = true")
     Optional<Dish> findByIdWithToppings(@Param("dishId") int dishId);
+
+    // ⭐ SỬA LẠI: Tìm các dish chứa tên (kèm topping)
+    @Query("SELECT DISTINCT d FROM Dish d LEFT JOIN FETCH d.dishToppings dt LEFT JOIN FETCH dt.topping " +
+            "WHERE d.dishName LIKE %:dishName% AND d.isAvailable = true")
+    List<Dish> findByDishNameContainingWithToppings(@Param("dishName") String dishName); // Đổi tên và kiểu trả về thành List
 }
