@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -78,15 +79,11 @@ public class AuthenticationController {
 
 
     @GetMapping("/google/success")
-    public ApiResponse<AuthenticationResponse> googleLoginSuccess(OAuth2AuthenticationToken authentication) {
-        String email = authentication.getPrincipal().getAttribute("email");
-        String name = authentication.getPrincipal().getAttribute("name");
-
-        AuthenticationResponse response = authenticationService.authenticateGoogleUser(email, name);
-
-        return ApiResponse.<AuthenticationResponse>builder()
-                .result(response)
-                .build();
+    public RedirectView googleLoginSuccess(OAuth2AuthenticationToken authentication) {
+        // Gọi service để xử lý và lấy URL redirect
+        String redirectUrl = authenticationService.handleGoogleLoginSuccess(authentication);
+        // Trả về RedirectView
+        return new RedirectView(redirectUrl);
     }
 
     @PostMapping("/token")
