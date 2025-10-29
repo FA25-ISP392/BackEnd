@@ -58,32 +58,43 @@ public class AuthenticationService {
     @Value("${jwt.signerKey}")
     String SIGNER_KEY;
 
-    @Transactional
-    public AuthenticationResponse authenticateGoogleUser(String email, String name) {
-        // Kiểm tra xem user đã tồn tại chưa
-        var account = accountRepository.findByEmail(email)
-                .orElseGet(() -> {
-                    Account newAcc = new Account();
-                    newAcc.setEmail(email);
-                    newAcc.setUsername(email); // có thể dùng email làm username
-                    newAcc.setFullName(name);
-                    newAcc.setPassword(UUID.randomUUID().toString());
-                    newAcc.setRole(Role.CUSTOMER);
-                    Customer customer = Customer.builder()
-                            .account(newAcc)
-                            .build();
-                    accountRepository.save(newAcc);
-                    customerRepository.save(customer);
-                    return newAcc;
-                });
+    @Transactional // Đảm bảo toàn bộ là một giao dịch
+public AuthenticationResponse authenticateGoogleUser(String email, String name) {
+    var account = accountRepository.findByEmail(email)
+        .orElseGet(() -> {
+            // --- BẮT ĐẦU SỬA ---
+            // 1. Tạo Account mới (CHƯA LƯU)
+            Account newAcc = new Account();
+            newAcc.setEmail(email);
+            newAcc.setUsername(email); // Hoặc logic username khác
+            newAcc.setFullName(name);
+            newAcc.setRole(Role.CUSTOMER);
+            newAcc.setPassword(UUID.randomUUID().toString()); // Mật khẩu ngẫu nhiên cho user Google
+            newAcc.setVerified(true); // User Google coi như đã xác thực email
 
-        String token = generateToken(account.getUsername(), account.getRole());
+            // 2. Tạo Customer và liên kết với Account vừa tạo
+            Customer newCustomer = Customer.builder()
+                    .account(newAcc) // Liên kết Account vào Customer
+                    .build();
 
-        return AuthenticationResponse.builder()
-                .token(token)
-                .authenticated(true)
-                .build();
-    }
+            // 3. CHỈ LƯU CUSTOMER (Cascade sẽ tự lưu Account)
+            customerRepository.save(newCustomer); // Lưu Customer, JPA sẽ tự lưu newAcc do cascade
+
+            // 4. Trả về Account đã được lưu (thông qua newCustomer)
+            // Lưu ý: Sau khi save newCustomer, newAcc bên trong nó cũng đã được quản lý
+            // và có thể đã được cập nhật ID bởi JPA.
+            return newCustomer.getAccount();
+            // --- KẾT THÚC SỬA ---
+        });
+
+    // Tạo token (phần này giữ nguyên)
+    String token = generateToken(account.getUsername(), account.getRole());
+
+    return AuthenticationResponse.builder()
+            .token(token)
+            .authenticated(true)
+            .build();
+}
 
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
