@@ -1,8 +1,12 @@
 package com.isp392.repository;
 
+import com.isp392.dto.response.BookingResponse;
+import com.isp392.entity.Booking;
 import com.isp392.entity.Payment;
 import com.isp392.repository.projection.RevenueByMethodProjection;
 import com.isp392.repository.projection.TotalRevenueProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -37,4 +41,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    Page<Payment> findAll(Pageable pageable);
+
+    Page<Payment> findByCustomer_CustomerId(int customerId, Pageable pageable);
 }

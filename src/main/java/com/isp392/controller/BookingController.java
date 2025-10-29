@@ -11,12 +11,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.data.domain.Page;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -41,18 +44,18 @@ public class BookingController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
-    public ApiResponse<List<BookingResponse>> findAllBookings() {
-        List<BookingResponse> list = bookingService.findAllBookings();
-        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+    public ApiResponse<Page<BookingResponse>> findAllBookings(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        Page<BookingResponse> list = bookingService.findAllBookings(PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
         response.setResult(list);
         return response;
     }
 
     @GetMapping("/status/{status}")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
-    public ApiResponse<List<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status) {
-        List<BookingResponse> list = bookingService.findBookingStatus(status);
-        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+    public ApiResponse<Page<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        Page<BookingResponse> list = bookingService.findBookingStatus(status, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
         response.setResult(list);
         return response;
     }
@@ -108,9 +111,9 @@ public class BookingController {
     }
     @GetMapping("customer/{id}")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
-    public ApiResponse<List<BookingResponse>> getBookingsByCustomer(@PathVariable int id) {
-        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
-        response.setResult(bookingService.findBookingsByCusId(id));
+    public ApiResponse<Page<BookingResponse>> getBookingsByCustomer(@PathVariable int id, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
+        response.setResult(bookingService.findBookingsByCusId(id, PageRequest.of(page, size, Sort.by("createdAt").descending())));
         return  response;
     }
 

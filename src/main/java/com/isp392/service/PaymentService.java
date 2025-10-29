@@ -3,6 +3,7 @@ package com.isp392.service;
 import com.isp392.dto.request.PayOSWebhookBody;
 import com.isp392.dto.request.PayOSWebhookData;
 import com.isp392.dto.request.PaymentCreationRequest;
+import com.isp392.dto.response.BookingResponse;
 import com.isp392.dto.response.PaymentResponse;
 import com.isp392.entity.OrderDetail;
 import com.isp392.entity.Orders;
@@ -20,6 +21,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
@@ -295,11 +298,16 @@ public class PaymentService {
         return hex;
     }
 
-    public List<PaymentResponse> getAllPayments() {
-        return paymentRepository.findAll()
-                .stream()
-                .map(paymentMapper::toPaymentResponse)
-                .collect(Collectors.toList());
+    public Page<PaymentResponse> getPaymentByCusId(int customerId, Pageable pageable) {
+        Page<Payment> payment =  paymentRepository.findByCustomer_CustomerId(customerId, pageable);
+
+        return payment.map(paymentMapper::toPaymentResponse);
+    }
+
+
+    public Page<PaymentResponse> getAllPayments(Pageable pageable) {
+        Page<Payment> payments = paymentRepository.findAll(pageable);
+        return payments.map(paymentMapper::toPaymentResponse);
     }
 
     public PaymentResponse getPaymentById(int id) {

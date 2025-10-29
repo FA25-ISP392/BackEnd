@@ -16,6 +16,8 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -65,8 +67,9 @@ public class BookingService {
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
 
-    public List<BookingResponse> findAllBookings() {
-        return bookingRepository.findAll().stream().map(bookingMapper::toResponse).toList();
+    public Page<BookingResponse> findAllBookings(Pageable pageable) {
+        Page<Booking> bookings = bookingRepository.findAll(pageable);
+        return bookings.map(bookingMapper::toResponse);
     }
 
     public BookingResponse getBookingById(int id) {
@@ -100,9 +103,9 @@ public class BookingService {
     }
 
     @Transactional
-    public List<BookingResponse> findBookingStatus(BookingStatus status) {
-        List<Booking> booking = bookingRepository.findByStatus(status);
-        return booking.stream().map(bookingMapper::toResponse).toList();
+    public Page<BookingResponse> findBookingStatus(BookingStatus status, Pageable pageable) {
+        Page<Booking> booking = bookingRepository.findByStatus(status, pageable);
+        return booking.map(bookingMapper::toResponse);
     }
 
     @Transactional
@@ -158,8 +161,9 @@ public class BookingService {
 //        }
         return ls.stream().map(bookingMapper::toResponse).toList();
     }
-    public List<BookingResponse> findBookingsByCusId(int customerId) {
-        List<Booking> ls = bookingRepository.findByCustomer_CustomerId(customerId);
-        return ls.stream().map(bookingMapper::toResponse).toList();
+    public Page<BookingResponse> findBookingsByCusId(int customerId, Pageable pageable) {
+        Page<Booking> bookings = bookingRepository.findByCustomer_CustomerId(customerId, pageable);
+        return bookings.map(bookingMapper::toResponse);
+
     }
 }
