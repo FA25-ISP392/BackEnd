@@ -32,6 +32,7 @@ public class SecurityConfig {
             "/auth/token",
             "/auth/introspect",
             "/customer",
+            "/payment/**",
     };
 
     private final String[] GET_PUBLIC_ENDPOINTS = {
@@ -44,6 +45,7 @@ public class SecurityConfig {
             "/staff/**",
             "/customer?page=0&size=1000",
             "/statistics/**",
+            "/payment/**",
     };
 
     private final String[] SWAGGER_ENDPOINTS = {
