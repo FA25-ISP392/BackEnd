@@ -51,7 +51,7 @@ public class OrderDetailController {
     }
 
     @PutMapping("/{orderDetailId}")
-    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER', 'STAFF','MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER', 'STAFF','MANAGER', 'CHEF')")
     public ApiResponse<OrderDetailResponse> update(@RequestBody @Valid OrderDetailUpdateRequest request) {
         OrderDetailResponse result = orderDetailService.updateOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()

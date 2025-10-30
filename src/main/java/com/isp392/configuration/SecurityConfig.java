@@ -36,12 +36,12 @@ public class SecurityConfig {
     };
 
     private final String[] GET_PUBLIC_ENDPOINTS = {
-            "/auth/**", // Cho verify-email
-            "/dish/**", // Cho khách xem menu
-            "/topping/**", // Cho khách xem menu
-            "/dish-topping/**", // Cho khách xem menu
-            "/payment/cancel", // Cho PayOS redirect
-            "/tables", // Cho Staff xem bàn (nếu cần)
+            "/auth/**",
+            "/dish/**",
+            "/topping/**",
+            "/dish-topping/**",
+            "/payment/cancel",
+            "/tables",
             "/statistics/dishes/best",
     };
 
