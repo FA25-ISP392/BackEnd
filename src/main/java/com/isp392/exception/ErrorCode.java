@@ -21,6 +21,8 @@ public enum ErrorCode {
     USER_NOT_EXISTED(1102, "User not existed"),
     STAFF_EXISTED(1100, "User already exists"),
     EMAIL_EXISTED(1109, "Email already exists"),
+    PHONE_EXISTED(1110, "Phone number already exists"),
+    EMAIL_AND_PHONE_EXISTED(1111, "Email and phone number already exist"),
     SIZE_INVALID(1010, "Field size is invalid"),
     EMAIL_INVALID(1011, "Email format is invalid"),
     PHONE_INVALID(1106, "Phone number must be between 9 and 11 digits"),
