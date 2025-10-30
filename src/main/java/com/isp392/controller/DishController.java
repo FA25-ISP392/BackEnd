@@ -40,7 +40,7 @@ public class DishController {
 //    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish,
                                                 @RequestPart(value = "image", required = false) MultipartFile imageFile) {
         return ApiResponse.<DishResponse>builder()
@@ -92,7 +92,7 @@ public class DishController {
     }
 
     @PutMapping(value = "/{dishId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<DishResponse> updateDish(
             @PathVariable int dishId,
             @Valid @RequestPart("dish") DishUpdateRequest request,
@@ -103,7 +103,7 @@ public class DishController {
     }
 
     @DeleteMapping("/{dishId}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<String> deleteDish(@PathVariable int dishId) {
         dishService.deleteDish(dishId);
         return ApiResponse.<String>builder()

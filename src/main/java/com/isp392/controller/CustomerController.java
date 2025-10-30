@@ -44,7 +44,7 @@ public class CustomerController {
     }
 
     @GetMapping("/{customerId}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ApiResponse<CustomerResponse> getCustomer(@PathVariable Integer customerId, @AuthenticationPrincipal Jwt jwt) {
         String username = jwt.getClaimAsString("sub");
         CustomerResponse customer = customerService.getCustomer(customerId, username);
@@ -63,7 +63,7 @@ public class CustomerController {
     }
 
     @PutMapping("/{customerId}")
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ApiResponse<CustomerResponse> updateCustomer(@PathVariable Integer customerId, @Valid @RequestBody CustomerUpdateRequest request) {
         CustomerResponse updatedCustomer = customerService.updateCustomer(customerId, request);
         return ApiResponse.<CustomerResponse>builder()

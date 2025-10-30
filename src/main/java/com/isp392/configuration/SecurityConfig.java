@@ -29,8 +29,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class SecurityConfig {
 
     private final String[] POST_PUBLIC_ENDPOINTS = {
-            "/auth/token",
-            "/auth/introspect",
+            "/auth/**",
             "/customer",
             "/payment/**",
     };
@@ -46,9 +45,7 @@ public class SecurityConfig {
             "/customer?page=0&size=1000",
             "/statistics/**",
             "/payment/**",
-            "/auth/verify-email",
-            "/auth/reset-password",
-            "/auth/forgot-password"
+            "/auth/**",
     };
 
     private final String[] SWAGGER_ENDPOINTS = {

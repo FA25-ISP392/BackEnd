@@ -22,7 +22,7 @@ public class DishToppingController {
     DishToppingService dishToppingService;
 
     @PostMapping
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<List<DishToppingResponse>> createDishToppings(@RequestBody @Valid DishToppingBatchCreationRequest request) {
         return ApiResponse.<List<DishToppingResponse>>builder()
                 .result(dishToppingService.createDishToppings(request))
@@ -44,7 +44,7 @@ public class DishToppingController {
     }
 
     @DeleteMapping("/{dishId}/{toppingId}")
-    @PreAuthorize("hasRole('MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<String> delete(@PathVariable int dishId, @PathVariable int toppingId) {
         dishToppingService.delete(dishId, toppingId);
         return ApiResponse.<String>builder()

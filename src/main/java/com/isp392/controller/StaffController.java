@@ -55,7 +55,7 @@ public class StaffController {
     }
 
     @PutMapping("/{staffId}")
-    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF', 'MANAGER', 'ADMIN', 'CHEF')")
     public ApiResponse<StaffResponse> updateStaff(@PathVariable Integer staffId, @Valid @RequestBody StaffUpdateRequest request) {
         StaffResponse updatedStaff = staffService.updateStaff(staffId, request);
         return ApiResponse.<StaffResponse>builder()
