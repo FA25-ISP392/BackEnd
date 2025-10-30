@@ -19,6 +19,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -42,7 +43,7 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','STAFF')")
     public ApiResponse<Page<BookingResponse>> findAllBookings(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         Page<BookingResponse> list = bookingService.findAllBookings(PageRequest.of(page, size, Sort.by("createdAt").descending()));
         ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
@@ -56,6 +57,30 @@ public class BookingController {
         Page<BookingResponse> list = bookingService.findBookingStatus(status, PageRequest.of(page, size, Sort.by("createdAt").descending()));
         ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
         response.setResult(list);
+        return response;
+    }
+
+    @GetMapping("/by_tableDate")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
+    public ApiResponse<List<BookingResponse>> getBookingsByDate(@RequestParam("tableId") int tableId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
+        if (date == null) {
+            response.setMessage("Date parameter is missing or invalid.");
+            response.setResult(List.of());
+            return response;
+        }
+        response.setResult(bookingService.getBookingsByDateAndTable(tableId, date));
+        if (response.getResult().isEmpty()) {
+            response.setMessage("No bookings found for the specified table and date.");
+        }
+        return response;
+    }
+
+    @GetMapping("customer/{id}")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
+    public ApiResponse<Page<BookingResponse>> getBookingsByCustomer(@PathVariable int id, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
+        ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
+        response.setResult(bookingService.findBookingsByCusId(id, PageRequest.of(page, size, Sort.by("createdAt").descending())));
         return response;
     }
 
@@ -93,36 +118,13 @@ public class BookingController {
         return response;
     }
 
-    @GetMapping("/by_tableDate")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
-    public ApiResponse<List<BookingResponse>> getBookingsByDate(@RequestParam("tableId") int tableId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
-        if(date == null){
-            response.setMessage("Date parameter is missing or invalid.");
-            response.setResult(List.of());
-            return response;
-        }
-        response.setResult(bookingService.getBookingsByDateAndTable(tableId, date));
-        if(response.getResult().isEmpty()){
-            response.setMessage("No bookings found for the specified table and date.");
-        }
-        return response;
-    }
-    @GetMapping("customer/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
-    public ApiResponse<Page<BookingResponse>> getBookingsByCustomer(@PathVariable int id, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
-        ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
-        response.setResult(bookingService.findBookingsByCusId(id, PageRequest.of(page, size, Sort.by("createdAt").descending())));
-        return  response;
-    }
-
     @PutMapping("{id}/cancel")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
     public ApiResponse<BookingResponse> cancelBooking(
             @PathVariable int id,
             @AuthenticationPrincipal Jwt jwt
     ) {
-        BookingResponse booking= bookingService.cancelBooking(id);
+        BookingResponse booking = bookingService.cancelBooking(id);
         ApiResponse<BookingResponse> response = new ApiResponse<>();
         response.setResult(booking);
         return response;

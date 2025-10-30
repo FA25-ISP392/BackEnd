@@ -24,7 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/payment")
 @RequiredArgsConstructor
-@SecurityRequirement(name="bearerAuth")
+@SecurityRequirement(name = "bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentController {
     @Autowired
@@ -33,7 +33,7 @@ public class PaymentController {
     PaymentRepository paymentRepository;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
     public ApiResponse<PaymentResponse> createPayment(@RequestBody PaymentCreationRequest request) {
         return ApiResponse.<PaymentResponse>builder()
                 .result(paymentService.createPayment(request))
@@ -51,7 +51,7 @@ public class PaymentController {
 
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
     public ApiResponse<PaymentResponse> getPaymentById(@PathVariable int id) {
         return ApiResponse.<PaymentResponse>builder()
                 .result(paymentService.getPaymentById(id))
@@ -59,7 +59,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{customerId}")
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
     public ApiResponse<Page<PaymentResponse>> getPaymentByCusId(@PathVariable int customerId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         return ApiResponse.<Page<PaymentResponse>>builder()
                 .result(paymentService.getPaymentByCusId(customerId, PageRequest.of(page, size, Sort.by("paidAt").descending())))
