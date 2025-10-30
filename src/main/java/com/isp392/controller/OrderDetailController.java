@@ -26,7 +26,7 @@ public class OrderDetailController {
 
 
     @PostMapping
-    @PreAuthorize("hasRole('MANAGER','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('MANAGER','CUSTOMER')")
     public ApiResponse<OrderDetailResponse> create(@RequestBody @Valid OrderDetailCreationRequest request) {
         OrderDetailResponse result = orderDetailService.createOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()
