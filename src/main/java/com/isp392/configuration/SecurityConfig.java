@@ -31,21 +31,16 @@ public class SecurityConfig {
     private final String[] POST_PUBLIC_ENDPOINTS = {
             "/auth/**",
             "/customer",
-            "/payment/**",
+            "/payment/payos-webhook", 
     };
 
     private final String[] GET_PUBLIC_ENDPOINTS = {
-            "/booking/**",
-            "/dish/**",
-            "/dish-topping/**",
-            "/order-details/**",
-            "/orders/**",
-            "/topping/**",
-            "/staff/**",
-            "/customer?page=0&size=1000",
-            "/statistics/**",
-            "/payment/**",
-            "/auth/**",
+            "/auth/**", // Cho verify-email
+            "/dish/**", // Cho khách xem menu
+            "/topping/**", // Cho khách xem menu
+            "/dish-topping/**", // Cho khách xem menu
+            "/payment/cancel", // Cho PayOS redirect
+            "/tables", // Cho Staff xem bàn (nếu cần)
     };
 
     private final String[] SWAGGER_ENDPOINTS = {
