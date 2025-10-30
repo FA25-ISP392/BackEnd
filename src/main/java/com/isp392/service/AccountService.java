@@ -7,6 +7,7 @@ import com.isp392.dto.request.StaffUpdateRequest;
 import com.isp392.entity.Account;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
+import com.isp392.exception.MultipleFieldsException;
 import com.isp392.mapper.AccountMapper;
 import com.isp392.repository.AccountRepository;
 import lombok.AccessLevel;
@@ -16,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -79,30 +82,29 @@ public class AccountService {
 
     //Helpter method
     private void checkAccountUniqueness(String username, String email, String phone) {
-        boolean usernameExists = accountRepository.existsByUsername(username);
-        boolean emailExists = false;
-        boolean phoneExists = false;
-
+        // 1. Chuẩn bị một map để chứa các lỗi
+        Map<String, ErrorCode> errors = new HashMap<>();
+        // 2. Kiểm tra Username
+        if (username != null && !username.isEmpty()) {
+            if (accountRepository.existsByUsername(username)) {
+                errors.put("username", ErrorCode.USER_EXISTED);
+            }
+        }
+        // 3. Kiểm tra Email
         if (email != null && !email.isEmpty()) {
-            emailExists = accountRepository.findByEmail(email).isPresent();
+            if (accountRepository.findByEmail(email).isPresent()) {
+                errors.put("email", ErrorCode.EMAIL_EXISTED);
+            }
         }
-
+        // 4. Kiểm tra Phone
         if (phone != null && !phone.isEmpty()) {
-            phoneExists = accountRepository.existsByPhone(phone);
+            if (accountRepository.existsByPhone(phone)) {
+                errors.put("phone", ErrorCode.PHONE_EXISTED);
+            }
         }
-
-        // 2. Ném lỗi theo thứ tự ưu tiên
-        if (emailExists && phoneExists) {
-            throw new AppException(ErrorCode.EMAIL_AND_PHONE_EXISTED);
-        }
-        if (emailExists) {
-            throw new AppException(ErrorCode.EMAIL_EXISTED);
-        }
-        if (phoneExists) {
-            throw new AppException(ErrorCode.PHONE_EXISTED);
-        }
-        if (usernameExists) {
-            throw new AppException(ErrorCode.USER_EXISTED);
+        // 5. Nếu có bất kỳ lỗi nào trong map, ném Exception mới
+        if (!errors.isEmpty()) {
+            throw new MultipleFieldsException(errors, ErrorCode.INVALID_ARGUMENT);
         }
     }
 }

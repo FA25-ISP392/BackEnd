@@ -11,6 +11,7 @@ import java.nio.file.AccessDeniedException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ControllerAdvice
 @Slf4j
@@ -70,16 +71,31 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
-    @ExceptionHandler(value = AccessDeniedException.class)
-    ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException exception) {
-        // Giả sử bạn đã thêm ACCESS_DENIED vào ErrorCode.java
-        // Log lỗi này
-        log.warn("Access Denied: {}", exception.getMessage());
+    @ExceptionHandler(value = MultipleFieldsException.class)
+    ResponseEntity<ApiResponse> handlingMultipleFieldsException(MultipleFieldsException exception) {
+        log.warn("Multiple business validation errors: {}", exception.getErrors());
 
+        // Lấy Map<String, ErrorCode> từ exception
+        Map<String, ErrorCode> fieldErrors = exception.getErrors();
+
+        // Chuyển đổi Map thành List<Map<String, Object>>
+        // Đây là cấu trúc mà frontend (parseBackendError) đang mong đợi
+        List<Map<String, Object>> errorsList = fieldErrors.entrySet().stream()
+                .map(entry -> {
+                    Map<String, Object> error = new HashMap<>();
+                    error.put("field", entry.getKey());
+                    error.put("code", entry.getValue().getCode());
+                    error.put("message", entry.getValue().getMessage());
+                    return error;
+                })
+                .collect(Collectors.toList());
+
+        // Gói vào ApiResponse
         ApiResponse apiResponse = new ApiResponse();
-        apiResponse.setMessage(exception.getMessage());
+        apiResponse.setCode(exception.getGeneralErrorCode().getCode());
+        apiResponse.setMessage("Validation failed");
+        apiResponse.setResult(errorsList);
 
-        // Lỗi Access Denied phải trả về HTTP 403 (Forbidden)
         return ResponseEntity.badRequest().body(apiResponse);
     }
 }
