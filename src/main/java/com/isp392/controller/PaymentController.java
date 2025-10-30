@@ -58,7 +58,7 @@ public class PaymentController {
                 .build();
     }
 
-    @GetMapping("/customer/{id}")
+    @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
     public ApiResponse<Page<PaymentResponse>> getPaymentByCusId(@PathVariable int customerId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         return ApiResponse.<Page<PaymentResponse>>builder()
