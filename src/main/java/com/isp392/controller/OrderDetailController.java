@@ -26,7 +26,7 @@ public class OrderDetailController {
 
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasRole('MANAGER','CUSTOMER')")
     public ApiResponse<OrderDetailResponse> create(@RequestBody @Valid OrderDetailCreationRequest request) {
         OrderDetailResponse result = orderDetailService.createOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()
@@ -51,7 +51,7 @@ public class OrderDetailController {
     }
 
     @PutMapping("/{orderDetailId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER','CHEF')")
     public ApiResponse<OrderDetailResponse> update(@RequestBody @Valid OrderDetailUpdateRequest request) {
         OrderDetailResponse result = orderDetailService.updateOrderDetail(request);
         return ApiResponse.<OrderDetailResponse>builder()
@@ -60,7 +60,7 @@ public class OrderDetailController {
     }
 
     @DeleteMapping("/{orderDetailId}")
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'STAFF','MANAGER','CHEF')")
     public ApiResponse<String> delete(@PathVariable Integer orderDetailId) {
         orderDetailService.deleteOrderDetail(orderDetailId);
         return ApiResponse.<String>builder()
