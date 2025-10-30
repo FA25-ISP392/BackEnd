@@ -41,7 +41,7 @@ public class PaymentController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'STAFF')")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'STAFF', 'CUSTOMER')")
     public ApiResponse<Page<PaymentResponse>> getAllPayments(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("paidAt").descending());
         return ApiResponse.<Page<PaymentResponse>>builder()
@@ -58,7 +58,7 @@ public class PaymentController {
                 .build();
     }
 
-    @GetMapping("/{customerId}")
+    @GetMapping("/customer/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'CUSTOMER')")
     public ApiResponse<Page<PaymentResponse>> getPaymentByCusId(@PathVariable int customerId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         return ApiResponse.<Page<PaymentResponse>>builder()
