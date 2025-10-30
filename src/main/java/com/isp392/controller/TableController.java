@@ -8,6 +8,7 @@ import com.isp392.service.TableService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,7 +22,7 @@ public class TableController {
     TableService tableService;
 
     @PostMapping("/create")
-    // @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<TableResponse> createTable(@RequestBody TableCreationRequest request) {
         TableResponse response = tableService.createTable(request);
         return ApiResponse.<TableResponse>builder()

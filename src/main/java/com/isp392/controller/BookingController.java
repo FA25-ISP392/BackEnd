@@ -12,7 +12,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -43,7 +42,7 @@ public class BookingController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<Page<BookingResponse>> findAllBookings(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         Page<BookingResponse> list = bookingService.findAllBookings(PageRequest.of(page, size, Sort.by("createdAt").descending()));
         ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
@@ -52,7 +51,7 @@ public class BookingController {
     }
 
     @GetMapping("/status/{status}")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<Page<BookingResponse>> findBookingStatus(@PathVariable BookingStatus status, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         Page<BookingResponse> list = bookingService.findBookingStatus(status, PageRequest.of(page, size, Sort.by("createdAt").descending()));
         ApiResponse<Page<BookingResponse>> response = new ApiResponse<>();
@@ -61,7 +60,7 @@ public class BookingController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER','ADMIN','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public ApiResponse<BookingResponse> updateBooking(
             @PathVariable int id,
             @RequestBody BookingUpdateRequest request,

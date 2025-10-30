@@ -26,7 +26,7 @@ public class DailyPlanController {
     DailyPlanService dailyPlanService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CHEF', 'MANAGER')")
     public ApiResponse<DailyPlanResponse> createDailyPlan(@RequestBody @Valid DailyPlanCreationRequest request, Authentication authentication) {
         return ApiResponse.<DailyPlanResponse>builder()
                 .result(dailyPlanService.createDailyPlan(request, authentication))
@@ -34,7 +34,7 @@ public class DailyPlanController {
     }
 
     @PostMapping("/batch")
-    @PreAuthorize("hasAnyRole('CHEF', 'MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CHEF', 'MANAGER')")
     public ApiResponse<List<DailyPlanResponse>> createDailyPlansBatch(@RequestBody @Valid List<DailyPlanCreationRequest> requests, Authentication authentication) {
         return ApiResponse.<List<DailyPlanResponse>>builder()
                 .result(dailyPlanService.createDailyPlansBatch(requests, authentication))

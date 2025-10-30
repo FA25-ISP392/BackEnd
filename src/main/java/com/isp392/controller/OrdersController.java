@@ -23,7 +23,7 @@ public class OrdersController {
     OrdersService ordersService;
 
     @PostMapping
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CUSTOMER')")
     public ApiResponse<OrdersResponse> createOrder(@RequestBody @Valid OrdersCreationRequest request) {
         OrdersResponse result = ordersService.createOrder(request);
         return ApiResponse.<OrdersResponse>builder()

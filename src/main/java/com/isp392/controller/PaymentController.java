@@ -7,6 +7,7 @@ import com.isp392.entity.Payment;
 import com.isp392.enums.PaymentStatus;
 import com.isp392.repository.PaymentRepository;
 import com.isp392.service.PaymentService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/payment")
 @RequiredArgsConstructor
+@SecurityRequirement(name="bearerAuth")
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentController {
     @Autowired
@@ -30,6 +33,7 @@ public class PaymentController {
     PaymentRepository paymentRepository;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER', 'CUSTOMER')")
     public ApiResponse<PaymentResponse> createPayment(@RequestBody PaymentCreationRequest request) {
         return ApiResponse.<PaymentResponse>builder()
                 .result(paymentService.createPayment(request))
@@ -37,6 +41,7 @@ public class PaymentController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'STAFF')")
     public ApiResponse<Page<PaymentResponse>> getAllPayments(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("paidAt").descending());
         return ApiResponse.<Page<PaymentResponse>>builder()
@@ -46,6 +51,7 @@ public class PaymentController {
 
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'STAFF')")
     public ApiResponse<PaymentResponse> getPaymentById(@PathVariable int id) {
         return ApiResponse.<PaymentResponse>builder()
                 .result(paymentService.getPaymentById(id))
@@ -53,6 +59,7 @@ public class PaymentController {
     }
 
     @GetMapping("/{customerId}")
+    @PreAuthorize("hasAnyRole('ADMIN','MANAGER', 'CUSTOMER')")
     public ApiResponse<Page<PaymentResponse>> getPaymentByCusId(@PathVariable int customerId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "6") int size) {
         return ApiResponse.<Page<PaymentResponse>>builder()
                 .result(paymentService.getPaymentByCusId(customerId, PageRequest.of(page, size, Sort.by("paidAt").descending())))
@@ -68,6 +75,7 @@ public class PaymentController {
                 .message("Payment Cancelled")
                 .build();
     }
+
     @GetMapping("/cancel")
     public ApiResponse<String> cancelPayment(
             @RequestParam String id,
