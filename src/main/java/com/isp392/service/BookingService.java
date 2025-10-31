@@ -34,26 +34,7 @@ public class BookingService {
     TableRepository tableRepository;
     BookingMapper bookingMapper;
 
-    //    @Transactional
-//    public BookingResponse createBooking(BookingCreationRequest request, String username) {
-//        Customer customer = customerRepository.findByUsername(username)
-//                .orElseThrow(() -> new RuntimeException("Customer not found"));
-//
-//        TableEntity table = tableRepository.findById(request.getTableId())
-//                .orElseThrow(() -> new RuntimeException("Table not found"));
-//        LocalDateTime startTime = request.getBookingDate().minusHours(2);
-//        LocalDateTime endTime = request.getBookingDate().plusHours(2);
-//        List<Booking> existing = bookingRepository.findByTableAndBookingDateBetween(table, startTime, endTime);
-//        if (!existing.isEmpty()) {
-//            throw new RuntimeException("Table already booked at this time!");
-//        }
-//        table.setIsAvailable(false);
-//        tableRepository.save(table);
-//        Booking booking = bookingMapper.toEntity(request);
-//        booking.setCustomer(customer);
-//
-//        return bookingMapper.toResponse(bookingRepository.save(booking));
-//    }
+
     @Transactional
     public BookingResponse createBooking(BookingCreationRequest request, String username) {
         Customer customer = customerRepository.findByUsername(username)
