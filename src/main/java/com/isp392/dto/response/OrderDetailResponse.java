@@ -2,6 +2,8 @@ package com.isp392.dto.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -16,6 +18,7 @@ public class OrderDetailResponse {
     Double totalPrice;
     String status;
     String note;
+    LocalDateTime orderDate;
 
     // Danh sách topping đi kèm món
     List<OrderToppingResponse> toppings;

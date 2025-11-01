@@ -20,11 +20,13 @@ public interface OrderDetailMapper {
     @Mapping(source = "dish.dishName", target = "dishName")
     @Mapping(source = "status", target = "status")
     @Mapping(source = "orderToppings", target = "toppings")
+    @Mapping(source = "order.orderDate", target = "orderDate")
     OrderDetailResponse toOrderDetailResponse(OrderDetail orderDetail);
 
     @Mapping(source = "orderDetail.dish.dishId", target = "dishId")
     @Mapping(source = "orderDetail.dish.dishName", target = "dishName")
     @Mapping(source = "orderDetail.status", target = "status")
+    @Mapping(source = "orderDetail.order.orderDate", target = "orderDate")
     OrderDetailResponse toResponse(OrderDetail orderDetail, List<OrderToppingResponse> toppings);
 
 

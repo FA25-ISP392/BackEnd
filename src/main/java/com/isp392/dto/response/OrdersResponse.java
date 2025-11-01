@@ -17,6 +17,5 @@ public class OrdersResponse {
     LocalDateTime orderDate;
     double totalPrice;
     boolean paid;
-
     List<OrderDetailResponse> orderDetails;
 }

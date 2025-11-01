@@ -93,7 +93,7 @@ public class OrderDetailService {
 
     @Transactional(readOnly = true)
     public List<OrderDetailResponse> getOrderDetailsByStatus(OrderDetailStatus status) {
-        List<OrderDetail> details = orderDetailRepository.findByStatus(status);
+        List<OrderDetail> details = orderDetailRepository.findByStatusWithOrder(status);
         return details.stream()
                 .map(orderDetailMapper::toOrderDetailResponse)
                 .toList();
