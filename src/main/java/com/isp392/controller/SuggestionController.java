@@ -1,6 +1,6 @@
 package com.isp392.controller;
 
-import com.isp392.dto.request.SuggestionRequest;
+import com.isp392.dto.request.SuggestionCreationRequest;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.dto.response.MenuSuggestion;
 import com.isp392.service.SuggestionService;
@@ -29,7 +29,7 @@ public class SuggestionController {
 
     @PostMapping("/menu")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ApiResponse<List<MenuSuggestion>> getMenuSuggestions(@RequestBody @Valid SuggestionRequest request, @AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<List<MenuSuggestion>> getMenuSuggestions(@RequestBody @Valid SuggestionCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
 
         String username = jwt.getClaimAsString("sub");
         List<MenuSuggestion> suggestions = suggestionService.getSuggestionsForCustomer(username, request);

@@ -1,6 +1,6 @@
 package com.isp392.service;
 
-import com.isp392.dto.request.SuggestionRequest;
+import com.isp392.dto.request.SuggestionCreationRequest;
 import com.isp392.dto.response.MenuSuggestion;
 import com.isp392.entity.Customer;
 import com.isp392.entity.Dish;
@@ -34,7 +34,7 @@ public class SuggestionService {
     // Số lượng thực đơn tối đa trả về
     private static final int MAX_SUGGESTIONS = 3;
 
-    public List<MenuSuggestion> getSuggestionsForCustomer(String username, SuggestionRequest request) {
+    public List<MenuSuggestion> getSuggestionsForCustomer(String username, SuggestionCreationRequest request) {
         // 1. Lấy thông tin Customer
         Customer customer = customerRepository.findByUsernameForSuggestion(username)
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
@@ -43,14 +43,12 @@ public class SuggestionService {
         Double height = customer.getHeight();
         Double weight = customer.getWeight();
         Boolean sex = customer.getSex(); // Giả sử: true = Nam, false = Nữ
-        LocalDate dob = customer.getAccount().getDob();
-
-        if (height == null || weight == null || sex == null || dob == null) {
+        //LocalDate dob = customer.getAccount().getDob();
+        Integer age = request.getAge();
+        if (height == null || weight == null || sex == null || age == null) {
             // Yêu cầu người dùng cập nhật thông tin
             throw new AppException(ErrorCode.INCOMPLETE_PROFILE);
         }
-
-        int age = Period.between(dob, LocalDate.now()).getYears();
 
         // 3. Tính BMR (Mifflin-St Jeor)
         double bmr;
@@ -62,9 +60,16 @@ public class SuggestionService {
 
         // 4. Tính TDEE
         double tdee = bmr * request.getActivityLevel().getMultiplier();
+        switch (request.getGoal()) {
+            case BUILD_MUSCLE -> tdee += 500;
+            case FAT_LOSS -> tdee -= 500;
+            case STAY_FIT -> {
+                // Không điều chỉnh
+            }
+        }
 
         // 5. Tính Calo mục tiêu mỗi bữa
-        double targetCaloriesPerMeal = tdee / request.getNumberOfMeals();
+        double targetCaloriesPerMeal = tdee / customer.getPortion();
         double minCal = targetCaloriesPerMeal * (1 - CALORIE_TOLERANCE_PERCENT);
         double maxCal = targetCaloriesPerMeal * (1 + CALORIE_TOLERANCE_PERCENT);
 
