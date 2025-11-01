@@ -34,51 +34,169 @@ public class OrderDetailService {
     ToppingRepository toppingRepository;
     DishRepository dishRepository;
     OrderDetailMapper orderDetailMapper;
-    DailyPlanRepository dailyPlanRepository;
+    DailyPlanService dailyPlanService;
     OrderToppingRepository orderToppingRepository;
-
-    // ⭐ THÊM DÒNG NÀY ĐỂ SỬA LỖI StaleObjectStateException
     EntityManager entityManager;
     TableRepository tableRepository;
 
+    // ===================================================================
+    // CÁC HÀM PUBLIC (CHỈ ĐIỀU PHỐI)
+    // ===================================================================
+
     @Transactional
     public OrderDetailResponse createOrderDetail(OrderDetailCreationRequest request) {
-        Orders order = getOrderById(request.getOrderId());
-        Dish dish = getDishById(request.getDishId());
+        // VIỆC 1: Lấy các entity gốc và kiểm tra
+        Orders order = findOrderById(request.getOrderId());
+        Dish dish = findDishById(request.getDishId());
+        validateAndSetTableServing(order); // Kiểm tra và set bàn "đang phục vụ"
 
-        TableEntity table = order.getTable();
-        if (table == null || !table.isAvailable()) {
-            throw new RuntimeException("Table is not available for ordering.");
-        }
-        table.setServing(true);
-        tableRepository.save(table);
-        // 1️⃣ Trừ số lượng món trong daily plan
-        decrementDishDailyPlan(dish, 1);
+        // VIỆC 2: Cập nhật kho (trừ 1 món)
+        updateDishInventory(dish.getDishId(), -1);
 
-        // 2️⃣ Tạo order detail
+        // VIỆC 3: Tạo OrderDetail
         OrderDetail orderDetail = buildOrderDetail(order, dish, request.getNote());
 
-        // 3️⃣ Xử lý topping (Đã cập nhật hàm này để chống trùng lặp)
-        List<OrderTopping> orderToppings = processToppingsForCreate(orderDetail, request.getToppings());
-        orderDetail.setOrderToppings(orderToppings);
+        // VIỆC 4: Xử lý Topping (gộp, trừ kho, build)
+        if (request.getToppings() != null && !request.getToppings().isEmpty()) {
+            Map<Integer, Integer> mergedToppings = mergeCreateToppings(request.getToppings());
+            List<OrderTopping> orderToppings = buildNewOrderToppings(orderDetail, mergedToppings);
+            orderDetail.setOrderToppings(orderToppings);
+        }
 
-        // 4️⃣ Tính tổng tiền
-        recalculateTotalPrice(orderDetail); // Dùng hàm helper cho nhất quán
+        // VIỆC 5: Tính tổng tiền
+        recalculateTotalPrice(orderDetail);
 
-        // 5️⃣ Lưu order detail và topping
-        orderDetailRepository.save(orderDetail);
-
-
-        List<OrderToppingResponse> toppingResponses = orderDetailMapper.toToppingResponseList(orderToppings);
-        return orderDetailMapper.toResponse(orderDetail, toppingResponses);
+        // VIỆC 6: Lưu và Map
+        OrderDetail savedDetail = orderDetailRepository.save(orderDetail);
+        return mapToResponse(savedDetail);
     }
 
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(int orderDetailId) {
-        OrderDetail orderDetail = orderDetailRepository
-                .findByIdWithToppings(orderDetailId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
+        // VIỆC 1: Lấy entity
+        OrderDetail orderDetail = findOrderDetailWithToppings(orderDetailId);
+        // VIỆC 2: Map sang response
+        return mapToResponse(orderDetail);
+    }
 
+    @Transactional(readOnly = true)
+    public List<OrderDetailResponse> getOrderDetailsByStatus(OrderDetailStatus status) {
+        // VIỆC 1: Lấy list entity
+        List<OrderDetail> details = orderDetailRepository.findByStatusWithOrder(status);
+        // VIỆC 2: Map list
+        return details.stream()
+                .map(orderDetailMapper::toOrderDetailResponse) // Dùng mapper đơn giản vì không cần topping
+                .toList();
+    }
+
+    @Transactional
+    public OrderDetailResponse updateOrderDetail(OrderDetailUpdateRequest request) {
+        // VIỆC 1: Lấy entity
+        OrderDetail detail = findOrderDetailWithToppings(request.getOrderDetailId());
+
+        // VIỆC 2: Map các trường đơn giản (note, status)
+        orderDetailMapper.updateOrderDetail(detail, request);
+
+        // VIỆC 3: Xử lý cập nhật topping (Nếu có)
+        if (request.getToppings() != null) {
+            processToppingUpdate(detail, request.getToppings());
+        }
+
+        // VIỆC 4: Tính lại tổng tiền
+        recalculateTotalPrice(detail);
+
+        // VIỆC 5: Map và trả về
+        return mapToResponse(detail);
+    }
+
+    @Transactional
+    public void deleteOrderDetail(Integer orderDetailId) {
+        // VIỆC 1: Lấy entity
+        OrderDetail orderDetail = findOrderDetailWithToppings(orderDetailId);
+
+        // VIỆC 2: Kiểm tra nghiệp vụ
+        validateDeletableStatus(orderDetail);
+
+        // VIỆC 3: Hoàn kho (Món ăn và Topping)
+        revertAllInventory(orderDetail);
+
+        // VIỆC 4: Xóa
+        orderDetailRepository.delete(orderDetail);
+    }
+
+    // ===================================================================
+    // HELPER: LẤY DỮ LIỆU (FINDERS)
+    // ===================================================================
+
+    private Orders findOrderById(Integer orderId) {
+        return ordersRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    private Dish findDishById(Integer dishId) {
+        return dishRepository.findById(dishId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
+    }
+
+    private Topping findToppingById(Integer toppingId) {
+        return toppingRepository.findById(toppingId)
+                .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND));
+    }
+
+    private OrderDetail findOrderDetailWithToppings(Integer orderDetailId) {
+        return orderDetailRepository.findByIdWithToppings(orderDetailId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
+    }
+
+    // ===================================================================
+    // HELPER: KIỂM TRA (VALIDATORS)
+    // ===================================================================
+
+    private void validateAndSetTableServing(Orders order) {
+        TableEntity table = order.getTable();
+        if (table == null || !table.isAvailable()) {
+            throw new RuntimeException("Table is not available for ordering.");
+        }
+        if (!table.isServing()) {
+            table.setServing(true);
+            tableRepository.save(table);
+        }
+    }
+
+    private void validateDeletableStatus(OrderDetail orderDetail) {
+        if (orderDetail.getStatus() != OrderDetailStatus.PENDING) {
+            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_CANCELLED);
+        }
+    }
+
+    // ===================================================================
+    // HELPER: XÂY DỰNG (BUILDERS & MAPPERS)
+    // ===================================================================
+
+    private OrderDetail buildOrderDetail(Orders order, Dish dish, String note) {
+        return OrderDetail.builder()
+                .order(order)
+                .dish(dish)
+                .status(OrderDetailStatus.PENDING)
+                .note(note)
+                .orderToppings(new ArrayList<>()) // Khởi tạo list rỗng
+                .build();
+    }
+
+    private OrderTopping buildOrderTopping(OrderDetail orderDetail, Topping topping, int quantity, double toppingPrice) {
+        return OrderTopping.builder()
+                .id(new OrderToppingId())
+                .orderDetail(orderDetail)
+                .topping(topping)
+                .quantity(quantity)
+                .toppingPrice(toppingPrice)
+                .build();
+    }
+
+    /**
+     * Helper map OrderDetail sang Response (kèm Topping)
+     */
+    private OrderDetailResponse mapToResponse(OrderDetail orderDetail) {
         List<OrderToppingResponse> toppings = orderDetail.getOrderToppings().stream()
                 .map(ot -> OrderToppingResponse.builder()
                         .toppingId(ot.getTopping().getToppingId())
@@ -91,245 +209,142 @@ public class OrderDetailService {
         return orderDetailMapper.toResponse(orderDetail, toppings);
     }
 
-    @Transactional(readOnly = true)
-    public List<OrderDetailResponse> getOrderDetailsByStatus(OrderDetailStatus status) {
-        List<OrderDetail> details = orderDetailRepository.findByStatusWithOrder(status);
-        return details.stream()
-                .map(orderDetailMapper::toOrderDetailResponse)
-                .toList();
-    }
-
-    @Transactional
-    public OrderDetailResponse updateOrderDetail(OrderDetailUpdateRequest request) {
-        // 1. Lấy entity VÀ topping CŨ
-        OrderDetail detail = orderDetailRepository
-                .findByIdWithToppings(request.getOrderDetailId())
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
-
-//        // 2. KIỂM TRA STATUS PENDING
-//        if (detail.getStatus() != OrderDetailStatus.PENDING) {
-//            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_UPDATED);
-//        }
-
-        // 3. Map các trường đơn giản (note...)
-        orderDetailMapper.updateOrderDetail(detail, request);
-
-        // 4. Xử lý topping và cập nhật kho (nếu có)
-        if (request.getToppings() != null) {
-            updateToppingsAndInventory(detail, request.getToppings());
-        }
-
-        // 5. Tính lại tổng tiền
-        recalculateTotalPrice(detail);
-
-        // 6. Trả về response
-        return orderDetailMapper.toOrderDetailResponse(detail);
-    }
-
-    @Transactional
-    public void deleteOrderDetail(Integer orderDetailId) {
-        // 1. Lấy OrderDetail cùng với các topping
-        OrderDetail orderDetail = orderDetailRepository
-                .findByIdWithToppings(orderDetailId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
-
-        // 2. Kiểm tra trạng thái
-        if (orderDetail.getStatus() != OrderDetailStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_DETAIL_CANNOT_BE_CANCELLED);
-        }
-
-        // 3. Hoàn lại số lượng cho Món ăn (Dish)
-        incrementDishDailyPlan(orderDetail.getDish(), 1);
-
-        // 4. Hoàn lại số lượng cho từng Topping
-        for (OrderTopping ot : orderDetail.getOrderToppings()) {
-            incrementToppingDailyPlan(ot.getTopping(), ot.getQuantity());
-        }
-
-        // 5. Xoá OrderDetail
-        orderDetailRepository.delete(orderDetail);
-    }
-
-
-// ================== Helper methods ==================
-
-    // ====== Helpers: Get Entity ======
-    private Orders getOrderById(Integer orderId) {
-        return ordersRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-    }
-
-    private Dish getDishById(Integer dishId) {
-        return dishRepository.findById(dishId)
-                .orElseThrow(() -> new AppException(ErrorCode.DISH_NOT_FOUND));
-    }
-
-    private Topping getToppingById(Integer toppingId) {
-        return toppingRepository.findById(toppingId)
-                .orElseThrow(() -> new AppException(ErrorCode.TOPPING_NOT_FOUND));
-    }
-
-    // ====== Helpers: Build Entity ======
-    private OrderDetail buildOrderDetail(Orders order, Dish dish, String note) {
-        return OrderDetail.builder()
-                .order(order)
-                .dish(dish)
-                .status(OrderDetailStatus.PENDING)
-                .note(note)
-                .build();
-    }
-
-    private OrderTopping buildOrderTopping(OrderDetail orderDetail, Topping topping, int quantity, double toppingPrice) {
-        return OrderTopping.builder()
-                .id(new OrderToppingId()) // Fix lỗi NullPointerException
-                .orderDetail(orderDetail) // @MapsId sẽ tự lấy ID từ đây
-                .topping(topping)         // @MapsId sẽ tự lấy ID từ đây
-                .quantity(quantity)
-                .toppingPrice(toppingPrice)
-                .build();
-    }
-
-    // ====== Helpers: Logic nghiệp vụ ======
+    // ===================================================================
+    // HELPER: LOGIC NGHIỆP VỤ (PROCESSORS)
+    // ===================================================================
 
     /**
-     * ⭐ SỬA LỖI (BUG TIỀM ẨN): Gộp các topping trùng lặp khi TẠO MỚI
-     */
-    private List<OrderTopping> processToppingsForCreate(OrderDetail orderDetail, List<OrderDetailCreationRequest.ToppingSelection> toppingRequests) {
-        if (toppingRequests == null || toppingRequests.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        // Gộp các toppingId trùng lặp và cộng dồn số lượng
-        Map<Integer, Integer> mergedToppings = toppingRequests.stream()
-                .collect(Collectors.groupingBy(
-                        OrderDetailCreationRequest.ToppingSelection::getToppingId,
-                        Collectors.summingInt(OrderDetailCreationRequest.ToppingSelection::getQuantity)
-                ));
-
-        // Tạo OrderTopping từ danh sách đã gộp
-        List<OrderTopping> orderToppings = new ArrayList<>();
-        for (Map.Entry<Integer, Integer> entry : mergedToppings.entrySet()) {
-            Integer toppingId = entry.getKey();
-            Integer quantity = entry.getValue();
-
-            Topping topping = getToppingById(toppingId);
-
-            // Trừ số lượng topping
-            decrementToppingDailyPlan(topping, quantity);
-
-            double toppingPrice = topping.getPrice() * quantity;
-            OrderTopping orderTopping = buildOrderTopping(orderDetail, topping, quantity, toppingPrice);
-            orderToppings.add(orderTopping);
-        }
-        return orderToppings;
-    }
-
-
-    /**
-     * Hàm helper chung MỚI để cập nhật số lượng DailyPlan
-     */
-    private void updateDailyPlanQuantity(Integer itemId, ItemType itemType, int quantityChange) {
-        if (quantityChange == 0) {
-            return; // Không làm gì nếu không thay đổi
-        }
-
-        // 1. Tìm plan. Nếu không tìm thấy -> BÁO LỖI (nghiệp vụ nghiêm ngặt)
-        DailyPlan dailyPlan = dailyPlanRepository.findByItemIdAndItemTypeAndPlanDate(itemId, itemType, LocalDate.now())
-                .orElseThrow(() -> new AppException(
-                        itemType == ItemType.DISH ? ErrorCode.DISH_NOT_FOUND : ErrorCode.TOPPING_NOT_FOUND
-                ));
-
-        // 2. Nếu tìm thấy, tiếp tục xử lý như cũ
-        int newRemaining = dailyPlan.getRemainingQuantity() + quantityChange;
-
-        // Nếu là trừ kho (quantityChange < 0) thì phải kiểm tra
-        if (quantityChange < 0 && newRemaining < 0) {
-            throw new AppException(ErrorCode.NOT_ENOUGH_QUANTITY);
-        }
-
-        dailyPlan.setRemainingQuantity(newRemaining);
-        dailyPlanRepository.save(dailyPlan);
-    }
-
-    // 4 hàm cũ gọi tới hàm chung
-    private void decrementDishDailyPlan(Dish dish, int quantity) {
-        updateDailyPlanQuantity(dish.getDishId(), ItemType.DISH, -quantity);
-    }
-    private void decrementToppingDailyPlan(Topping topping, int quantity) {
-        updateDailyPlanQuantity(topping.getToppingId(), ItemType.TOPPING, -quantity);
-    }
-    private void incrementDishDailyPlan(Dish dish, int quantity) {
-        updateDailyPlanQuantity(dish.getDishId(), ItemType.DISH, quantity);
-    }
-    private void incrementToppingDailyPlan(Topping topping, int quantity) {
-        updateDailyPlanQuantity(topping.getToppingId(), ItemType.TOPPING, quantity);
-    }
-
-    /**
-     * ⭐ SỬA LỖI (StaleObjectState): Thêm entityManager.evict()
-     */
-    private void updateToppingsAndInventory(OrderDetail detail, List<OrderDetailUpdateRequest.ToppingSelection> newToppingRequests) {
-
-        // 1. CỘNG LẠI SỐ LƯỢNG (Hoàn trả kho)
-        // ... (giữ nguyên)
-        for (OrderTopping ot : detail.getOrderToppings()) {
-            incrementToppingDailyPlan(ot.getTopping(), ot.getQuantity());
-        }
-
-        // 2. Xóa TỨC THÌ tất cả topping cũ khỏi DB
-        // ... (giữ nguyên)
-        orderToppingRepository.deleteAllInBatch(detail.getOrderToppings());
-
-        // ================== START SỬA LỖI ==================
-
-        // 3. Lấy Hibernate Session gốc từ EntityManager
-        Session session = entityManager.unwrap(Session.class);
-
-        // 4. ⭐ EVICT (ĐUỔI) topping cũ khỏi cache của Hibernate
-        //    Dùng session.evict() thay vì entityManager.evict()
-        for (OrderTopping ot : detail.getOrderToppings()) {
-            session.evict(ot); // <-- Sửa ở đây
-        }
-
-        // 5. Xóa chúng khỏi collection trong bộ nhớ (giờ đã an toàn)
-        detail.getOrderToppings().clear();
-
-        // =================== END SỬA LỖI ===================
-
-        // 6. Gộp topping MỚI
-        // ... (giữ nguyên)
-        Map<Integer, Integer> mergedToppings = newToppingRequests.stream()
-                .collect(Collectors.groupingBy(
-                        OrderDetailUpdateRequest.ToppingSelection::getToppingId,
-                        Collectors.summingInt(OrderDetailUpdateRequest.ToppingSelection::getQuantity)
-                ));
-
-        // 7. TRỪ KHO và tạo topping MỚI
-        // ... (giữ nguyên)
-        List<OrderTopping> newToppings = mergedToppings.entrySet().stream().map(entry -> {
-            // ... (code bên trong giữ nguyên)
-            Integer toppingId = entry.getKey();
-            Integer quantity = entry.getValue();
-
-            Topping topping = getToppingById(toppingId);
-            decrementToppingDailyPlan(topping, quantity);
-            double toppingPrice = topping.getPrice() * quantity;
-
-            return buildOrderTopping(detail, topping, quantity, toppingPrice);
-        }).toList();
-
-        // 8. Thêm topping mới vào collection
-        detail.getOrderToppings().addAll(newToppings);
-    }
-
-    /**
-     * Hàm helper tính tổng tiền
+     * Tính toán lại tổng tiền cho 1 OrderDetail
      */
     private void recalculateTotalPrice(OrderDetail detail) {
         double toppingsPrice = detail.getOrderToppings().stream()
                 .mapToDouble(OrderTopping::getToppingPrice)
                 .sum();
-        detail.setTotalPrice(detail.getDish().getPrice() + toppingsPrice);
+
+        // Đảm bảo dish không null trước khi lấy giá
+        double dishPrice = (detail.getDish() != null && detail.getDish().getPrice() != null)
+                ? detail.getDish().getPrice()
+                : 0.0;
+
+        detail.setTotalPrice(dishPrice + toppingsPrice);
     }
 
+    /**
+     * Gộp danh sách ToppingSelection (dùng cho Create)
+     */
+    private Map<Integer, Integer> mergeCreateToppings(List<OrderDetailCreationRequest.ToppingSelection> toppingRequests) {
+        return toppingRequests.stream()
+                .collect(Collectors.groupingBy(
+                        OrderDetailCreationRequest.ToppingSelection::getToppingId,
+                        Collectors.summingInt(OrderDetailCreationRequest.ToppingSelection::getQuantity)
+                ));
+    }
+
+    /**
+     * Gộp danh sách ToppingSelection (dùng cho Update)
+     */
+    private Map<Integer, Integer> mergeUpdateToppings(List<OrderDetailUpdateRequest.ToppingSelection> toppingRequests) {
+        return toppingRequests.stream()
+                .collect(Collectors.groupingBy(
+                        OrderDetailUpdateRequest.ToppingSelection::getToppingId,
+                        Collectors.summingInt(OrderDetailUpdateRequest.ToppingSelection::getQuantity)
+                ));
+    }
+
+    /**
+     * Lặp qua Map topping đã gộp, trừ kho và build List<OrderTopping>
+     */
+    private List<OrderTopping> buildNewOrderToppings(OrderDetail orderDetail, Map<Integer, Integer> mergedToppings) {
+        List<OrderTopping> newToppings = new ArrayList<>();
+        for (Map.Entry<Integer, Integer> entry : mergedToppings.entrySet()) {
+            Integer toppingId = entry.getKey();
+            Integer quantity = entry.getValue();
+
+            Topping topping = findToppingById(toppingId);
+
+            // Trừ kho topping
+            updateToppingInventory(topping.getToppingId(), -quantity);
+
+            double toppingPrice = topping.getPrice() * quantity;
+            newToppings.add(buildOrderTopping(orderDetail, topping, quantity, toppingPrice));
+        }
+        return newToppings;
+    }
+
+    /**
+     * Điều phối toàn bộ logic cập nhật topping
+     */
+    private void processToppingUpdate(OrderDetail detail, List<OrderDetailUpdateRequest.ToppingSelection> newToppingRequests) {
+        // 1. Hoàn kho topping cũ
+        revertToppingInventory(detail.getOrderToppings());
+
+        // 2. Xóa topping cũ (khỏi DB và cache)
+        clearOldToppings(detail);
+
+        // 3. Gộp topping mới
+        Map<Integer, Integer> mergedNewToppings = mergeUpdateToppings(newToppingRequests);
+
+        // 4. Trừ kho và build topping mới
+        List<OrderTopping> newToppings = buildNewOrderToppings(detail, mergedNewToppings);
+
+        // 5. Thêm topping mới vào collection
+        detail.getOrderToppings().addAll(newToppings);
+    }
+
+    /**
+     * Xóa topping cũ khỏi DB và evict khỏi Hibernate cache
+     */
+    private void clearOldToppings(OrderDetail detail) {
+        // Xóa TỨC THÌ tất cả topping cũ khỏi DB
+        orderToppingRepository.deleteAllInBatch(detail.getOrderToppings());
+
+        // Lấy Hibernate Session gốc từ EntityManager
+        Session session = entityManager.unwrap(Session.class);
+
+        // EVICT (ĐUỔI) topping cũ khỏi cache của Hibernate
+        for (OrderTopping ot : detail.getOrderToppings()) {
+            session.evict(ot);
+        }
+
+        // Xóa chúng khỏi collection trong bộ nhớ
+        detail.getOrderToppings().clear();
+    }
+
+
+    // ===================================================================
+    // HELPER: CẬP NHẬT KHO (INVENTORY)
+    // ===================================================================
+
+    /**
+     * Cập nhật kho (cộng/trừ) cho MÓN ĂN
+     */
+    private void updateDishInventory(int dishId, int quantityChange) {
+        dailyPlanService.updateRemainingQuantity(dishId, ItemType.DISH, LocalDate.now(), quantityChange);
+    }
+
+    /**
+     * Cập nhật kho (cộng/trừ) cho TOPPING
+     */
+    private void updateToppingInventory(int toppingId, int quantityChange) {
+        dailyPlanService.updateRemainingQuantity(toppingId, ItemType.TOPPING, LocalDate.now(), quantityChange);
+    }
+
+    /**
+     * Hoàn lại kho cho tất cả topping trong 1 list
+     */
+    private void revertToppingInventory(List<OrderTopping> toppings) {
+        for (OrderTopping ot : toppings) {
+            updateToppingInventory(ot.getTopping().getToppingId(), ot.getQuantity());
+        }
+    }
+
+    /**
+     * Hoàn lại kho cho 1 món và tất cả topping của nó
+     */
+    private void revertAllInventory(OrderDetail orderDetail) {
+        // Hoàn kho món ăn
+        updateDishInventory(orderDetail.getDish().getDishId(), 1);
+        // Hoàn kho topping
+        revertToppingInventory(orderDetail.getOrderToppings());
+    }
 }
