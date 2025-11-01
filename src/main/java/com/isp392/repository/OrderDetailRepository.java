@@ -17,4 +17,6 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetail, Intege
     Optional<OrderDetail> findByIdWithToppings(@Param("id") Integer id);
 
     List<OrderDetail> findByStatus(OrderDetailStatus status);
+    @Query("SELECT od FROM OrderDetail od JOIN FETCH od.order o WHERE od.status = :status ORDER BY o.orderDate DESC")
+    List<OrderDetail> findByStatusWithOrder(@Param("status") OrderDetailStatus status);
 }
