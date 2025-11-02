@@ -2,7 +2,7 @@ package com.isp392.controller;
 
 import com.isp392.dto.request.SuggestionCreationRequest;
 import com.isp392.dto.response.ApiResponse;
-import com.isp392.dto.response.MenuSuggestion;
+import com.isp392.dto.response.SuggestionResponse;
 import com.isp392.service.SuggestionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
@@ -29,12 +29,12 @@ public class SuggestionController {
 
     @PostMapping("/menu")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ApiResponse<List<MenuSuggestion>> getMenuSuggestions(@RequestBody @Valid SuggestionCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
+    public ApiResponse<List<SuggestionResponse>> getMenuSuggestions(@RequestBody @Valid SuggestionCreationRequest request, @AuthenticationPrincipal Jwt jwt) {
 
         String username = jwt.getClaimAsString("sub");
-        List<MenuSuggestion> suggestions = suggestionService.getSuggestionsForCustomer(username, request);
+        List<SuggestionResponse> suggestions = suggestionService.getSuggestionsForCustomer(username, request);
 
-        return ApiResponse.<List<MenuSuggestion>>builder()
+        return ApiResponse.<List<SuggestionResponse>>builder()
                 .result(suggestions)
                 .build();
     }

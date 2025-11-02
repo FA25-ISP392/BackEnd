@@ -2,7 +2,7 @@ package com.isp392.service;
 
 import com.isp392.dto.request.SuggestionCreationRequest;
 import com.isp392.dto.response.DishResponse;
-import com.isp392.dto.response.MenuSuggestion;
+import com.isp392.dto.response.SuggestionResponse; // 👈 Đổi lại tên DTO cho đúng
 import com.isp392.dto.response.ToppingWithQuantityResponse;
 import com.isp392.entity.Customer;
 import com.isp392.entity.Dish;
@@ -14,6 +14,8 @@ import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.DishMapper;
 import com.isp392.repository.CustomerRepository;
 import com.isp392.repository.DishRepository;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
@@ -21,8 +23,11 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet; // 👈 Thêm
 import java.util.List;
 import java.util.Map;
+import java.util.Random; // 👈 Thêm
+import java.util.Set; // 👈 Thêm
 import java.util.stream.Collectors;
 
 @Service
@@ -37,20 +42,40 @@ public class SuggestionService {
 
     private static final double CALORIE_TOLERANCE_PERCENT = 0.15;
     private static final int MAX_SUGGESTIONS = 3;
+    // ✅ Giới hạn số lần thử ngẫu nhiên để tránh vòng lặp vô tận
+    private static final int MAX_RANDOM_ATTEMPTS = 1000;
+    private static final Random random = new Random();
 
-    // ----- CÁC RECORD HELPER (Túi chứa dữ liệu nội bộ) -----
-    private record CalorieRange(double minCal, double maxCal, double targetPerMeal) {
+    // ----- CÁC CLASS HELPER (Thay thế Record) -----
+    @Data
+    @AllArgsConstructor
+    private static class CalorieRange {
+        double minCal;
+        double maxCal;
+        double targetPerMeal;
     }
 
-    private record DishPool(List<Dish> drinks, List<Dish> salads, List<Dish> mainCourses, List<Dish> desserts) {
+    @Data
+    @AllArgsConstructor
+    private static class DishPool {
+        List<Dish> drinks;
+        List<Dish> salads;
+        List<Dish> mainCourses;
+        List<Dish> desserts;
     }
 
-    // ✅ TÁCH RA: Record để chứa danh sách ID
-    private record ItemIds(List<Integer> dishIds, List<Integer> toppingIds) {
+    @Data
+    @AllArgsConstructor
+    private static class ItemIds {
+        List<Integer> dishIds;
+        List<Integer> toppingIds;
     }
 
-    // ✅ TÁCH RA: Record để chứa Map số lượng
-    private record QuantityMaps(Map<Integer, Integer> dishQuantities, Map<Integer, Integer> toppingQuantities) {
+    @Data
+    @AllArgsConstructor
+    private static class QuantityMaps {
+        Map<Integer, Integer> dishQuantities;
+        Map<Integer, Integer> toppingQuantities;
     }
 
 
@@ -58,7 +83,7 @@ public class SuggestionService {
     // HÀM CHÍNH (ĐIỀU PHỐI)
     // ===================================================================
 
-    public List<MenuSuggestion> getSuggestionsForCustomer(String username, SuggestionCreationRequest request) {
+    public List<SuggestionResponse> getSuggestionsForCustomer(String username, SuggestionCreationRequest request) {
         // VIỆC 1: Lấy Customer
         Customer customer = customerRepository.findByUsernameForSuggestion(username)
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
@@ -66,21 +91,24 @@ public class SuggestionService {
         // VIỆC 2: Tính Calo
         CalorieRange calorieRange = calculateTargetCalories(customer, request);
 
-        // VIỆC 3: Tải "bể" món ăn
-        DishPool dishPool = loadDishPool();
+        // VIỆC 3: Tải "bể" món ăn (KHÔNG shuffle)
+        DishPool dishPool = loadDishPool(); // 👈 Đổi tên hàm
         if (dishPool.drinks.isEmpty() || dishPool.salads.isEmpty() ||
                 dishPool.mainCourses.isEmpty() || dishPool.desserts.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // VIỆC 4: Trích xuất ID từ "bể" món ăn
+        // VIỆC 4: Trích xuất ID
         ItemIds itemIds = extractItemIds(dishPool);
 
-        // VIỆC 5: Lấy số lượng tồn kho cho các ID đó
+        // VIỆC 5: Lấy số lượng tồn kho
         QuantityMaps quantityMaps = loadInventoryQuantities(itemIds);
 
-        // VIỆC 6: Tìm tổ hợp
-        return findMatchingCombinations(dishPool, quantityMaps, calorieRange);
+        // VIỆC 6: ✅ Tìm tổ hợp NGẪU NHIÊN
+        Set<SuggestionResponse> suggestionSet = findRandomCombinations(dishPool, quantityMaps, calorieRange);
+
+        // VIỆC 7: Trả về kết quả (đã được đa dạng hóa)
+        return new ArrayList<>(suggestionSet);
     }
 
     // ===================================================================
@@ -88,7 +116,7 @@ public class SuggestionService {
     // ===================================================================
 
     /**
-     * (VIỆC 2) Tính toán BMR, TDEE và khoảng Calo mục tiêu.
+     * (VIỆC 2) Tính Calo mục tiêu (Giữ nguyên)
      */
     private CalorieRange calculateTargetCalories(Customer customer, SuggestionCreationRequest request) {
         Double height = customer.getHeight();
@@ -121,7 +149,7 @@ public class SuggestionService {
     }
 
     /**
-     * (VIỆC 3) Tải tất cả các món ăn (Dish) từ DB, phân loại và xáo trộn.
+     * (VIỆC 3) ✅ SỬA ĐỔI: Chỉ tải "bể" món ăn, KHÔNG shuffle
      */
     private DishPool loadDishPool() {
         List<Dish> drinks = dishRepository.findAllWithToppings(Category.DRINKS, null);
@@ -131,17 +159,11 @@ public class SuggestionService {
         mainCourses.addAll(dishRepository.findAllWithToppings(Category.PASTA, null));
         List<Dish> desserts = dishRepository.findAllWithToppings(Category.DESSERT, null);
 
-        // Xáo trộn danh sách
-        Collections.shuffle(drinks);
-        Collections.shuffle(salads);
-        Collections.shuffle(mainCourses);
-        Collections.shuffle(desserts);
-
         return new DishPool(drinks, salads, mainCourses, desserts);
     }
 
     /**
-     * (VIỆC 4) ✅ HÀM MỚI: Chỉ làm 1 việc: Trích xuất ID từ "bể" món ăn.
+     * (VIỆC 4) Trích xuất ID (Giữ nguyên)
      */
     private ItemIds extractItemIds(DishPool dishPool) {
         List<Dish> allDishes = new ArrayList<>();
@@ -167,7 +189,7 @@ public class SuggestionService {
     }
 
     /**
-     * (VIỆC 5) ✅ HÀM MỚI: Chỉ làm 1 việc: Tải số lượng tồn kho.
+     * (VIỆC 5) Tải số lượng tồn kho (Giữ nguyên)
      */
     private QuantityMaps loadInventoryQuantities(ItemIds itemIds) {
         LocalDate today = LocalDate.now();
@@ -185,69 +207,77 @@ public class SuggestionService {
 
 
     /**
-     * (VIỆC 6) Tìm kiếm các tổ hợp món ăn phù hợp.
+     * (VIỆC 6) ✅ SỬA ĐỔI: Tìm tổ hợp bằng cách chọn ngẫu nhiên
      */
-    private List<MenuSuggestion> findMatchingCombinations(DishPool dishPool,
-                                                          QuantityMaps quantityMaps,
-                                                          CalorieRange calorieRange) {
-        List<MenuSuggestion> suggestions = new ArrayList<>();
+    private Set<SuggestionResponse> findRandomCombinations(DishPool dishPool,
+                                                       QuantityMaps quantityMaps,
+                                                       CalorieRange calorieRange) {
+        // Dùng Set để tự động chống trùng lặp
+        Set<SuggestionResponse> suggestions = new HashSet<>();
 
-        for (Dish drink : dishPool.drinks) {
-            for (Dish salad : dishPool.salads) {
-                for (Dish main : dishPool.mainCourses) {
-                    for (Dish dessert : dishPool.desserts) {
+        // Lấy kích thước của các danh sách
+        int drinksCount = dishPool.drinks.size();
+        int saladsCount = dishPool.salads.size();
+        int mainCoursesCount = dishPool.mainCourses.size();
+        int dessertsCount = dishPool.desserts.size();
 
-                        double totalCal = drink.getCalo() + salad.getCalo() + main.getCalo() + dessert.getCalo();
+        int attempts = 0;
+        // Chạy vòng lặp cho đến khi đủ 3 gợi ý, hoặc đã thử quá nhiều lần
+        while (suggestions.size() < MAX_SUGGESTIONS && attempts < MAX_RANDOM_ATTEMPTS) {
 
-                        if (totalCal >= calorieRange.minCal && totalCal <= calorieRange.maxCal) {
+            // 1. Chọn ngẫu nhiên 1 món từ mỗi loại
+            Dish drink = dishPool.drinks.get(random.nextInt(drinksCount));
+            Dish salad = dishPool.salads.get(random.nextInt(saladsCount));
+            Dish main = dishPool.mainCourses.get(random.nextInt(mainCoursesCount));
+            Dish dessert = dishPool.desserts.get(random.nextInt(dessertsCount));
 
-                            // Gọi hàm helper (VIỆC 7)
-                            DishResponse drinkResponse = buildEnrichedDishResponse(drink, quantityMaps);
-                            DishResponse saladResponse = buildEnrichedDishResponse(salad, quantityMaps);
-                            DishResponse mainResponse = buildEnrichedDishResponse(main, quantityMaps);
-                            DishResponse dessertResponse = buildEnrichedDishResponse(dessert, quantityMaps);
+            // Tăng biến đếm số lần thử
+            attempts++;
 
-                            // Lọc các món đã hết hàng
-                            if (drinkResponse.getRemainingQuantity() <= 0 || saladResponse.getRemainingQuantity() <= 0 ||
-                                    mainResponse.getRemainingQuantity() <= 0 || dessertResponse.getRemainingQuantity() <= 0) {
-                                continue; // Bỏ qua combo này
-                            }
-
-                            MenuSuggestion menu = MenuSuggestion.builder()
-                                    .drink(drinkResponse)
-                                    .salad(saladResponse)
-                                    .mainCourse(mainResponse)
-                                    .dessert(dessertResponse)
-                                    .totalCalories(totalCal)
-                                    .targetCaloriesPerMeal(calorieRange.targetPerMeal)
-                                    .build();
-
-                            suggestions.add(menu);
-
-                            if (suggestions.size() >= MAX_SUGGESTIONS) {
-                                return suggestions;
-                            }
-                        }
-                    }
-                }
+            // 2. Kiểm tra Calo
+            double totalCal = drink.getCalo() + salad.getCalo() + main.getCalo() + dessert.getCalo();
+            if (totalCal < calorieRange.minCal || totalCal > calorieRange.maxCal) {
+                continue; // Bỏ qua nếu Calo không phù hợp
             }
+
+            // 3. Lắp ráp Response (để lấy số lượng)
+            DishResponse drinkResponse = buildEnrichedDishResponse(drink, quantityMaps);
+            DishResponse saladResponse = buildEnrichedDishResponse(salad, quantityMaps);
+            DishResponse mainResponse = buildEnrichedDishResponse(main, quantityMaps);
+            DishResponse dessertResponse = buildEnrichedDishResponse(dessert, quantityMaps);
+
+            // 4. Kiểm tra số lượng
+            if (drinkResponse.getRemainingQuantity() <= 0 || saladResponse.getRemainingQuantity() <= 0 ||
+                    mainResponse.getRemainingQuantity() <= 0 || dessertResponse.getRemainingQuantity() <= 0) {
+                continue; // Bỏ qua nếu có món hết hàng
+            }
+
+            // 5. Tạo Menu
+            SuggestionResponse menu = SuggestionResponse.builder()
+                    .drink(drinkResponse)
+                    .salad(saladResponse)
+                    .mainCourse(mainResponse)
+                    .dessert(dessertResponse)
+                    .totalCalories(totalCal)
+                    .targetCaloriesPerMeal(calorieRange.targetPerMeal)
+                    .build();
+
+            // 6. Thêm vào Set (Set sẽ tự bỏ qua nếu đã tồn tại)
+            suggestions.add(menu);
         }
-        return suggestions;
+
+        return suggestions; // Trả về Set (chứa 0, 1, 2, hoặc 3 gợi ý)
     }
 
     /**
-     * (VIỆC 7 - Helper) Lắp ráp một DishResponse hoàn chỉnh (kèm topping & số lượng).
+     * (VIỆC 7 - Helper) Lắp ráp một DishResponse (Giữ nguyên)
      */
     private DishResponse buildEnrichedDishResponse(Dish dish, QuantityMaps quantityMaps) {
-        // 1. Dùng mapper để map thông tin cơ bản
         DishResponse response = dishMapper.toDishResponse(dish);
-
-        // 2. Lấy số lượng món (Đọc từ Map)
-        int dishRemaining = quantityMaps.dishQuantities().getOrDefault(dish.getDishId(), 0);
+        int dishRemaining = quantityMaps.getDishQuantities().getOrDefault(dish.getDishId(), 0);
         response.setRemainingQuantity(dishRemaining);
 
-        // 3. Lấy danh sách topping (Gọi hàm helper VIỆC 8)
-        List<ToppingWithQuantityResponse> toppingResponses = buildEnrichedToppingList(dish, quantityMaps.toppingQuantities());
+        List<ToppingWithQuantityResponse> toppingResponses = buildEnrichedToppingList(dish, quantityMaps.getToppingQuantities());
         response.setOptionalToppings(toppingResponses);
 
         return response;
@@ -255,7 +285,7 @@ public class SuggestionService {
 
 
     /**
-     * (VIỆC 8 - Helper) Xây dựng danh sách topping kèm số lượng.
+     * (VIỆC 8 - Helper) Xây dựng danh sách topping (Giữ nguyên)
      */
     private List<ToppingWithQuantityResponse> buildEnrichedToppingList(Dish dish, Map<Integer, Integer> toppingQuantities) {
         if (dish.getDishToppings() == null || dish.getDishToppings().isEmpty()) {
@@ -266,8 +296,6 @@ public class SuggestionService {
                 .filter(dt -> dt != null && dt.getTopping() != null)
                 .map(dishTopping -> {
                     Topping topping = dishTopping.getTopping();
-
-                    // Lấy số lượng topping (Đọc từ Map)
                     int toppingRemaining = toppingQuantities.getOrDefault(topping.getToppingId(), 0);
 
                     return ToppingWithQuantityResponse.builder()
