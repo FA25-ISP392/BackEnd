@@ -50,7 +50,6 @@ public class BookingService {
         booking.setWantTable(request.getWantTable());
         booking.setCreatedAt(LocalDateTime.now());
 
-        // *** ĐÃ XÓA PHẦN GỬI EMAIL TẠI ĐÂY ***
 
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
@@ -105,9 +104,7 @@ public class BookingService {
             }
         } catch (Exception e) {
             log.error("Failed to send booking approval email for bookingId {}: {}", savedBooking.getBookingId(), e.getMessage(), e);
-            // Không ném lỗi ra ngoài
         }
-        // 🔼 KẾT THÚC GỬI EMAIL 🔼
 
         return bookingMapper.toResponse(savedBooking);
     }
