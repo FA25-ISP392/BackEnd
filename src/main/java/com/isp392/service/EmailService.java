@@ -2,16 +2,19 @@ package com.isp392.service;
 
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +24,7 @@ public class EmailService {
 
     JavaMailSender mailSender;
 
+    @Async("taskExecutor")
     public void send(String to, String subject, String htmlBody) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -37,91 +41,163 @@ public class EmailService {
         }
     }
 
+    @Async("taskExecutor")
     public void sendResetPasswordEmail(String email, String resetLink) {
         String subject = "Yêu cầu đặt lại mật khẩu của bạn";
 
         String body = """
-        <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
-            <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: center;">
+                <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+                    <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
+                                box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: center;">
                 
-                <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Logo" 
-                     style="width: 80px; margin-bottom: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Logo" 
+                             style="width: 80px; margin-bottom: 20px;">
                 
-                <h2 style="color: #333;">Đặt lại mật khẩu của bạn</h2>
+                        <h2 style="color: #333;">Đặt lại mật khẩu của bạn</h2>
                 
-                <p style="color: #555; font-size: 15px; line-height: 1.6;">
-                    Xin chào,<br><br>
-                    Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.<br>
-                    Vui lòng nhấn vào nút bên dưới để tiến hành đặt lại mật khẩu.<br>
-                    (Liên kết có hiệu lực trong <b>15 phút</b>).
-                </p>
-
-                <a href="%s" 
-                   style="display: inline-block; background-color: #007bff; color: #fff; 
-                          padding: 12px 25px; border-radius: 5px; text-decoration: none; 
-                          font-weight: bold; margin: 20px 0;">
-                    🔐 Đặt lại mật khẩu
-                </a>
-
-                <p style="color: #777; font-size: 13px;">
-                    Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.<br>
-                    Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
-                </p>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-
-                <p style="color: #999; font-size: 12px;">
-                    © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
-                </p>
-            </div>
-        </div>
-        """.formatted(resetLink);
+                        <p style="color: #555; font-size: 15px; line-height: 1.6;">
+                            Xin chào,<br><br>
+                            Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.<br>
+                            Vui lòng nhấn vào nút bên dưới để tiến hành đặt lại mật khẩu.<br>
+                            (Liên kết có hiệu lực trong <b>15 phút</b>).
+                        </p>
+                
+                        <a href="%s" 
+                           style="display: inline-block; background-color: #007bff; color: #fff; 
+                                  padding: 12px 25px; border-radius: 5px; text-decoration: none; 
+                                  font-weight: bold; margin: 20px 0;">
+                            🔐 Đặt lại mật khẩu
+                        </a>
+                
+                        <p style="color: #777; font-size: 13px;">
+                            Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.<br>
+                            Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!
+                        </p>
+                
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                
+                        <p style="color: #999; font-size: 12px;">
+                            © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
+                        </p>
+                    </div>
+                </div>
+                """.formatted(resetLink);
 
         send(email, subject, body);
         log.info("Reset password email sent to {}", email);
     }
+
+    @Async("taskExecutor")
     public void sendVerificationEmail(String email, String name, String verifyLink) {
         String subject = "Xác thực tài khoản của bạn";
         String body = String.format("""
-        <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
-            <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: center;">
+                <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+                    <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
+                                box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: center;">
                 
-                <img src="https://cdn-icons-png.flaticon.com/512/992/992648.png" alt="Logo" 
-                     style="width: 80px; margin-bottom: 20px;">
+                        <img src="https://cdn-icons-png.flaticon.com/512/992/992648.png" alt="Logo" 
+                             style="width: 80px; margin-bottom: 20px;">
                 
-                <h2 style="color: #333;">Chào mừng bạn, %s!</h2>
+                        <h2 style="color: #333;">Chào mừng bạn, %s!</h2>
                 
-                <p style="color: #555; font-size: 15px; line-height: 1.6;">
-                    Cảm ơn bạn đã đăng ký với chúng tôi.<br>
-                    Vui lòng nhấn vào nút bên dưới để hoàn tất việc xác thực tài khoản.<br>
-                    (Liên kết có hiệu lực trong <b>24 giờ</b>).
-                </p>
-
-                <a href="%s" 
-                   style="display: inline-block; background-color: #007bff; color: #fff; 
-                          padding: 12px 25px; border-radius: 5px; text-decoration: none; 
-                          font-weight: bold; margin: 20px 0;">
-                    ✅ Xác thực tài khoản
-                </a>
-
-                <p style="color: #777; font-size: 13px;">
-                    Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email.<br>
-                    Cảm ơn bạn!
-                </p>
-
-                <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-
-                <p style="color: #999; font-size: 12px;">
-                    © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
-                </p>
-            </div>
-        </div>
-        """, name, verifyLink);
+                        <p style="color: #555; font-size: 15px; line-height: 1.6;">
+                            Cảm ơn bạn đã đăng ký với chúng tôi.<br>
+                            Vui lòng nhấn vào nút bên dưới để hoàn tất việc xác thực tài khoản.<br>
+                            (Liên kết có hiệu lực trong <b>24 giờ</b>).
+                        </p>
+                
+                        <a href="%s" 
+                           style="display: inline-block; background-color: #007bff; color: #fff; 
+                                  padding: 12px 25px; border-radius: 5px; text-decoration: none; 
+                                  font-weight: bold; margin: 20px 0;">
+                            ✅ Xác thực tài khoản
+                        </a>
+                
+                        <p style="color: #777; font-size: 13px;">
+                            Nếu bạn không đăng ký tài khoản này, vui lòng bỏ qua email.<br>
+                            Cảm ơn bạn!
+                        </p>
+                
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                
+                        <p style="color: #999; font-size: 12px;">
+                            © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
+                        </p>
+                    </div>
+                </div>
+                """, name, verifyLink);
 
         send(email, subject, body);
         log.info("Verification email sent to {}", email);
+    }
+
+    /**
+     * Gửi email xác nhận đặt bàn (mới hoặc đã được duyệt).
+     *
+     * @param toEmail         Email khách hàng
+     * @param customerName    Tên khách hàng
+     * @param bookingDateTime Thời gian đặt
+     * @param seatCount       Số lượng khách
+     * @param tableInfo       Thông tin bàn (có thể là "Bàn 1" hoặc "Khu vực cửa sổ")
+     * @param status          Trạng thái (PENDING, APPROVED)
+     */
+    @Async("taskExecutor")
+    public void sendBookingConfirmationEmail(String toEmail, String customerName, LocalDateTime bookingDateTime, int seatCount, String tableInfo, String status) {
+        String subject = "Xác nhận đặt bàn của bạn - Trạng thái: " + status;
+
+        // Định dạng lại ngày giờ cho dễ đọc
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
+        String formattedDateTime = bookingDateTime.format(formatter);
+
+        String statusMessage;
+        String tableDetail;
+
+        if ("APPROVED".equalsIgnoreCase(status)) {
+            statusMessage = "Chúng tôi vui mừng thông báo lượt đặt bàn của bạn đã được <b>XÁC NHẬN</b>.";
+            tableDetail = "<strong>Bàn của bạn:</strong> " + tableInfo;
+        } else {
+            statusMessage = "Chúng tôi đã nhận được yêu cầu đặt bàn của bạn và đang <b>CHỜ XỬ LÝ</b>.";
+            tableDetail = "<strong>Khu vực mong muốn:</strong> " + (tableInfo != null ? tableInfo : "Không có yêu cầu đặc biệt");
+        }
+
+        String body = String.format("""
+            <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+                <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px; 
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: left;">
+            
+                    <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Logo" 
+                         style="width: 80px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+            
+                    <h2 style="color: #333; text-align: center;">Cảm ơn bạn, %s!</h2>
+            
+                    <p style="color: #555; font-size: 15px; line-height: 1.6;">
+                        %s
+                    </p>
+                    
+                    <div style="background-color: #f9f9f9; border-left: 5px solid #007bff; padding: 15px; margin: 20px 0;">
+                        <h3 style="color: #333; margin-top: 0;">Chi tiết đặt bàn:</h3>
+                        <p style="color: #555; margin: 5px 0;"><strong>Trạng thái:</strong> %s</p>
+                        <p style="color: #555; margin: 5px 0;"><strong>Thời gian:</strong> %s</p>
+                        <p style="color: #555; margin: 5px 0;"><strong>Số lượng khách:</strong> %d</p>
+                        <p style="color: #555; margin: 5px 0;">%s</p>
+                    </div>
+            
+                    <p style="color: #777; font-size: 13px; text-align: center;">
+                        Nếu bạn có bất kỳ thay đổi nào, vui lòng liên hệ với chúng tôi.<br>
+                        Cảm ơn bạn đã chọn nhà hàng của chúng tôi!
+                    </p>
+            
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            
+                    <p style="color: #999; font-size: 12px; text-align: center;">
+                        © 2025 Hệ thống Quản lý Nhà hàng | Mọi quyền được bảo lưu.
+                    </p>
+                </div>
+            </div>
+            """, customerName, statusMessage, status, formattedDateTime, seatCount, tableDetail);
+
+        send(toEmail, subject, body);
+        log.info("Booking confirmation email sent to {} with status {}", toEmail, status);
     }
 
 }

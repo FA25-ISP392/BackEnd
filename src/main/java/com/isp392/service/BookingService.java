@@ -4,6 +4,7 @@ import com.isp392.dto.request.BookingApprovalRequest;
 import com.isp392.dto.request.BookingCreationRequest;
 import com.isp392.dto.request.BookingUpdateRequest;
 import com.isp392.dto.response.BookingResponse;
+import com.isp392.entity.Account; // 👈 Đã thêm
 import com.isp392.entity.Booking;
 import com.isp392.entity.Customer;
 import com.isp392.entity.TableEntity;
@@ -16,6 +17,7 @@ import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j; // 👈 Đã thêm
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -28,11 +30,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j // 👈 Đã thêm
 public class BookingService {
     BookingRepository bookingRepository;
     CustomerRepository customerRepository;
     TableRepository tableRepository;
     BookingMapper bookingMapper;
+    EmailService emailService; // 👈 Đã thêm
 
 
     @Transactional
@@ -44,6 +48,8 @@ public class BookingService {
         booking.setCustomer(customer);
         booking.setWantTable(request.getWantTable());
         booking.setCreatedAt(LocalDateTime.now());
+
+        // *** ĐÃ XÓA PHẦN GỬI EMAIL TẠI ĐÂY ***
 
         return bookingMapper.toResponse(bookingRepository.save(booking));
     }
@@ -80,7 +86,29 @@ public class BookingService {
         }
         booking.setTable(table);
         booking.setStatus(BookingStatus.APPROVED);
-        return bookingMapper.toResponse(bookingRepository.save(booking));
+
+        Booking savedBooking = bookingRepository.save(booking); // 👈 Lưu booking
+
+        // 🔽 GỬI EMAIL SAU KHI DUYỆT (ĐƯỢC GIỮ LẠI) 🔽
+        try {
+            Account customerAccount = savedBooking.getCustomer().getAccount();
+            if (customerAccount != null && customerAccount.getEmail() != null) {
+                emailService.sendBookingConfirmationEmail(
+                        customerAccount.getEmail(),
+                        customerAccount.getFullName(),
+                        savedBooking.getBookingDate(),
+                        savedBooking.getSeat(),
+                        savedBooking.getTable().getTableName(), // 👈 Dùng tên bàn đã duyệt
+                        savedBooking.getStatus().name()        // Sẽ là "APPROVED"
+                );
+            }
+        } catch (Exception e) {
+            log.error("Failed to send booking approval email for bookingId {}: {}", savedBooking.getBookingId(), e.getMessage(), e);
+            // Không ném lỗi ra ngoài
+        }
+        // 🔼 KẾT THÚC GỬI EMAIL 🔼
+
+        return bookingMapper.toResponse(savedBooking);
     }
 
     @Transactional
