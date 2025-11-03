@@ -30,8 +30,6 @@ public interface OrdersRepository extends JpaRepository<Orders, Integer> {
     @Query(value = "SELECT o FROM Orders o " +
             "LEFT JOIN FETCH o.orderDetails od " + // Lấy cả orderDetails
             "LEFT JOIN FETCH od.dish " + // Lấy thông tin dish
-            "LEFT JOIN FETCH od.orderToppings ot " + // Lấy cả topping
-            "LEFT JOIN FETCH ot.topping " +
             "WHERE o.customer.customerId = :customerId " +
             "AND o.paid = true", // Chỉ lấy đơn đã thanh toán
             countQuery = "SELECT count(o) FROM Orders o " +

@@ -165,7 +165,13 @@ public class OrdersService {
     public Page<OrdersResponse> getOrdersByCustomerId(Integer customerId, Pageable pageable) {
         Page<Orders> orderPage = ordersRepository.findAllPaidByCustomer_CustomerId(customerId, pageable);
 
-        // Map Page<Orders> sang Page<OrdersResponse>
+        orderPage.getContent().forEach(order -> {
+            // Với mỗi order, lặp qua orderDetails của nó
+            order.getOrderDetails().forEach(detail -> {
+                // Và chủ động tải topping
+                Hibernate.initialize(detail.getOrderToppings());
+            });
+        });
         return orderPage.map(order -> {
             double totalOrderPrice = calculateTotalOrderPrice(order);
             OrdersResponse response = ordersMapper.toOrdersResponse(order);

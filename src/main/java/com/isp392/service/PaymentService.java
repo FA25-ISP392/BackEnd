@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +55,7 @@ public class PaymentService {
     @NonFinal
     ObjectMapper objectMapper = new ObjectMapper();
 
+    // ... (các @Value) ...
     @Value("${payos.return-url}")
     @NonFinal
     String payosReturnUrl;
@@ -72,6 +74,7 @@ public class PaymentService {
         Orders order = ordersRepository.findById(request.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // ... (logic tính total, kiểm tra method) ...
         double total = order.getOrderDetails().stream()
                 .mapToDouble(OrderDetail::getTotalPrice)
                 .sum();
@@ -93,11 +96,8 @@ public class PaymentService {
                     newPayment.setMethod(method);
                     return newPayment;
                 });
+        // ...
 
-        if (payment.getStatus() == PaymentStatus.COMPLETED) {
-            throw new RuntimeException("Đơn hàng này đã được thanh toán rồi!");
-        }
-        TableEntity table = order.getTable();
         // CASE 1: Thanh toán tiền mặt
         if (method == PaymentMethod.CASH) {
             log.info(" Processing CASH payment for order {}", request.getOrderId());
@@ -107,12 +107,8 @@ public class PaymentService {
             payment.setTotal(total);
             payment.setPaidAt(LocalDateTime.now());
 
-            payment.setPayosOrderCode(null);
-            payment.setCheckoutUrl(null);
-            payment.setQrCode(null);
-            payment.setPaymentLinkId(null);
-
             order.setPaid(true);
+            TableEntity table = order.getTable(); // SỬA ĐỔI: Lấy table từ order
             if (table != null && table.isServing()) {
                 table.setServing(false);
                 tableRepository.save(table);
@@ -122,14 +118,20 @@ public class PaymentService {
             try {
                 Account customerAccount = order.getCustomer().getAccount();
                 if (customerAccount != null && customerAccount.getEmail() != null) {
+
+                    // --- SỬA ĐỔI BẮT ĐẦU (1) ---
+                    // Tải chi tiết đơn hàng để gửi hóa đơn
+                    Hibernate.initialize(order.getOrderDetails());
+                    order.getOrderDetails().forEach(detail -> Hibernate.initialize(detail.getOrderToppings()));
+
                     emailService.sendPaymentSuccessEmail(
                             customerAccount.getEmail(),
                             customerAccount.getFullName(),
-                            order.getOrderId(),
-                            savedPayment.getTotal(),
+                            order, // Truyền cả đối tượng order
                             savedPayment.getMethod(),
                             savedPayment.getPaidAt()
                     );
+                    // --- SỬA ĐỔI KẾT THÚC (1) ---
                 }
             } catch (Exception e) {
                 log.error("Failed to send CASH payment success email for order {}: {}", order.getOrderId(), e.getMessage(), e);
@@ -141,6 +143,7 @@ public class PaymentService {
 
         // CASE 2: Thanh toán chuyển khoản (PayOS)
         if (method == PaymentMethod.BANK_TRANSFER) {
+            // ... (logic tạo link PayOS giữ nguyên) ...
             log.info(" Processing BANK_TRANSFER for order {}", request.getOrderId());
             payment.setStatus(PaymentStatus.PENDING);
             payment.setMethod(PaymentMethod.BANK_TRANSFER);
@@ -178,13 +181,14 @@ public class PaymentService {
             }
         }
 
-        // CASE 3: Các phương thức không hỗ trợ
+        // ... (Phần còn lại của file giữ nguyên) ...
         log.error("Unsupported payment method: {}", method);
         throw new RuntimeException("Unsupported payment method: " + method);
     }
 
     @Transactional
     public void processPayOSWebhookManual(String rawBody, String signature) throws Exception {
+        // ... (logic xác thực signature và parse JSON giữ nguyên) ...
         // 1. Xác thực chữ ký Webhook (QUAN TRỌNG)
         if (webhookKey == null || webhookKey.isEmpty() || webhookKey.equals("YOUR_WEBHOOK_KEY_HERE")) {
             log.error("PayOS Webhook Key is not configured properly in application.yaml!");
@@ -242,19 +246,19 @@ public class PaymentService {
             return; // Đã xử lý rồi
         }
 
-        // 7. Cập nhật trạng thái Payment và Order
+        // ... (logic kiểm tra status) ...
         String code = transactionData.getCode();
 
         log.info("Webhook status from PayOS: code={}, orderCode={}",
                 code, orderCodeFromWebhook);
 
-// --- Thanh toán thành công ---
+        // --- Thanh toán thành công ---
         if ("00".equalsIgnoreCase(code)) {
             log.info("Payment SUCCESSFUL (Code 00) for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
 
+            // ... (logic parse paidAtTime) ...
             LocalDateTime paidAtTime;
-
             try {
                 if (transactionData.getTransactionDateTime() != null) {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -266,11 +270,9 @@ public class PaymentService {
                 }
             } catch (Exception e) {
                 log.warn("Không thể parse transactionDateTime: {}", transactionData.getTransactionDateTime());
-                paidAtTime = LocalDateTime.now(); 
+                paidAtTime = LocalDateTime.now();
                 payment.setPaidAt(paidAtTime); // fallback
             }
-
-            // Giờ đây, paidAtTime chắc chắn đã được khởi tạo
 
             Orders order = payment.getOrder();
             if (order != null) {
@@ -285,14 +287,20 @@ public class PaymentService {
                 try {
                     Account customerAccount = order.getCustomer().getAccount();
                     if (customerAccount != null && customerAccount.getEmail() != null) {
+
+                        // --- SỬA ĐỔI BẮT ĐẦU (2) ---
+                        // Tải chi tiết đơn hàng để gửi hóa đơn
+                        Hibernate.initialize(order.getOrderDetails());
+                        order.getOrderDetails().forEach(detail -> Hibernate.initialize(detail.getOrderToppings()));
+
                         emailService.sendPaymentSuccessEmail(
                                 customerAccount.getEmail(),
                                 customerAccount.getFullName(),
-                                order.getOrderId(),
-                                payment.getTotal(),
+                                order, // Truyền cả đối tượng order
                                 payment.getMethod(),
-                                paidAtTime // Sử dụng an toàn
+                                paidAtTime
                         );
+                        // --- SỬA ĐỔI KẾT THÚC (2) ---
                     }
                 } catch (Exception e) {
                     log.error("Failed to send BANK_TRANSFER payment success email for order {}: {}", order.getOrderId(), e.getMessage(), e);
@@ -302,7 +310,7 @@ public class PaymentService {
                 log.error("Critical Error: Order relationship not found for order code {}", orderCodeFromWebhook);
             }
 
-// --- Giao dịch thất bại hoặc bị hủy (bất kỳ code nào khác "00") ---
+            // --- Giao dịch thất bại hoặc bị hủy ...
         } else {
             log.warn("Payment FAILED/CANCELLED (Code {}) for order code: {}",
                     code, orderCodeFromWebhook);
@@ -310,11 +318,12 @@ public class PaymentService {
             payment.setStatus(PaymentStatus.FAILED);
         }
 
-// 8. Lưu thay đổi của Payment
+        // 8. Lưu thay đổi của Payment
         paymentRepository.save(payment);
         log.info("Updated Payment status to {} for order code: {}", payment.getStatus(), orderCodeFromWebhook);
     }
 
+    // ... (Các hàm còn lại: calculateHMACSHA256, getPaymentByCusId, getAllPayments, getPaymentById, cancelPayment) ...
     // --- HÀM HỖ TRỢ TÍNH HMAC-SHA256 ---
     private String calculateHMACSHA256(String data, String key) throws NoSuchAlgorithmException, InvalidKeyException {
         final String algo = "HmacSHA256";
