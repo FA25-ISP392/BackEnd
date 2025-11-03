@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -174,5 +175,57 @@ public class BookingService {
         Page<Booking> bookings = bookingRepository.findByCustomer_CustomerId(customerId, pageable);
         return bookings.map(bookingMapper::toResponse);
 
+    }
+    @Transactional
+    public void processAndSendReminders() {
+        LocalDateTime now = LocalDateTime.now();
+        // Tìm các booking trong khoảng 60 đến 75 phút tới (chạy mỗi 15 phút)
+        LocalDateTime reminderStart = now.plusMinutes(60);
+        LocalDateTime reminderEnd = now.plusMinutes(75);
+
+        log.info("Scanning for bookings between {} and {} for reminders...", reminderStart, reminderEnd);
+
+        List<Booking> bookingsToRemind = bookingRepository.findAllByStatusAndBookingDateBetweenAndReminderSentIsFalse(
+                BookingStatus.APPROVED,
+                reminderStart,
+                reminderEnd
+        );
+
+        if (bookingsToRemind.isEmpty()) {
+            log.info("No bookings found to remind.");
+            return;
+        }
+
+        log.info("Found {} bookings to remind.", bookingsToRemind.size());
+        List<Booking> bookingsSent = new ArrayList<>();
+
+        for (Booking booking : bookingsToRemind) {
+            try {
+                Account customerAccount = booking.getCustomer().getAccount();
+                if (customerAccount != null && customerAccount.getEmail() != null && booking.getTable() != null) {
+
+                    emailService.sendBookingReminderEmail(
+                            customerAccount.getEmail(),
+                            customerAccount.getFullName(),
+                            booking.getBookingDate(),
+                            booking.getSeat(),
+                            booking.getTable().getTableName()
+                    );
+
+                    // Đánh dấu là đã gửi
+                    booking.setReminderSent(true);
+                    bookingsSent.add(booking);
+                }
+            } catch (Exception e) {
+                log.error("Failed to send reminder for bookingId {}: {}", booking.getBookingId(), e.getMessage(), e);
+                // Không ném lỗi, tiếp tục vòng lặp
+            }
+        }
+
+        // Lưu tất cả thay đổi (đánh dấu reminderSent= true)
+        if (!bookingsSent.isEmpty()) {
+            bookingRepository.saveAll(bookingsSent);
+            log.info("Successfully sent {} reminders.", bookingsSent.size());
+        }
     }
 }

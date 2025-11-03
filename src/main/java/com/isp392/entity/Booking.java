@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.annotations.CreationTimestamp;
-
+import org.hibernate.annotations.ColumnDefault;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "Booking")
+
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Booking {
     @Id
@@ -43,4 +44,8 @@ public class Booking {
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     LocalDateTime createdAt= LocalDateTime.now();
+
+    @Column(name = "reminder_sent", nullable = false)
+    @ColumnDefault("0")
+    boolean reminderSent = false;
 }

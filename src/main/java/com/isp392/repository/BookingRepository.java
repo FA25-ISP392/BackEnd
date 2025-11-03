@@ -19,4 +19,14 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
     Page<Booking> findByStatus(BookingStatus status, Pageable pageable);
     Page<Booking> findByCustomer_CustomerId(int id, Pageable pageable);
+    // 👇 THÊM PHƯƠNG THỨC MỚI 👇
+    /**
+     * Tìm các booking đã được duyệt, sắp diễn ra trong khoảng thời gian (từ start đến end)
+     * và chưa được gửi email nhắc nhở (reminderSent = false).
+     */
+    List<Booking> findAllByStatusAndBookingDateBetweenAndReminderSentIsFalse(
+            BookingStatus status,
+            LocalDateTime start,
+            LocalDateTime end
+    );
 }
