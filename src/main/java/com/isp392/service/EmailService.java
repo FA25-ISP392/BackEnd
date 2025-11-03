@@ -145,11 +145,14 @@ public class EmailService {
 
         String statusMessage;
         String tableDetail;
+        String vietnameseStatus;
 
         if ("APPROVED".equalsIgnoreCase(status)) {
+            vietnameseStatus = "ĐÃ XÁC NHẬN";
             statusMessage = "Chúng tôi vui mừng thông báo lượt đặt bàn của bạn đã được <b>XÁC NHẬN</b>.";
             tableDetail = "<strong>Bàn của bạn:</strong> " + tableInfo;
         } else {
+            vietnameseStatus = "CHỜ XỬ LÝ";
             statusMessage = "Chúng tôi đã nhận được yêu cầu đặt bàn của bạn và đang <b>CHỜ XỬ LÝ</b>.";
             tableDetail = "<strong>Khu vực mong muốn:</strong> " + (tableInfo != null ? tableInfo : "Không có yêu cầu đặc biệt");
         }
