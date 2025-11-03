@@ -18,10 +18,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
 
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -35,19 +36,6 @@ public class OrdersService {
     TableRepository tableRepository;
     OrdersMapper ordersMapper;
 
-//    public OrdersResponse createOrder(OrdersCreationRequest request) {
-//        Customer customer = customerRepository.findById(request.getCustomerId())
-//                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
-//
-//        TableEntity table = tableRepository.findById(request.getTableId())
-//                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
-//
-//        Orders order = ordersMapper.toOrders(request, customer, table);
-//
-//        Orders saved = ordersRepository.save(order);
-//
-//        return ordersMapper.toOrdersResponse(saved);
-//    }
 
     @Transactional
     public OrdersResponse createOrder(OrdersCreationRequest request) {
@@ -65,7 +53,7 @@ public class OrdersService {
         // 3. Nếu không tìm thấy -> tạo đơn hàng mới
         return createNewOrder(request);
     }
-
+    @Transactional(readOnly = true)
     public OrdersResponse getOrder(Integer orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -173,5 +161,16 @@ public class OrdersService {
                 .mapToDouble(OrderDetail::getTotalPrice) // Giả sử OrderDetail có getter getTotalPrice()
                 .sum();
     }
+    @Transactional(readOnly = true)
+    public Page<OrdersResponse> getOrdersByCustomerId(Integer customerId, Pageable pageable) {
+        Page<Orders> orderPage = ordersRepository.findAllPaidByCustomer_CustomerId(customerId, pageable);
 
+        // Map Page<Orders> sang Page<OrdersResponse>
+        return orderPage.map(order -> {
+            double totalOrderPrice = calculateTotalOrderPrice(order);
+            OrdersResponse response = ordersMapper.toOrdersResponse(order);
+            response.setTotalPrice(totalOrderPrice);
+            return response;
+        });
+    }
 }

@@ -24,9 +24,7 @@ import vn.payos.PayOS;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkRequest;
 import vn.payos.model.v2.paymentRequests.CreatePaymentLinkResponse;
 import vn.payos.model.v2.paymentRequests.PaymentLinkItem;
-import vn.payos.model.webhooks.WebhookData;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import vn.payos.model.webhooks.Webhook;
 
 
 import javax.crypto.Mac;
@@ -39,7 +37,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -109,6 +106,11 @@ public class PaymentService {
             payment.setStatus(PaymentStatus.COMPLETED);
             payment.setTotal(total);
             payment.setPaidAt(LocalDateTime.now());
+
+            payment.setPayosOrderCode(null);
+            payment.setCheckoutUrl(null);
+            payment.setQrCode(null);
+            payment.setPaymentLinkId(null);
 
             order.setPaid(true);
             if (table != null && table.isServing()) {
