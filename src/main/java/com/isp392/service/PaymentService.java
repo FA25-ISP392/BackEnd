@@ -186,8 +186,6 @@ public class PaymentService {
             log.info("Webhook signature verified successfully.");
         } else {
             log.warn("Missing PayOS webhook signature. Processing without verification (UNSAFE - NOT FOR PRODUCTION).");
-            // Khi deploy thật, NÊN ném lỗi ở đây nếu không có signature:
-            // throw new RuntimeException("Missing webhook signature");
         }
 
         // 2. Parse JSON body
