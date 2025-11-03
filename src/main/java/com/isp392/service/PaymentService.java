@@ -3,12 +3,8 @@ package com.isp392.service;
 import com.isp392.dto.request.PayOSWebhookBody;
 import com.isp392.dto.request.PayOSWebhookData;
 import com.isp392.dto.request.PaymentCreationRequest;
-import com.isp392.dto.response.BookingResponse;
 import com.isp392.dto.response.PaymentResponse;
-import com.isp392.entity.OrderDetail;
-import com.isp392.entity.Orders;
-import com.isp392.entity.Payment;
-import com.isp392.entity.TableEntity;
+import com.isp392.entity.*;
 import com.isp392.enums.PaymentMethod;
 import com.isp392.enums.PaymentStatus;
 import com.isp392.mapper.PaymentMapper;
@@ -53,6 +49,7 @@ public class PaymentService {
     PaymentMapper paymentMapper;
     PaymentRepository paymentRepository;
     OrdersRepository ordersRepository;
+    EmailService emailService;
     TableService tableService;
     PayOS payOs;
     private final TableRepository tableRepository;
@@ -120,6 +117,21 @@ public class PaymentService {
             }
             Payment savedPayment = paymentRepository.save(payment);
             ordersRepository.save(order);
+            try {
+                Account customerAccount = order.getCustomer().getAccount();
+                if (customerAccount != null && customerAccount.getEmail() != null) {
+                    emailService.sendPaymentSuccessEmail(
+                            customerAccount.getEmail(),
+                            customerAccount.getFullName(),
+                            order.getOrderId(),
+                            savedPayment.getTotal(),
+                            savedPayment.getMethod(),
+                            savedPayment.getPaidAt()
+                    );
+                }
+            } catch (Exception e) {
+                log.error("Failed to send CASH payment success email for order {}: {}", order.getOrderId(), e.getMessage(), e);
+            }
 
             log.info(" CASH payment completed successfully for order {}", order.getOrderId());
             return paymentMapper.toPaymentResponse(savedPayment);
@@ -239,15 +251,24 @@ public class PaymentService {
             log.info("Payment SUCCESSFUL (Code 00) for order code: {}", orderCodeFromWebhook);
             payment.setStatus(PaymentStatus.COMPLETED);
 
+            LocalDateTime paidAtTime;
+
             try {
                 if (transactionData.getTransactionDateTime() != null) {
                     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    payment.setPaidAt(LocalDateTime.parse(transactionData.getTransactionDateTime(), formatter));
+                    paidAtTime = LocalDateTime.parse(transactionData.getTransactionDateTime(), formatter);
+                    payment.setPaidAt(paidAtTime);
+                } else {
+                    paidAtTime = LocalDateTime.now();
+                    payment.setPaidAt(paidAtTime);
                 }
             } catch (Exception e) {
                 log.warn("Không thể parse transactionDateTime: {}", transactionData.getTransactionDateTime());
-                payment.setPaidAt(LocalDateTime.now()); // fallback
+                paidAtTime = LocalDateTime.now(); 
+                payment.setPaidAt(paidAtTime); // fallback
             }
+
+            // Giờ đây, paidAtTime chắc chắn đã được khởi tạo
 
             Orders order = payment.getOrder();
             if (order != null) {
@@ -259,6 +280,22 @@ public class PaymentService {
                     tableRepository.save(table);
                 }
                 log.info("Order ID {} marked as paid.", order.getOrderId());
+                try {
+                    Account customerAccount = order.getCustomer().getAccount();
+                    if (customerAccount != null && customerAccount.getEmail() != null) {
+                        emailService.sendPaymentSuccessEmail(
+                                customerAccount.getEmail(),
+                                customerAccount.getFullName(),
+                                order.getOrderId(),
+                                payment.getTotal(),
+                                payment.getMethod(),
+                                paidAtTime // Sử dụng an toàn
+                        );
+                    }
+                } catch (Exception e) {
+                    log.error("Failed to send BANK_TRANSFER payment success email for order {}: {}", order.getOrderId(), e.getMessage(), e);
+                }
+
             } else {
                 log.error("Critical Error: Order relationship not found for order code {}", orderCodeFromWebhook);
             }
@@ -277,8 +314,6 @@ public class PaymentService {
     }
 
     // --- HÀM HỖ TRỢ TÍNH HMAC-SHA256 ---
-    // **QUAN TRỌNG:** HÀM NÀY DỰA TRÊN GIẢ ĐỊNH PayOS DÙNG HMAC-SHA256 VÀ KẾT QUẢ HEX LOWERCASE.
-    // HÃY LUÔN KIỂM TRA LẠI VỚI TÀI LIỆU CHÍNH THỨC CỦA PAYOS.
     private String calculateHMACSHA256(String data, String key) throws NoSuchAlgorithmException, InvalidKeyException {
         final String algo = "HmacSHA256";
         SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), algo);
@@ -297,7 +332,7 @@ public class PaymentService {
     }
 
     public Page<PaymentResponse> getPaymentByCusId(int customerId, Pageable pageable) {
-        Page<Payment> payment =  paymentRepository.findByOrder_Customer_CustomerId(customerId, pageable);
+        Page<Payment> payment = paymentRepository.findByOrder_Customer_CustomerId(customerId, pageable);
 
         return payment.map(paymentMapper::toPaymentResponse);
     }
