@@ -125,9 +125,8 @@ public class PaymentService {
                     emailService.sendPaymentSuccessEmail(
                             customerAccount.getEmail(),
                             customerAccount.getFullName(),
-                            order.getOrderId(),
-                            savedPayment.getTotal(),
-                            savedPayment.getMethod(),
+                            order,
+                            payment.getMethod(),
                             savedPayment.getPaidAt()
                     );
                 }
@@ -288,10 +287,9 @@ public class PaymentService {
                         emailService.sendPaymentSuccessEmail(
                                 customerAccount.getEmail(),
                                 customerAccount.getFullName(),
-                                order.getOrderId(),
-                                payment.getTotal(),
+                                order,
                                 payment.getMethod(),
-                                paidAtTime // Sử dụng an toàn
+                                paidAtTime
                         );
                     }
                 } catch (Exception e) {

@@ -1,5 +1,8 @@
 package com.isp392.service;
 
+import com.isp392.entity.OrderDetail;
+import com.isp392.entity.OrderTopping;
+import com.isp392.entity.Orders;
 import com.isp392.enums.PaymentMethod;
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
@@ -43,6 +46,7 @@ public class EmailService {
             throw new AppException(ErrorCode.SEND_EMAIL_FAILED);
         }
     }
+
 
     @Async("taskExecutor")
     public void sendResetPasswordEmail(String email, String resetLink) {
@@ -193,12 +197,9 @@ public class EmailService {
                 </div>
             </div>
             """, customerName, statusMessage, vietnameseStatus, formattedDateTime, seatCount, tableDetail);
-        // ^-- Đã cập nhật tham số thứ 3 thành `vietnameseStatus`
-
-        // --- KẾT THÚC THAY ĐỔI ---
 
         send(toEmail, subject, body);
-        log.info("Booking confirmation email sent to {} with status {}", toEmail, status); // Giữ log gốc
+        log.info("Booking confirmation email sent to {} with status {}", toEmail, status);
     }
 
     @Async("taskExecutor")
@@ -232,7 +233,7 @@ public class EmailService {
             
                     <p style="color: #777; font-size: 13px; text-align: center;">
                         Nếu bạn có bất kỳ thay đổi nào, vui lòng liên hệ với chúng tôi qua:<br>
-                        Email: <strong>[Địa chỉ email nhà hàng]</strong> | SĐT: <strong>[Số điện thoại nhà hàng]</strong><br><br>
+                        Email: <strong>moncuaban@gmail.com</strong> | SĐT: <strong>0123456789</strong><br><br>
                         Chúng tôi rất mong được phục vụ bạn!
                     </p>
             
@@ -248,41 +249,48 @@ public class EmailService {
         send(toEmail, subject, body);
         log.info("Booking REMINDER email sent to {}", toEmail);
     }
-    @Async("taskExecutor")
-    public void sendPaymentSuccessEmail(String toEmail, String customerName, int orderId, double totalAmount, PaymentMethod method, LocalDateTime paidAt) {
-        String subject = "Thanh toán thành công cho đơn hàng #" + orderId;
 
-        // Định dạng tiền tệ
+    @Async("taskExecutor")
+    public void sendPaymentSuccessEmail(String toEmail, String customerName, Orders order, PaymentMethod method, LocalDateTime paidAt) {
+        String subject = "Hóa đơn thanh toán cho đơn hàng #" + order.getOrderId();
+
         Locale vietnameseLocale = new Locale("vi", "VN");
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(vietnameseLocale);
+
+        String invoiceTableHtml = generateHtmlInvoiceTable(order, currencyFormatter);
+
+
+        double totalAmount = order.getOrderDetails().stream()
+                .mapToDouble(OrderDetail::getTotalPrice)
+                .sum();
         String formattedTotal = currencyFormatter.format(totalAmount);
 
-        // Định dạng ngày giờ
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
         String formattedPaidAt = paidAt.format(formatter);
 
-        // Định dạng phương thức thanh toán
-        String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản ngân hàng";
+        String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản Ngân hàng";
 
+        // 5. Tạo nội dung email
         String body = String.format("""
-            <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+            <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px; margin: 0;">
                 <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px;
                             box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: left;">
             
                     <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Logo"
                          style="width: 80px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
             
-                    <h2 style="color: #333; text-align: center;">Thanh toán thành công!</h2>
+                    <h2 style="color: #333; text-align: center;">Hóa đơn thanh toán</h2>
             
-                    <p style="color: #555; font-size: 15px; line-height: 1.6;">
-                        Xin chào %s,<br><br>
-                        Chúng tôi xác nhận đã nhận thanh toán thành công cho đơn hàng của bạn.
+                    <p style="color: #555; font-size: 15px; line-height: 1.6; text-align: center;">
+                        Xin chào %s,<br>
+                        Cảm ơn bạn đã sử dụng dịch vụ. Dưới đây là chi tiết hóa đơn cho đơn hàng #%d.
                     </p>
+                    
+                    %s
                     
                     <div style="background-color: #f9f9f9; border-left: 5px solid #28a745; padding: 15px; margin: 20px 0;">
                         <h3 style="color: #333; margin-top: 0;">Chi tiết thanh toán:</h3>
-                        <p style="color: #555; margin: 5px 0;"><strong>Mã đơn hàng:</strong> #%d</p>
-                        <p style="color: #555; margin: 5px 0;"><strong>Tổng tiền:</strong> <span style="font-weight: bold; color: #28a745;">%s</span></p>
+                        <p style="color: #555; margin: 5px 0;"><strong>Tổng cộng:</strong> <span style="font-weight: bold; color: #28a745; font-size: 1.2em;">%s</span></p>
                         <p style="color: #555; margin: 5px 0;"><strong>Phương thức:</strong> %s</p>
                         <p style="color: #555; margin: 5px 0;"><strong>Thời gian:</strong> %s</p>
                     </div>
@@ -299,9 +307,93 @@ public class EmailService {
                     </p>
                 </div>
             </div>
-            """, customerName, orderId, formattedTotal, paymentMethodString, formattedPaidAt);
+            """, customerName, order.getOrderId(), invoiceTableHtml, formattedTotal, paymentMethodString, formattedPaidAt);
 
         send(toEmail, subject, body);
-        log.info("Payment success email sent to {} for order #{}", toEmail, orderId);
+        log.info("Payment success email (invoice) sent to {} for order #{}", toEmail, order.getOrderId());
+    }
+
+
+    private String generateHtmlInvoiceTable(Orders order, NumberFormat currencyFormatter) {
+        StringBuilder tableBuilder = new StringBuilder();
+
+        // CSS cho bảng
+        tableBuilder.append("""
+            <style>
+                .invoice-table {
+                    width: 100%%;
+                    border-collapse: collapse;
+                    margin: 20px 0;
+                    font-size: 14px;
+                }
+                .invoice-table th, .invoice-table td {
+                    border: 1px solid #ddd;
+                    padding: 10px;
+                    text-align: left;
+                    vertical-align: top;
+                }
+                .invoice-table th {
+                    background-color: #f2f2f2;
+                    color: #333;
+                }
+                .invoice-table .item-row td {
+                    font-weight: bold;
+                    background-color: #fdfdfd;
+                }
+                .invoice-table .topping-row td {
+                    font-size: 0.9em;
+                    color: #555;
+                    padding-left: 25px; /* Thụt lề cho topping */
+                }
+                .invoice-table .price {
+                    text-align: right;
+                    white-space: nowrap;
+                }
+            </style>
+            """);
+
+        tableBuilder.append("<table class='invoice-table'>");
+        tableBuilder.append("<thead><tr><th>Chi tiết món ăn</th><th class='price'>Thành tiền</th></tr></thead>");
+        tableBuilder.append("<tbody>");
+
+        if (order.getOrderDetails() == null || order.getOrderDetails().isEmpty()) {
+            tableBuilder.append("<tr><td colspan='2'>Không có chi tiết đơn hàng.</td></tr>");
+        } else {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                tableBuilder.append("<tr class='item-row'>");
+                tableBuilder.append("<td>");
+                tableBuilder.append(detail.getDish() != null ? detail.getDish().getDishName() : "Món không xác định");
+
+                // Thêm ghi chú (note) nếu có
+                if (detail.getNote() != null && !detail.getNote().isEmpty()) {
+                    tableBuilder.append("<br><small style='font-weight:normal; color: #777;'><em>Ghi chú: ").append(detail.getNote()).append("</em></small>");
+                }
+                tableBuilder.append("</td>");
+
+                // Giá của món ăn (không bao gồm topping, dựa theo logic của OrderDetailService)
+                double dishPrice = (detail.getDish() != null && detail.getDish().getPrice() != null) ? detail.getDish().getPrice() : 0.0;
+                tableBuilder.append("<td class='price'>").append(currencyFormatter.format(dishPrice)).append("</td>");
+                tableBuilder.append("</tr>");
+
+                // Các dòng cho topping (nếu có)
+                if (detail.getOrderToppings() != null) {
+                    for (OrderTopping topping : detail.getOrderToppings()) {
+                        tableBuilder.append("<tr class='topping-row'>");
+                        tableBuilder.append("<td>");
+                        tableBuilder.append("+ ");
+                        tableBuilder.append(topping.getTopping() != null ? topping.getTopping().getName() : "Topping");
+                        if (topping.getQuantity() > 1) {
+                            tableBuilder.append(" (x").append(topping.getQuantity()).append(")");
+                        }
+                        tableBuilder.append("</td>");
+                        tableBuilder.append("<td class='price'>").append(currencyFormatter.format(topping.getToppingPrice())).append("</td>");
+                        tableBuilder.append("</tr>");
+                    }
+                }
+            }
+        }
+
+        tableBuilder.append("</tbody></table>");
+        return tableBuilder.toString();
     }
 }
