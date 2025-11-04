@@ -47,7 +47,6 @@ public class EmailService {
         }
     }
 
-    // ... (các hàm sendResetPasswordEmail, sendVerificationEmail, sendBookingConfirmationEmail, sendBookingReminderEmail giữ nguyên) ...
     @Async("taskExecutor")
     public void sendResetPasswordEmail(String email, String resetLink) {
         String subject = "Yêu cầu đặt lại mật khẩu của bạn";
@@ -236,7 +235,7 @@ public class EmailService {
             
                     <p style="color: #777; font-size: 13px; text-align: center;">
                         Nếu bạn có bất kỳ thay đổi nào, vui lòng liên hệ với chúng tôi qua:<br>
-                        Email: <strong>[Địa chỉ email nhà hàng]</strong> | SĐT: <strong>[Số điện thoại nhà hàng]</strong><br><br>
+                        Email: <strong>moncuaban@gmail.com</strong> | SĐT: <strong>0123456789</strong><br><br>
                         Chúng tôi rất mong được phục vụ bạn!
                     </p>
             
@@ -252,33 +251,30 @@ public class EmailService {
         send(toEmail, subject, body);
         log.info("Booking REMINDER email sent to {}", toEmail);
     }
-
-    // --- SỬA ĐỔI BẮT ĐẦU ---
     @Async("taskExecutor")
     public void sendPaymentSuccessEmail(String toEmail, String customerName, Orders order, PaymentMethod method, LocalDateTime paidAt) {
         String subject = "Hóa đơn thanh toán cho đơn hàng #" + order.getOrderId();
 
+        // Định dạng tiền tệ
         Locale vietnameseLocale = new Locale("vi", "VN");
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(vietnameseLocale);
 
-        // Tạo bảng chi tiết hóa đơn
         String invoiceTableHtml = generateHtmlInvoiceTable(order, currencyFormatter);
 
-        // Tính tổng tiền từ các OrderDetail (đảm bảo chính xác)
+
         double totalAmount = order.getOrderDetails().stream()
                 .mapToDouble(OrderDetail::getTotalPrice)
                 .sum();
         String formattedTotal = currencyFormatter.format(totalAmount);
 
-        // Định dạng ngày giờ
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
         String formattedPaidAt = paidAt.format(formatter);
 
-        // Định dạng phương thức thanh toán
-        String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản ngân hàng";
+        String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản Ngân hàng";
 
+        // 5. Tạo nội dung email
         String body = String.format("""
-            <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px;">
+            <div style="font-family: Arial, sans-serif; background-color: #f7f7f7; padding: 40px; margin: 0;">
                 <div style="max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 10px;
                             box-shadow: 0 4px 10px rgba(0,0,0,0.1); padding: 30px; text-align: left;">
             
@@ -287,8 +283,8 @@ public class EmailService {
             
                     <h2 style="color: #333; text-align: center;">Hóa đơn thanh toán</h2>
             
-                    <p style="color: #555; font-size: 15px; line-height: 1.6;">
-                        Xin chào %s,<br><br>
+                    <p style="color: #555; font-size: 15px; line-height: 1.6; text-align: center;">
+                        Xin chào %s,<br>
                         Cảm ơn bạn đã sử dụng dịch vụ. Dưới đây là chi tiết hóa đơn cho đơn hàng #%d.
                     </p>
                     
@@ -319,9 +315,7 @@ public class EmailService {
         log.info("Payment success email (invoice) sent to {} for order #{}", toEmail, order.getOrderId());
     }
 
-    /**
-     * (HELPER) Tạo bảng HTML chi tiết các món ăn và topping
-     */
+
     private String generateHtmlInvoiceTable(Orders order, NumberFormat currencyFormatter) {
         StringBuilder tableBuilder = new StringBuilder();
 
@@ -338,6 +332,7 @@ public class EmailService {
                     border: 1px solid #ddd;
                     padding: 10px;
                     text-align: left;
+                    vertical-align: top;
                 }
                 .invoice-table th {
                     background-color: #f2f2f2;
@@ -350,7 +345,7 @@ public class EmailService {
                 .invoice-table .topping-row td {
                     font-size: 0.9em;
                     color: #555;
-                    padding-left: 25px;
+                    padding-left: 25px; /* Thụt lề cho topping */
                 }
                 .invoice-table .price {
                     text-align: right;
@@ -367,15 +362,17 @@ public class EmailService {
             tableBuilder.append("<tr><td colspan='2'>Không có chi tiết đơn hàng.</td></tr>");
         } else {
             for (OrderDetail detail : order.getOrderDetails()) {
-                // Dòng cho món ăn chính
                 tableBuilder.append("<tr class='item-row'>");
                 tableBuilder.append("<td>");
                 tableBuilder.append(detail.getDish() != null ? detail.getDish().getDishName() : "Món không xác định");
+
+                // Thêm ghi chú (note) nếu có
                 if (detail.getNote() != null && !detail.getNote().isEmpty()) {
                     tableBuilder.append("<br><small style='font-weight:normal; color: #777;'><em>Ghi chú: ").append(detail.getNote()).append("</em></small>");
                 }
                 tableBuilder.append("</td>");
-                // Giá của món ăn (không bao gồm topping)
+
+                // Giá của món ăn (không bao gồm topping, dựa theo logic của OrderDetailService)
                 double dishPrice = (detail.getDish() != null && detail.getDish().getPrice() != null) ? detail.getDish().getPrice() : 0.0;
                 tableBuilder.append("<td class='price'>").append(currencyFormatter.format(dishPrice)).append("</td>");
                 tableBuilder.append("</tr>");
