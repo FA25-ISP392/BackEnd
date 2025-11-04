@@ -61,7 +61,7 @@ public class BookingController {
     }
 
     @GetMapping("/by_tableDate")
-    @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN','CUSTOMER','MANAGER')")
     public ApiResponse<List<BookingResponse>> getBookingsByDate(@RequestParam("tableId") int tableId, @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         ApiResponse<List<BookingResponse>> response = new ApiResponse<>();
         if (date == null) {
