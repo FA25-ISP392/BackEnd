@@ -18,8 +18,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,16 +37,21 @@ public class OrdersService {
     TableRepository tableRepository;
     OrdersMapper ordersMapper;
 
+
     @Transactional
     public OrdersResponse createOrder(OrdersCreationRequest request) {
+        // 1. Tìm đơn hàng đang hoạt động (chưa thanh toán) trước
         Optional<Orders> existingOrderOpt = ordersRepository.findActiveOrderByCustomerAndTable(
                 request.getCustomerId(),
                 request.getTableId()
         );
 
+        // 2. Nếu tìm thấy -> xử lý và trả về đơn đó
         if (existingOrderOpt.isPresent()) {
             return handleExistingOrder(existingOrderOpt.get(), request.getCustomerId(), request.getTableId());
         }
+
+        // 3. Nếu không tìm thấy -> tạo đơn hàng mới
         return createNewOrder(request);
     }
 
@@ -52,14 +59,17 @@ public class OrdersService {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // Load chi tiết order
         Hibernate.initialize(order.getOrderDetails());
 
+        // Tính tổng giá đơn hàng = tổng totalPrice của từng orderDetail
         double totalOrderPrice = order.getOrderDetails().stream()
                 .mapToDouble(OrderDetail::getTotalPrice)
                 .sum();
 
+        // Map sang response
         OrdersResponse response = ordersMapper.toOrdersResponse(order);
-        response.setTotalPrice(totalOrderPrice);
+        response.setTotalPrice(totalOrderPrice); // thêm trường này trong OrdersResponse
         return response;
     }
 
@@ -104,6 +114,7 @@ public class OrdersService {
         Hibernate.initialize(existingOrder.getOrderDetails());
         double totalOrderPrice = calculateTotalOrderPrice(existingOrder);
 
+        // Map sang response và cập nhật tổng tiền
         OrdersResponse response = ordersMapper.toOrdersResponse(existingOrder);
         response.setTotalPrice(totalOrderPrice);
         return response;
@@ -118,6 +129,7 @@ public class OrdersService {
         log.info("No active order found for customer {} at table {}. Creating a new order.",
                 request.getCustomerId(), request.getTableId());
 
+        // Lấy thông tin Customer và Table
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
         TableEntity table = tableRepository.findById(request.getTableId())
@@ -129,9 +141,12 @@ public class OrdersService {
         }
 
         Orders newOrder = ordersMapper.toOrders(request, customer, table);
+        // paid mặc định là false khi tạo mới (đã cấu hình trong mapper)
 
+        // Lưu vào DB
         Orders savedOrder = ordersRepository.save(newOrder);
 
+        // Map sang response, đơn mới chưa có chi tiết nên tổng tiền là 0
         OrdersResponse response = ordersMapper.toOrdersResponse(savedOrder);
         response.setTotalPrice(0.0);
         return response;
@@ -143,6 +158,7 @@ public class OrdersService {
      * @return Tổng tiền của đơn hàng.
      */
     private double calculateTotalOrderPrice(Orders order) {
+        // Đảm bảo orderDetails đã được load (có thể thêm Hibernate.initialize nếu cần)
         if (order.getOrderDetails() == null) {
             return 0.0;
         }
@@ -150,5 +166,22 @@ public class OrdersService {
                 .mapToDouble(OrderDetail::getTotalPrice) // Giả sử OrderDetail có getter getTotalPrice()
                 .sum();
     }
+    @Transactional(readOnly = true)
+    public Page<OrdersResponse> getOrdersByCustomerId(Integer customerId, Pageable pageable) {
+        Page<Orders> orderPage = ordersRepository.findAllPaidByCustomer_CustomerId(customerId, pageable);
 
+        orderPage.getContent().forEach(order -> {
+            // Với mỗi order, lặp qua orderDetails của nó
+            order.getOrderDetails().forEach(detail -> {
+                // Và chủ động tải topping
+                Hibernate.initialize(detail.getOrderToppings());
+            });
+        });
+        return orderPage.map(order -> {
+            double totalOrderPrice = calculateTotalOrderPrice(order);
+            OrdersResponse response = ordersMapper.toOrdersResponse(order);
+            response.setTotalPrice(totalOrderPrice);
+            return response;
+        });
+    }
 }

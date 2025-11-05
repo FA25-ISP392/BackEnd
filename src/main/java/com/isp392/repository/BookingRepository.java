@@ -29,4 +29,5 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             LocalDateTime start,
             LocalDateTime end
     );
+
 }

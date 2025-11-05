@@ -31,12 +31,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4 # Kéo mã nguồn về runner (trên VPS của bạn)
 
-      # --- Không cần cài đặt Java/Maven SDK trực tiếp trên runner nữa ---
-      # Lý do: Dockerfile của bạn đã xử lý việc này trong giai đoạn BUILD của image.
-      # DOCKERFILE của bạn (FROM openjdk:17-jdk-slim-buster as build ...)
-      # sẽ tự tải JDK và Maven cần thiết để build JAR bên trong Docker context.
-      # Do đó, runner (VPS của bạn) chỉ cần có Docker Engine.
-
       - name: Build Docker Image
         run: |
           echo "Building Docker image ${IMAGE_NAME}:latest from Dockerfile..."
@@ -52,18 +46,25 @@ jobs:
           docker stop $IMAGE_NAME || true
           docker rm $IMAGE_NAME || true
           echo "Old container stopped and removed (if it existed)."
-          
+
+      # ***** BƯỚC ĐÃ ĐƯỢC SỬA LỖI (GOM VỀ MỘT DÒNG) *****
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
-          docker run -d \
-            --name $IMAGE_NAME \
-            -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
-            -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
-            -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
-            -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
-            -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} \
-            $IMAGE_NAME:latest
+          
+          # 1: Tạo file credentials tạm thời trên máy runner
+          # Nó lấy nội dung từ GitHub Secret GOOGLE_CREDENTIALS_JSON
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > ./gemini-creds.json
+          echo "Temporary credentials file created."
+          
+          # 2: Sửa lệnh docker run - GOM TẤT CẢ VÀO MỘT DÒNG
+          # Lệnh này sẽ chạy toàn bộ trên 1 dòng để tránh lỗi ngắt dòng
+          docker run -d --name $IMAGE_NAME -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT -v $(pwd)/gemini-creds.json:/app/creds.json -e GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} -e GOOGLE_GEMINI_PROJECT_ID=${{ secrets.GOOGLE_GEMINI_PROJECT_ID }} -e GOOGLE_GEMINI_LOCATION=${{ secrets.GOOGLE_GEMINI_LOCATION }} -e GOOGLE_GEMINI_MODEL_NAME=${{ secrets.GOOGLE_GEMINI_MODEL_NAME }} $IMAGE_NAME:latest
+          
+          # 3: Xóa file credentials trên máy runner cho an toàn
+          rm ./gemini-creds.json
+          echo "Temporary credentials file removed."
+          
           echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
 
       - name: Check Running Container Status
@@ -73,4 +74,6 @@ jobs:
       - name: Show container logs
         run: |
           echo "=== Reading app.log from container ==="
+          # Chờ vài giây để ứng dụng khởi động và ghi log
+          sleep 10 
           docker exec $IMAGE_NAME cat /app/logs/app.log || true

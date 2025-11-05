@@ -10,8 +10,12 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/orders")
@@ -60,6 +64,19 @@ public class OrdersController {
         ordersService.deleteOrder(orderId);
         return ApiResponse.<String>builder()
                 .result("Delete Successfully!")
+                .build();
+    }
+
+    @GetMapping("/customer/{customerId}")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ApiResponse<Page<OrdersResponse>> getOrdersByCustomer(
+            @PathVariable Integer customerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        Page<OrdersResponse> result = ordersService.getOrdersByCustomerId(customerId, pageable);
+        return ApiResponse.<Page<OrdersResponse>>builder()
+                .result(result)
                 .build();
     }
 }
