@@ -69,6 +69,7 @@ public class AISuggestionService {
 
             // Cách 2: Gói Part vào trong Content
             Content content = Content.newBuilder()
+                    .setRole("user") // 👈 THÊM DÒNG NÀY VÀO
                     .addParts(textPart)
                     .build();
             // ******************************************************
