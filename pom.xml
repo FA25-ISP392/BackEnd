@@ -18,7 +18,30 @@
         <projectlombok-lombok.version>1.18.30</projectlombok-lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        
+        <!--
+           FIX 3 (Bổ sung): Khai báo phiên bản BOM của Google Cloud 
+           Điều này đảm bảo tất cả thư viện con của Google Cloud tương thích với nhau.
+        -->
+        <google.cloud.bom.version>26.40.0</google.cloud.bom.version>
     </properties>
+
+    <!--
+       FIX 3 (Bổ sung): Thêm Dependency Management cho Google Cloud BOM
+       Điều này giải quyết xung đột thư viện ở bước 'repackage'.
+    -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.cloud</groupId>
+                <artifactId>libraries-bom</artifactId>
+                <version>${google.cloud.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>vn.payos</groupId>
@@ -91,7 +114,10 @@
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-vertexai</artifactId>
-            <version>1.4.0</version>
+            <!-- 
+                FIX 3 (Bổ sung): Xóa <version> từ đây
+                BOM ở trên sẽ tự động quản lý phiên bản này.
+            -->
         </dependency>
 
     </dependencies>
@@ -114,7 +140,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <!-- 
-                    FIX 1: Đã xóa dòng <version>${maven-compiler-plugin.version}</version>
+                    FIX 1: Đã xóa dòng <version> không hợp lệ
                     Spring Boot Parent sẽ tự quản lý phiên bản này.
                 -->
                 <configuration>
