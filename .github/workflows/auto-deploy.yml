@@ -47,7 +47,7 @@ jobs:
           docker rm $IMAGE_NAME || true
           echo "Old container stopped and removed (if it existed)."
 
-      # ***** BƯỚC CŨ ĐÃ BỊ THAY THẾ BẰNG BƯỚC MỚI NÀY *****
+      # ***** BƯỚC ĐÃ ĐƯỢC SỬA LỖI *****
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
@@ -58,26 +58,27 @@ jobs:
           echo "Temporary credentials file created."
           
           # 2: Sửa lệnh docker run
-          docker run -d 
-            --name $IMAGE_NAME 
-            -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT 
+          # Thêm ký tự \ ở cuối mỗi dòng để báo cho shell biết lệnh này chạy trên nhiều dòng
+          docker run -d \
+            --name $IMAGE_NAME \
+            -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
             
             # Mount file credentials từ runner vào BÊN TRONG container
-            -v $(pwd)/gemini-creds.json:/app/creds.json 
+            -v $(pwd)/gemini-creds.json:/app/creds.json \
             
             # Đây chính là biến môi trường ADC
-            -e GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json 
+            -e GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json \
             
             # Các biến cũ của bạn (giữ nguyên)
-            -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} 
-            -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} 
-            -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} 
-            -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} 
+            -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
+            -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
+            -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
+            -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} \
             
-            # Thêm các biến cấu hình Gemini (đọc từ secret bạn tạo ở Bước 3)
-            -e GOOGLE_GEMINI_PROJECT_ID=${{ secrets.GOOGLE_GEMINI_PROJECT_ID }} 
-            -e GOOGLE_GEMINI_LOCATION=${{ secrets.GOOGLE_GEMINI_LOCATION }} 
-            -e GOOGLE_GEMINI_MODEL_NAME=${{ secrets.GOOGLE_GEMINI_MODEL_NAME }} 
+            # Thêm các biến cấu hình Gemini
+            -e GOOGLE_GEMINI_PROJECT_ID=${{ secrets.GOOGLE_GEMINI_PROJECT_ID }} \
+            -e GOOGLE_GEMINI_LOCATION=${{ secrets.GOOGLE_GEMINI_LOCATION }} \
+            -e GOOGLE_GEMINI_MODEL_NAME=${{ secrets.GOOGLE_GEMINI_MODEL_NAME }} \
             $IMAGE_NAME:latest
           
           # 3: Xóa file credentials trên máy runner cho an toàn
@@ -93,4 +94,6 @@ jobs:
       - name: Show container logs
         run: |
           echo "=== Reading app.log from container ==="
+          # Chờ vài giây để ứng dụng khởi động và ghi log
+          sleep 10 
           docker exec $IMAGE_NAME cat /app/logs/app.log || true
