@@ -118,6 +118,20 @@
                 FIX 3 (Bổ sung): Xóa <version> từ đây
                 BOM ở trên sẽ tự động quản lý phiên bản này.
             -->
+            
+            <!--
+                FIX 4: Loại trừ Guava của Google
+                Spring Boot Parent (3.2.2) đã cung cấp phiên bản Guava.
+                Thư viện VertexAI kéo theo phiên bản Guava mới hơn,
+                gây ra xung đột (LinkageError) khi Spring Boot cố gắng 'repackage'.
+                Việc loại trừ này buộc VertexAI phải sử dụng phiên bản Guava do Spring Boot cung cấp.
+            -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>
