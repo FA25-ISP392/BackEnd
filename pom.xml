@@ -18,30 +18,7 @@
         <projectlombok-lombok.version>1.18.30</projectlombok-lombok.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        
-        <!--
-           FIX 3 (Bổ sung): Khai báo phiên bản BOM của Google Cloud 
-           Điều này đảm bảo tất cả thư viện con của Google Cloud tương thích với nhau.
-        -->
-        <google.cloud.bom.version>26.40.0</google.cloud.bom.version>
     </properties>
-
-    <!--
-       FIX 3 (Bổ sung): Thêm Dependency Management cho Google Cloud BOM
-       Điều này giải quyết xung đột thư viện ở bước 'repackage'.
-    -->
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.google.cloud</groupId>
-                <artifactId>libraries-bom</artifactId>
-                <version>${google.cloud.bom.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>vn.payos</groupId>
@@ -110,29 +87,13 @@
             <version>1.33.0</version>
         </dependency>
 
-        <!-- Thư viện Google VertexAI -->
+        <!-- ***** ĐÂY LÀ THƯ VIỆN MỚI CẦN THÊM ***** -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-vertexai</artifactId>
-            <!-- 
-                FIX 3 (Bổ sung): Xóa <version> từ đây
-                BOM ở trên sẽ tự động quản lý phiên bản này.
-            -->
-            
-            <!--
-                FIX 4: Loại trừ Guava của Google
-                Spring Boot Parent (3.2.2) đã cung cấp phiên bản Guava.
-                Thư viện VertexAI kéo theo phiên bản Guava mới hơn,
-                gây ra xung đột (LinkageError) khi Spring Boot cố gắng 'repackage'.
-                Việc loại trừ này buộc VertexAI phải sử dụng phiên bản Guava do Spring Boot cung cấp.
-            -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-            </exclusions>
+            <version>1.4.0</version>
         </dependency>
+        <!-- **************************************** -->
 
     </dependencies>
 
@@ -153,10 +114,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <!-- 
-                    FIX 1: Đã xóa dòng <version> không hợp lệ
-                    Spring Boot Parent sẽ tự quản lý phiên bản này.
-                -->
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -186,7 +144,4 @@
             </plugin>
         </plugins>
     </build>
-    <!-- 
-        FIX 2: Đã xóa dòng chú thích XML bị lỗi nằm ở đây.
-    -->
 </project>
