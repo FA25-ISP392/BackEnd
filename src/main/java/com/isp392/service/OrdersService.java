@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -53,7 +54,7 @@ public class OrdersService {
         // 3. Nếu không tìm thấy -> tạo đơn hàng mới
         return createNewOrder(request);
     }
-    @Transactional(readOnly = true)
+
     public OrdersResponse getOrder(Integer orderId) {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -134,7 +135,11 @@ public class OrdersService {
         TableEntity table = tableRepository.findById(request.getTableId())
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
 
-        // Tạo entity Orders mới
+        if (table.isServing()) {
+            log.warn("Failed to create new order: Table {} is already being served.", table.getTableId());
+            throw new AppException(ErrorCode.TABLE_ALREADY_SERVING);
+        }
+
         Orders newOrder = ordersMapper.toOrders(request, customer, table);
         // paid mặc định là false khi tạo mới (đã cấu hình trong mapper)
 
