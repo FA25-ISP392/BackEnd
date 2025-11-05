@@ -1,9 +1,10 @@
+# Tên file: .github/workflows/main.yml
 name: CI/CD for Spring Boot Application (Local Docker)
 
 on:
   push:
     branches:
-      - main # Chạy workflow khi có push lên nhánh 'master' (hoặc 'main')
+      - main # Chạy workflow khi có push lên nhánh 'main'
   pull_request:
     branches:
       - main
@@ -14,29 +15,27 @@ jobs:
 
     env:
       # Các biến môi trường lấy từ GitHub Secrets.
-      # Đảm bảo bạn đã cấu hình các secrets này trong repo của mình.
       IMAGE_NAME: ${{ secrets.IMAGE_NAME }}
-      # Tên image Docker (ví dụ: healthcare-app)
-      DOCKER_HOST_PORT: 9020 # Cổng trên máy host (ví dụ: 80)
-      APP_INTERNAL_PORT: 8080 # Cổng mà ứng dụng Spring Boot lắng nghe bên trong container (thường là 8080)
-
-      # Nếu ứng dụng Spring Boot của bạn cần các biến môi trường cấu hình, hãy thêm vào đây
-      # Ví dụ:
-      # DATABASE_URL: ${{ secrets.DATABASE_URL }}
-      # API_KEY: ${{ secrets.API_KEY }}
+      DOCKER_HOST_PORT: 9020 # Cổng trên máy host
+      APP_INTERNAL_PORT: 8080 # Cổng mà ứng dụng Spring Boot lắng nghe bên trong container
+      
+      # Biến môi trường cho ứng dụng Spring Boot
       FRONTEND_RESET_PASSWORD_URL: ${{ secrets.FRONTEND_RESET_PASSWORD_URL }}
       FRONTEND_VERIFY_EMAIL_URL: ${{ secrets.FRONTEND_VERIFY_EMAIL_URL }}
+      PAYOS_RETURN_URL: ${{ secrets.PAYOS_RETURN_URL }}
+      PAYOS_CANCEL_URL: ${{ secrets.PAYOS_CANCEL_URL }}
+      GOOGLE_GEMINI_PROJECT_ID: ${{ secrets.GOOGLE_GEMINI_PROJECT_ID }}
+      GOOGLE_GEMINI_LOCATION: ${{ secrets.GOOGLE_GEMINI_LOCATION }}
+      GOOGLE_GEMINI_MODEL_NAME: ${{ secrets.GOOGLE_GEMINI_MODEL_NAME }}
+      # GOOGLE_CREDENTIALS_JSON sẽ được xử lý riêng bên dưới
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4 # Kéo mã nguồn về runner (trên VPS của bạn)
+        uses: actions/checkout@v4 # Kéo mã nguồn về runner
 
       - name: Build Docker Image
         run: |
           echo "Building Docker image ${IMAGE_NAME}:latest from Dockerfile..."
-          # Lệnh này sẽ chạy Docker build. Docker sẽ đọc Dockerfile của bạn,
-          # thực hiện multi-stage build (build Maven JAR, copy vào JRE image)
-          # và tạo ra image cuối cùng.
           docker build -t $IMAGE_NAME:latest .
           echo "Docker image built successfully: ${IMAGE_NAME}:latest"
 
@@ -48,32 +47,27 @@ jobs:
           echo "Old container stopped and removed (if it existed)."
 
       # ***** BƯỚC ĐÃ ĐƯỢC SỬA LỖI *****
+      # Phiên bản này ĐÃ XÓA TẤT CẢ CÁC DÒNG TRỐNG bên trong
+      # khối lệnh `docker run` để tránh lỗi shell.
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
           
           # 1: Tạo file credentials tạm thời trên máy runner
+          # Đảm bảo file này được tạo ở vị trí mà $(pwd) có thể truy cập
           echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > ./gemini-creds.json
           echo "Temporary credentials file created."
           
-          # 2: Sửa lệnh docker run (ĐÃ THÊM DẤU \ Ở CUỐI DÒNG)
+          # 2: Sửa lệnh docker run (ĐÃ XÓA CÁC DÒNG TRỐNG)
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
-            
-            # Mount file credentials từ runner vào BÊN TRONG container
             -v $(pwd)/gemini-creds.json:/app/creds.json \
-            
-            # Đây chính là biến môi trường ADC
             -e GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json \
-            
-            # Các biến cũ của bạn (giữ nguyên)
             -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
             -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
             -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
             -e PAYOS_CANCEL_URL=${{ secrets.PAYOS_CANCEL_URL }} \
-            
-            # Thêm các biến cấu hình Gemini (đọc từ secret bạn tạo ở Bước 3)
             -e GOOGLE_GEMINI_PROJECT_ID=${{ secrets.GOOGLE_GEMINI_PROJECT_ID }} \
             -e GOOGLE_GEMINI_LOCATION=${{ secrets.GOOGLE_GEMINI_LOCATION }} \
             -e GOOGLE_GEMINI_MODEL_NAME=${{ secrets.GOOGLE_GEMINI_MODEL_NAME }} \
@@ -88,8 +82,18 @@ jobs:
       - name: Check Running Container Status
         run: |
           echo "Checking status of container ${IMAGE_NAME}..."
+          # Đợi một chút để container có thời gian khởi động
+          sleep 10
           docker ps -f "name=${IMAGE_NAME}"
+
       - name: Show container logs
         run: |
-          echo "=== Reading app.log from container ==="
-          docker exec $IMAGE_NAME cat /app/logs/app.log || true
+          echo "=== Reading app.log from container (if available) ==="
+          # Chờ thêm vài giây để ứng dụng có thể đã bắt đầu ghi log
+          sleep 5
+          # Thêm 'docker logs' để xem output của container, rất hữu ích khi debug
+          echo "--- Docker logs ---"
+          docker logs $IMAGE_NAME
+          
+          echo "--- /app/logs/app.log (if exists) ---"
+          docker exec $IMAGE_NAME cat /app/logs/app.log || echo "Log file /app/logs/app.log not found or container not ready."
