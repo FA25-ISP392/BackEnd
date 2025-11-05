@@ -251,25 +251,29 @@ public class EmailService {
         send(toEmail, subject, body);
         log.info("Booking REMINDER email sent to {}", toEmail);
     }
+
     @Async("taskExecutor")
     public void sendPaymentSuccessEmail(String toEmail, String customerName, Orders order, PaymentMethod method, LocalDateTime paidAt) {
         String subject = "Hóa đơn thanh toán cho đơn hàng #" + order.getOrderId();
 
-        // Định dạng tiền tệ
+        // 1. Chuẩn bị các định dạng
         Locale vietnameseLocale = new Locale("vi", "VN");
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(vietnameseLocale);
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
+        DateTimeFormatter orderDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-        String invoiceTableHtml = generateHtmlInvoiceTable(order, currencyFormatter);
+        // 2. Tạo bảng chi tiết món ăn (gọi helper đã được thiết kế lại)
+        String invoiceTableHtml = generateHtmlInvoiceItemsTable(order, currencyFormatter);
 
-
+        // 3. Tính tổng tiền
         double totalAmount = order.getOrderDetails().stream()
                 .mapToDouble(OrderDetail::getTotalPrice)
                 .sum();
         String formattedTotal = currencyFormatter.format(totalAmount);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm 'ngày' dd/MM/yyyy");
-        String formattedPaidAt = paidAt.format(formatter);
-
+        // 4. Định dạng các chuỗi
+        String formattedOrderDate = order.getOrderDate() != null ? order.getOrderDate().format(orderDateFormatter) : "N/A";
+        String formattedPaidAt = paidAt.format(dateFormatter);
         String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản Ngân hàng";
 
         // 5. Tạo nội dung email
@@ -281,26 +285,37 @@ public class EmailService {
                     <img src="https://cdn-icons-png.flaticon.com/512/2910/2910768.png" alt="Logo"
                          style="width: 80px; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
             
-                    <h2 style="color: #333; text-align: center;">Hóa đơn thanh toán</h2>
-            
+                    <h2 style="color: #333; text-align: center;">Cảm ơn bạn, %s!</h2>
                     <p style="color: #555; font-size: 15px; line-height: 1.6; text-align: center;">
-                        Xin chào %s,<br>
-                        Cảm ơn bạn đã sử dụng dịch vụ. Dưới đây là chi tiết hóa đơn cho đơn hàng #%d.
+                        Đơn hàng của bạn đã được thanh toán thành công.
                     </p>
                     
+                    <table style="width: 100%%; margin-bottom: 20px; font-size: 14px;">
+                        <tr>
+                            <td style="color: #555;">Mã đơn hàng: <strong>#%d</strong></td>
+                            <td style="color: #555; text-align: right;">Đặt hàng vào: <strong>%s</strong></td>
+                        </tr>
+                    </table>
+
+                    <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 25px;">
+                        <h3 style="color: #333; margin-top: 0;">Thanh toán</h3>
+                        <p style="color: #555; margin: 5px 0; font-size: 14px;">
+                            <strong>Phương thức:</strong> %s
+                        </p>
+                        <p style="color: #555; margin: 5px 0; font-size: 14px;">
+                            <strong>Trạng thái:</strong> <span style="color: #28a745; font-weight: bold;">Đã thanh toán</span> (lúc %s)
+                        </p>
+                    </div>
+
+                    <h3 style="color: #333; margin-top: 0;">Tóm tắt đơn hàng</h3>
                     %s
                     
-                    <div style="background-color: #f9f9f9; border-left: 5px solid #28a745; padding: 15px; margin: 20px 0;">
-                        <h3 style="color: #333; margin-top: 0;">Chi tiết thanh toán:</h3>
-                        <p style="color: #555; margin: 5px 0;"><strong>Tổng cộng:</strong> <span style="font-weight: bold; color: #28a745; font-size: 1.2em;">%s</span></p>
-                        <p style="color: #555; margin: 5px 0;"><strong>Phương thức:</strong> %s</p>
-                        <p style="color: #555; margin: 5px 0;"><strong>Thời gian:</strong> %s</p>
-                    </div>
-            
-                    <p style="color: #777; font-size: 13px; text-align: center;">
-                        Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của chúng tôi!<br>
-                        Nếu có bất kỳ thắc mắc nào, vui lòng liên hệ bộ phận hỗ trợ.
-                    </p>
+                    <table style="width: 100%%; margin-top: 20px; border-top: 2px solid #eee; padding-top: 15px;">
+                        <tr>
+                            <td style="color: #111; padding: 5px 0; font-size: 1.2em; font-weight: bold;">Tổng cộng:</td>
+                            <td style="color: #111; padding: 5px 0; text-align: right; font-size: 1.2em; font-weight: bold;">%s</td>
+                        </tr>
+                    </table>
             
                     <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
             
@@ -309,89 +324,116 @@ public class EmailService {
                     </p>
                 </div>
             </div>
-            """, customerName, order.getOrderId(), invoiceTableHtml, formattedTotal, paymentMethodString, formattedPaidAt);
+            """, customerName, order.getOrderId(), formattedOrderDate, paymentMethodString, formattedPaidAt, invoiceTableHtml, formattedTotal);
 
         send(toEmail, subject, body);
         log.info("Payment success email (invoice) sent to {} for order #{}", toEmail, order.getOrderId());
     }
 
 
-    private String generateHtmlInvoiceTable(Orders order, NumberFormat currencyFormatter) {
+
+    private String generateHtmlInvoiceItemsTable(Orders order, NumberFormat currencyFormatter) {
         StringBuilder tableBuilder = new StringBuilder();
 
-        // CSS cho bảng
+        // CSS cho bảng (Thêm style cho hình ảnh)
         tableBuilder.append("""
             <style>
                 .invoice-table {
-                    width: 100%%;
+                    width: 100%;
                     border-collapse: collapse;
-                    margin: 20px 0;
+                    margin: 0;
                     font-size: 14px;
                 }
-                .invoice-table th, .invoice-table td {
-                    border: 1px solid #ddd;
-                    padding: 10px;
+                .invoice-table tr {
+                    border-bottom: 1px solid #eee; /* Đường kẻ mờ giữa các món */
+                }
+                .invoice-table td {
+                    padding: 15px 0; /* Tăng khoảng cách */
                     text-align: left;
                     vertical-align: top;
                 }
-                .invoice-table th {
-                    background-color: #f2f2f2;
-                    color: #333;
+                .invoice-table .item-info {
+                    padding-left: 15px;
                 }
-                .invoice-table .item-row td {
+                .invoice-table .item-image {
+                    width: 65px;
+                    height: 65px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                    border: 1px solid #eee;
+                }
+                .invoice-table .item-name {
+                    font-size: 1.1em;
                     font-weight: bold;
-                    background-color: #fdfdfd;
+                    color: #000;
+                    margin: 0;
                 }
-                .invoice-table .topping-row td {
+                .invoice-table .item-details {
                     font-size: 0.9em;
                     color: #555;
-                    padding-left: 25px; /* Thụt lề cho topping */
+                    margin: 5px 0 0 0;
                 }
                 .invoice-table .price {
                     text-align: right;
                     white-space: nowrap;
+                    font-weight: bold;
+                    font-size: 1.1em;
                 }
             </style>
             """);
 
         tableBuilder.append("<table class='invoice-table'>");
-        tableBuilder.append("<thead><tr><th>Chi tiết món ăn</th><th class='price'>Thành tiền</th></tr></thead>");
         tableBuilder.append("<tbody>");
 
         if (order.getOrderDetails() == null || order.getOrderDetails().isEmpty()) {
             tableBuilder.append("<tr><td colspan='2'>Không có chi tiết đơn hàng.</td></tr>");
         } else {
             for (OrderDetail detail : order.getOrderDetails()) {
-                tableBuilder.append("<tr class='item-row'>");
-                tableBuilder.append("<td>");
-                tableBuilder.append(detail.getDish() != null ? detail.getDish().getDishName() : "Món không xác định");
+                // Lấy ảnh (fallback nếu không có ảnh)
+                String imageUrl = (detail.getDish() != null && detail.getDish().getPicture() != null)
+                        ? detail.getDish().getPicture()
+                        : "https://via.placeholder.com/65"; // Ảnh dự phòng
 
-                // Thêm ghi chú (note) nếu có
-                if (detail.getNote() != null && !detail.getNote().isEmpty()) {
-                    tableBuilder.append("<br><small style='font-weight:normal; color: #777;'><em>Ghi chú: ").append(detail.getNote()).append("</em></small>");
-                }
-                tableBuilder.append("</td>");
+                String dishName = (detail.getDish() != null) ? detail.getDish().getDishName() : "Món không xác định";
 
-                // Giá của món ăn (không bao gồm topping, dựa theo logic của OrderDetailService)
-                double dishPrice = (detail.getDish() != null && detail.getDish().getPrice() != null) ? detail.getDish().getPrice() : 0.0;
-                tableBuilder.append("<td class='price'>").append(currencyFormatter.format(dishPrice)).append("</td>");
-                tableBuilder.append("</tr>");
+                tableBuilder.append("<tr>");
 
-                // Các dòng cho topping (nếu có)
-                if (detail.getOrderToppings() != null) {
+                // Cột 1: Chi tiết (Hình ảnh + Tên + Topping/Note)
+                tableBuilder.append("<td style='display: flex; align-items: center; border: none;'>");
+
+                // Hình ảnh
+                tableBuilder.append(String.format("<img src='%s' alt='%s' class='item-image'>", imageUrl, dishName));
+
+                // Thông tin
+                tableBuilder.append("<div class='item-info'>");
+                tableBuilder.append(String.format("<p class='item-name'>%s</p>", dishName));
+
+                // Xây dựng chuỗi chi tiết (Topping và Ghi chú)
+                StringBuilder detailsText = new StringBuilder();
+
+                // Thêm Topping
+                if (detail.getOrderToppings() != null && !detail.getOrderToppings().isEmpty()) {
                     for (OrderTopping topping : detail.getOrderToppings()) {
-                        tableBuilder.append("<tr class='topping-row'>");
-                        tableBuilder.append("<td>");
-                        tableBuilder.append("+ ");
-                        tableBuilder.append(topping.getTopping() != null ? topping.getTopping().getName() : "Topping");
-                        if (topping.getQuantity() > 1) {
-                            tableBuilder.append(" (x").append(topping.getQuantity()).append(")");
-                        }
-                        tableBuilder.append("</td>");
-                        tableBuilder.append("<td class='price'>").append(currencyFormatter.format(topping.getToppingPrice())).append("</td>");
-                        tableBuilder.append("</tr>");
+                        String toppingName = (topping.getTopping() != null) ? topping.getTopping().getName() : "Topping";
+                        detailsText.append(String.format("%s (x%d)<br>", toppingName, topping.getQuantity()));
                     }
                 }
+                // Thêm Ghi chú
+                if (detail.getNote() != null && !detail.getNote().isEmpty()) {
+                    detailsText.append(String.format("<em>Ghi chú: %s</em>", detail.getNote()));
+                }
+
+                if (detailsText.length() > 0) {
+                    tableBuilder.append(String.format("<p class='item-details'>%s</p>", detailsText.toString()));
+                }
+
+                tableBuilder.append("</div>"); // end item-info
+                tableBuilder.append("</td>"); // end cột 1
+
+                // Cột 2: Thành tiền (của line item này)
+                tableBuilder.append(String.format("<td class='price' style='border: none;'>%s</td>", currencyFormatter.format(detail.getTotalPrice())));
+
+                tableBuilder.append("</tr>");
             }
         }
 
