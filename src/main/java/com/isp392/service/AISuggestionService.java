@@ -1,13 +1,16 @@
 package com.isp392.service;
 
+// --- CÁC IMPORT CẦN THÊM ---
+import com.isp392.dto.request.AIChatRequest;
+import com.isp392.dto.request.ChatMessage;
+import com.isp392.dto.response.AIChatResponse;
+// --- (Giữ các import cũ) ---
 import com.isp392.dto.response.DishResponse;
 import com.isp392.entity.Customer;
 import com.isp392.repository.CustomerRepository;
 import com.google.cloud.vertexai.VertexAI;
 import com.google.cloud.vertexai.api.GenerateContentResponse;
-// ***** SỬA LỖI IMPORT 1: Import 'Content' từ .api *****
 import com.google.cloud.vertexai.api.Content;
-// ***** SỬA LỖI IMPORT 2: Import 'Part' từ .api *****
 import com.google.cloud.vertexai.api.Part;
 import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList; // 👈 Thêm
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,11 +27,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AISuggestionService {
 
-    // 1. Tái sử dụng các service/repository bạn đã có
     private final DishService dishService;
     private final CustomerRepository customerRepository;
 
-    // 2. Lấy thông tin cấu hình AI từ application.yaml
     @Value("${google.gemini.project-id}")
     private String geminiProjectId;
 
@@ -38,48 +40,60 @@ public class AISuggestionService {
     private String geminiModelName;
 
     /**
-     * Hàm chính để xử lý chat
+     * Hàm chính đã được sửa đổi để xử lý hội thoại (chat)
      */
-    public String getChatSuggestion(String userQuery, String customerUsername) {
+    public AIChatResponse getChatSuggestion(AIChatRequest request, String customerUsername) {
 
-        // --- PHẦN 1: THU THẬP BỐI CẢNH (CONTEXT) ---
-        log.info("AI Chat: Lấy dữ liệu cho người dùng {}", customerUsername);
+        // --- PHẦN 1: TẠO DANH SÁCH HỘI THOẠI (HISTORY LIST) ---
+        List<Content> historyContents = new ArrayList<>();
 
-        Customer customer = customerRepository.findByUsername(customerUsername)
-                .orElse(null);
+        // 1a. (QUAN TRỌNG) Luôn bắt đầu bằng RÀNG BUỘC HỆ THỐNG (System Prompt)
+        // Chỉ thêm ràng buộc này nếu đây là tin nhắn đầu tiên (lịch sử rỗng)
+        if (request.getHistory() == null || request.getHistory().isEmpty()) {
+            log.info("AI Chat: Bắt đầu hội thoại mới cho {}", customerUsername);
+            String systemPrompt = buildSystemPrompt(customerUsername);
 
-        List<DishResponse> allDishes = dishService.getAllDishes(null, null);
+            // "Priming" - Gửi ràng buộc hệ thống cho AI (giả lập vai trò user)
+            historyContents.add(createVertexContent("user", systemPrompt));
+            // "Priming" - Gửi một câu trả lời mẫu của AI để nó nhận vai
+            historyContents.add(createVertexContent("model", "Đã hiểu. Tôi là trợ lý tư vấn món ăn. Tôi đã sẵn sàng, mời bạn đặt câu hỏi."));
+        } else {
+            log.info("AI Chat: Tiếp tục hội thoại cho {}", customerUsername);
+            // Tải lại lịch sử chat cũ từ request
+            for (ChatMessage msg : request.getHistory()) {
+                historyContents.add(createVertexContent(msg.getRole(), msg.getText()));
+            }
+        }
 
-        String dishDataContext = convertDishesToText(allDishes);
+        // 1b. Thêm câu hỏi MỚI của người dùng vào cuối danh sách
+        historyContents.add(createVertexContent("user", request.getQuery()));
 
-        // --- PHẦN 2: TẠO PROMPT CHO AI ---
-        String finalPrompt = buildPrompt(userQuery, customer, dishDataContext);
-        log.debug("AI Chat: Final Prompt: {}", finalPrompt);
-
-        // --- PHẦN 3: GỌI API CỦA GEMINI (tức là tôi) ---
+        // --- PHẦN 2: GỌI API CỦA GEMINI ---
         log.info("AI Chat: Đang gọi VertexAI Gemini...");
         try (VertexAI vertexAi = new VertexAI(geminiProjectId, geminiLocation)) {
             GenerativeModel model = new GenerativeModel(geminiModelName, vertexAi);
 
-            // ***** SỬA LỖI LOGIC 3: Cách tạo 'Content' và 'Part' *****
-            // Cách 1: Tạo Part
-            Part textPart = Part.newBuilder()
-                    .setText(finalPrompt)
-                    .build();
+            // 👇 SỬA ĐỔI: Gửi TOÀN BỘ danh sách hội thoại
+            GenerateContentResponse response = model.generateContent(historyContents);
 
-            // Cách 2: Gói Part vào trong Content
-            Content content = Content.newBuilder()
-                    .setRole("user") // 👈 THÊM DÒNG NÀY VÀO
-                    .addParts(textPart)
-                    .build();
-            // ******************************************************
-
-            GenerateContentResponse response = model.generateContent(content);
-
-            // Lấy text từ response (phần này vẫn đúng)
-            String aiResponse = response.getCandidates(0).getContent().getParts(0).getText();
+            String aiResponseText = response.getCandidates(0).getContent().getParts(0).getText();
             log.info("AI Chat: Đã nhận phản hồi từ Gemini.");
-            return aiResponse;
+
+            // --- PHẦN 3: ĐÓNG GÓI RESPONSE ---
+
+            // 3a. Tạo danh sách lịch sử mới để trả về cho frontend
+            List<ChatMessage> updatedHistory = new ArrayList<>();
+            if (request.getHistory() != null) {
+                updatedHistory.addAll(request.getHistory()); // Thêm lịch sử cũ
+            }
+            updatedHistory.add(new ChatMessage("user", request.getQuery())); // Thêm câu hỏi mới
+            updatedHistory.add(new ChatMessage("model", aiResponseText)); // Thêm câu trả lời mới
+
+            // 3b. Xây dựng đối tượng AIChatResponse
+            return AIChatResponse.builder()
+                    .aiText(aiResponseText)
+                    .updatedHistory(updatedHistory)
+                    .build();
 
         } catch (Exception e) {
             log.error("Lỗi khi gọi VertexAI: {}", e.getMessage(), e);
@@ -88,12 +102,32 @@ public class AISuggestionService {
     }
 
     /**
-     * (Helper) Xây dựng prompt hoàn chỉnh cho AI
+     * (Helper) Tạo một đối tượng Content của VertexAI từ role và text
      */
-    private String buildPrompt(String userQuery, Customer customer, String dishDataContext) {
+    private Content createVertexContent(String role, String text) {
+        Part textPart = Part.newBuilder()
+                .setText(text)
+                .build();
+        return Content.newBuilder()
+                .setRole(role) // "user" hoặc "model"
+                .addParts(textPart)
+                .build();
+    }
+
+    /**
+     * (Helper) Xây dựng RÀNG BUỘC HỆ THỐNG (System Prompt)
+     * (Đã loại bỏ userQuery)
+     */
+    private String buildSystemPrompt(String customerUsername) {
+        // --- THU THẬP BỐI CẢNH (CONTEXT) ---
+        Customer customer = customerRepository.findByUsername(customerUsername).orElse(null);
+        List<DishResponse> allDishes = dishService.getAllDishes(null, null);
+        String dishDataContext = convertDishesToText(allDishes);
+
+        // --- XÂY DỰNG PROMPT ---
         StringBuilder prompt = new StringBuilder();
 
-        // 1. Thiết lập vai trò (System Prompt)
+        // 1. Thiết lập vai trò (Giữ nguyên các ràng buộc của bạn)
         prompt.append("Bạn là một chuyên gia tư vấn dinh dưỡng của nhà hàng. ");
         prompt.append("Nhiệm vụ của bạn CHỈ LÀ gợi ý món ăn từ danh sách được cung cấp. ");
         prompt.append("KHÔNG trả lời bất kỳ câu hỏi nào không liên quan đến việc chọn món ăn (ví dụ: không trả lời câu hỏi về thời tiết, lịch sử, toán học...). ");
@@ -111,25 +145,24 @@ public class AISuggestionService {
             if(customer.getSex() != null) prompt.append("Giới tính: ").append(customer.getSex() ? "Nam" : "Nữ").append("\n\n");
         }
 
-        // 3. Cung cấp dữ liệu món ăn (Lấy từ DB của bạn)
+        // 3. Cung cấp dữ liệu món ăn
         prompt.append("--- Danh sách món ăn HÔM NAY (chỉ được chọn từ đây) ---\n");
         prompt.append(dishDataContext);
         prompt.append("\n\n");
 
-        // 4. Câu hỏi của người dùng
-        prompt.append("--- Câu hỏi của khách hàng ---\n");
-        prompt.append(userQuery).append("\n");
+        // 4. KHÔNG CÒN câu hỏi của user ở đây
+        // prompt.append("--- Câu hỏi của khách hàng ---\n");
+        // prompt.append(userQuery).append("\n");
 
-        prompt.append("\n--- Câu trả lời tư vấn của bạn (Hãy gợi ý 1-2 món phù hợp nhất) ---\n");
+        prompt.append("\n--- BẮT ĐẦU HỘI THOẠI ---\n");
 
         return prompt.toString();
     }
 
     /**
-     * (Helper) Chuyển List<DishResponse> thành text cho AI đọc
+     * (Helper) Chuyển List<DishResponse> thành text cho AI đọc (Giữ nguyên)
      */
     private String convertDishesToText(List<DishResponse> dishes) {
-        // Chỉ gợi ý các món còn hàng (remainingQuantity > 0)
         return dishes.stream()
                 .filter(dish -> dish.getRemainingQuantity() > 0)
                 .map(dish -> String.format(
@@ -146,4 +179,3 @@ public class AISuggestionService {
                 .collect(Collectors.joining("\n"));
     }
 }
-
