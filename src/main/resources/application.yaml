@@ -72,8 +72,8 @@ logging:
   level:
     root: INFO
     com.isp392: DEBUG
-    google:
-      gemini:
-        project-id: "${GOOGLE_GEMINI_PROJECT_ID}"
-        location: "${GOOGLE_GEMINI_LOCATION}"
-        model-name: "${GOOGLE_GEMINI_MODEL_NAME}"
+google:
+  gemini:
+    project-id: "${GOOGLE_GEMINI_PROJECT_ID}"
+    location: "${GOOGLE_GEMINI_LOCATION}"
+    model-name: "${GOOGLE_GEMINI_MODEL_NAME}"
