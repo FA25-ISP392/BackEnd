@@ -87,13 +87,12 @@
             <version>1.33.0</version>
         </dependency>
 
-        <!-- ***** ĐÂY LÀ THƯ VIỆN MỚI CẦN THÊM ***** -->
+        <!-- Thư viện Google VertexAI -->
         <dependency>
             <groupId>com.google.cloud</groupId>
             <artifactId>google-cloud-vertexai</artifactId>
             <version>1.4.0</version>
         </dependency>
-        <!-- **************************************** -->
 
     </dependencies>
 
@@ -114,7 +113,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${maven-compiler-plugin.version}</version>
+                <!-- 
+                    FIX 1: Đã xóa dòng <version>${maven-compiler-plugin.version}</version>
+                    Spring Boot Parent sẽ tự quản lý phiên bản này.
+                -->
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -144,5 +146,7 @@
             </plugin>
         </plugins>
     </build>
-    <!-- ***** BẠN ĐÃ DÁN SAI VỊ TRÍ, NÓ PHẢI NẰM BÊN TRÊN </project> ***** -->
+    <!-- 
+        FIX 2: Đã xóa dòng chú thích XML bị lỗi nằm ở đây.
+    -->
 </project>
