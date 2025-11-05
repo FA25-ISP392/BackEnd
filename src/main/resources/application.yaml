@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: ${PORT:8080}
   servlet:
     context-path: /isp392
   forward-headers-strategy: framework
@@ -72,6 +72,10 @@ logging:
   level:
     root: INFO
     com.isp392: DEBUG
+
+# --- ĐÃ SỬA ---
+# Khối 'google' này được di chuyển ra ngoài (xóa thụt vào)
+# để nó không còn nằm trong 'logging.level'
 google:
   gemini:
     project-id: "${GOOGLE_GEMINI_PROJECT_ID}"
