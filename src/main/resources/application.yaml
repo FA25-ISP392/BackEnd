@@ -1,31 +1,29 @@
 server:
-  # === SỬA LỖI PORT ===
-  # Dòng này sẽ sử dụng cổng (port) mà Render cung cấp.
-  # Nếu không có (chạy local), nó sẽ dùng cổng 8080.
-  port: ${PORT:8080}
+  port: 8080
   servlet:
     context-path: /isp392
   forward-headers-strategy: framework
-
 spring:
   datasource:
-    # === SỬA LỖI BẢO MẬT ===
-    # Sử dụng biến môi trường cho tất cả thông tin nhạy cảm
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:sqlserver://database.purintech.id.vn:1433;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
+    username: ispmaifa
+    password: ispmaifa
+    # url: jdbc:sqlserver://localhost:1433;databaseName=FOODSYSTEM;encrypt=true;trustServerCertificate=true;
+    # username: sa
+    # password: 12345
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.SQLServerDialect
+    # properties:
+    #   hibernate.jdbc.time_zone: Asia/Ho_Chi_Minh
   mail:
     host: smtp.gmail.com
     port: 587
     username: moncuaban@gmail.com
-    # === SỬA LỖI BẢO MẬT ===
-    password: ${MAIL_PASSWORD} # Không bao giờ hard-code mật khẩu
+    password: horilrdteknanpiz
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -37,9 +35,8 @@ spring:
       client:
         registration:
           google:
-            # === SỬA LỖI BẢO MẬT ===
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
+            client-id: 812416226843-emd2psskagm5orp5gk816tfrs9dohtp7.apps.googleusercontent.com
+            client-secret: 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
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - email
@@ -51,28 +48,24 @@ spring:
 app:
   frontend:
     reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:5173/reset-password}
+    # reset-password-url: ${http://moncuaban.vercel.app/reset-password}
     verify-email-url: ${FRONTEND_VERIFY_EMAIL_URL:http://localhost:5173/verify-email}
     google-callback-url: ${FRONTEND_GOOGLE_CALLBACK_URL:https://moncuaban.vercel.app/auth/callback}
-
 jwt:
-  # === SỬA LỖI BẢO MẬT ===
-  signerKey: ${JWT_SIGNER_KEY}
+  signerKey: fgSgZOIgNe6UNMGTaXNyQTMEIcx/cRzJxMXxFFu6npVmY6nfNM55d9UlAAU+ehbJ
 
 cloudinary:
-  # === SỬA LỖI BẢO MẬT ===
-  cloud-name: ${CLOUDINARY_CLOUD_NAME}
-  api-key: ${CLOUDINARY_API_KEY}
-  api-secret: ${CLOUDINARY_API_SECRET}
+  cloud-name: dvcosaetb
+  api-key: 298672844131261
+  api-secret: 1eczGsocRPNluh28DuDUy1SxUfM
 
 payos:
-  # === SỬA LỖI BẢO MẬT ===
-  client-id: ${PAYOS_CLIENT_ID}
-  api-key: ${PAYOS_API_KEY}
-  checksum-key: ${PAYOS_CHECKSUM_KEY}
+  client-id: 67c71da0-2783-4017-b92c-253309ccc9d0
+  api-key: f8cab22b-6837-4578-b72a-dc2cd15ba941
+  checksum-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
-  webhook-key: ${PAYOS_WEBHOOK_KEY}
-
+  webhook-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
 logging:
   file:
     name: /app/logs/app.log
@@ -80,7 +73,9 @@ logging:
     root: INFO
     com.isp392: DEBUG
 
-# Khối 'google' này đã ở đúng định dạng
+# --- ĐÃ SỬA ---
+# Khối 'google' này được di chuyển ra ngoài (xóa thụt vào)
+# để nó không còn nằm trong 'logging.level'
 google:
   gemini:
     project-id: "${GOOGLE_GEMINI_PROJECT_ID}"
