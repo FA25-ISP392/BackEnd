@@ -35,34 +35,16 @@ public class OrdersService {
     TableRepository tableRepository;
     OrdersMapper ordersMapper;
 
-//    public OrdersResponse createOrder(OrdersCreationRequest request) {
-//        Customer customer = customerRepository.findById(request.getCustomerId())
-//                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
-//
-//        TableEntity table = tableRepository.findById(request.getTableId())
-//                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
-//
-//        Orders order = ordersMapper.toOrders(request, customer, table);
-//
-//        Orders saved = ordersRepository.save(order);
-//
-//        return ordersMapper.toOrdersResponse(saved);
-//    }
-
     @Transactional
     public OrdersResponse createOrder(OrdersCreationRequest request) {
-        // 1. Tìm đơn hàng đang hoạt động (chưa thanh toán) trước
         Optional<Orders> existingOrderOpt = ordersRepository.findActiveOrderByCustomerAndTable(
                 request.getCustomerId(),
                 request.getTableId()
         );
 
-        // 2. Nếu tìm thấy -> xử lý và trả về đơn đó
         if (existingOrderOpt.isPresent()) {
             return handleExistingOrder(existingOrderOpt.get(), request.getCustomerId(), request.getTableId());
         }
-
-        // 3. Nếu không tìm thấy -> tạo đơn hàng mới
         return createNewOrder(request);
     }
 
@@ -70,17 +52,14 @@ public class OrdersService {
         Orders order = ordersRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        // Load chi tiết order
         Hibernate.initialize(order.getOrderDetails());
 
-        // Tính tổng giá đơn hàng = tổng totalPrice của từng orderDetail
         double totalOrderPrice = order.getOrderDetails().stream()
                 .mapToDouble(OrderDetail::getTotalPrice)
                 .sum();
 
-        // Map sang response
         OrdersResponse response = ordersMapper.toOrdersResponse(order);
-        response.setTotalPrice(totalOrderPrice); // thêm trường này trong OrdersResponse
+        response.setTotalPrice(totalOrderPrice);
         return response;
     }
 
@@ -125,7 +104,6 @@ public class OrdersService {
         Hibernate.initialize(existingOrder.getOrderDetails());
         double totalOrderPrice = calculateTotalOrderPrice(existingOrder);
 
-        // Map sang response và cập nhật tổng tiền
         OrdersResponse response = ordersMapper.toOrdersResponse(existingOrder);
         response.setTotalPrice(totalOrderPrice);
         return response;
@@ -140,20 +118,20 @@ public class OrdersService {
         log.info("No active order found for customer {} at table {}. Creating a new order.",
                 request.getCustomerId(), request.getTableId());
 
-        // Lấy thông tin Customer và Table
         Customer customer = customerRepository.findById(request.getCustomerId())
                 .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
         TableEntity table = tableRepository.findById(request.getTableId())
                 .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
 
-        // Tạo entity Orders mới
-        Orders newOrder = ordersMapper.toOrders(request, customer, table);
-        // paid mặc định là false khi tạo mới (đã cấu hình trong mapper)
+        if (table.isServing()) {
+            log.warn("Failed to create new order: Table {} is already being served.", table.getTableId());
+            throw new AppException(ErrorCode.TABLE_ALREADY_SERVING);
+        }
 
-        // Lưu vào DB
+        Orders newOrder = ordersMapper.toOrders(request, customer, table);
+
         Orders savedOrder = ordersRepository.save(newOrder);
 
-        // Map sang response, đơn mới chưa có chi tiết nên tổng tiền là 0
         OrdersResponse response = ordersMapper.toOrdersResponse(savedOrder);
         response.setTotalPrice(0.0);
         return response;
@@ -165,7 +143,6 @@ public class OrdersService {
      * @return Tổng tiền của đơn hàng.
      */
     private double calculateTotalOrderPrice(Orders order) {
-        // Đảm bảo orderDetails đã được load (có thể thêm Hibernate.initialize nếu cần)
         if (order.getOrderDetails() == null) {
             return 0.0;
         }

@@ -73,6 +73,7 @@ public enum ErrorCode {
     TABLE_NOT_FOUND(2200, "Table not found"),
     // Orders
     ORDER_NOT_FOUND(3000, "Order notfound"),
+    TABLE_ALREADY_SERVING(3004, "Table is already being served"),
 
     //Order Detail
     ORDER_DETAIL_NOT_FOUND(3001, "Order detail not found"),
