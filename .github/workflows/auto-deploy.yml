@@ -47,18 +47,17 @@ jobs:
           echo "Old container stopped and removed (if it existed)."
 
       # ***** BƯỚC ĐÃ ĐƯỢC SỬA LỖI *****
-      # Phiên bản này ĐÃ XÓA TẤT CẢ CÁC DÒNG TRỐNG bên trong
-      # khối lệnh `docker run` để tránh lỗi shell.
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
           
-          # 1: Tạo file credentials tạm thời trên máy runner
-          # Đảm bảo file này được tạo ở vị trí mà $(pwd) có thể truy cập
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > ./gemini-creds.json
+          # 1: SỬA LỖI - Dùng 'printf' để ghi file JSON một cách an toàn
+          # Lệnh 'echo' cũ làm hỏng định dạng JSON, gây ra lỗi MalformedJsonException
+          printf "%s\n" "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > ./gemini-creds.json
           echo "Temporary credentials file created."
           
-          # 2: Sửa lệnh docker run (ĐÃ XÓA CÁC DÒNG TRỐNG)
+          # 2: Lệnh docker run (Định dạng multi-line đã loại bỏ các dòng trống)
+          # Cách này dễ đọc hơn là một dòng dài
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
@@ -88,12 +87,12 @@ jobs:
 
       - name: Show container logs
         run: |
+          echo "=== Reading container logs (stdout/stderr) ==="
+          # Thêm 'docker logs' để xem output của container, rất hữu ích khi debug
+          # Lỗi MalformedJsonException sẽ xuất hiện ở đây
+          docker logs $IMAGE_NAME
+          
           echo "=== Reading app.log from container (if available) ==="
           # Chờ thêm vài giây để ứng dụng có thể đã bắt đầu ghi log
           sleep 5
-          # Thêm 'docker logs' để xem output của container, rất hữu ích khi debug
-          echo "--- Docker logs ---"
-          docker logs $IMAGE_NAME
-          
-          echo "--- /app/logs/app.log (if exists) ---"
           docker exec $IMAGE_NAME cat /app/logs/app.log || echo "Log file /app/logs/app.log not found or container not ready."
