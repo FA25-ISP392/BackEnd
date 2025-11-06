@@ -169,7 +169,7 @@ public class PaymentService {
                 payment.setPaymentLinkId(res.getPaymentLinkId());
 
                 Payment savedPayment = paymentRepository.save(payment);
-                log.info("✅ PayOS link created successfully for order {}", order.getOrderId());
+                log.info("PayOS link created successfully for order {}", order.getOrderId());
                 return paymentMapper.toPaymentResponse(savedPayment);
 
             } catch (Exception e) {
@@ -178,14 +178,13 @@ public class PaymentService {
             }
         }
 
-        // CASE 3: Các phương thức không hỗ trợ
         log.error("Unsupported payment method: {}", method);
         throw new RuntimeException("Unsupported payment method: " + method);
     }
 
     @Transactional
     public void processPayOSWebhookManual(String rawBody, String signature) throws Exception {
-        // 1. Xác thực chữ ký Webhook (QUAN TRỌNG)
+        // 1. Xác thực chữ ký Webhook
         if (webhookKey == null || webhookKey.isEmpty() || webhookKey.equals("YOUR_WEBHOOK_KEY_HERE")) {
             log.error("PayOS Webhook Key is not configured properly in application.yaml!");
             throw new RuntimeException("Webhook key not configured");

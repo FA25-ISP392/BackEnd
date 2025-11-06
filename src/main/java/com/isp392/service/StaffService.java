@@ -32,8 +32,7 @@ public class StaffService {
     StaffRepository staffRepository;
     StaffMapper staffMapper;
     AccountService accountService;
-    AccountRepository accountRepository;
-    AuthenticationService authenticationService;
+
 
 
     @Transactional

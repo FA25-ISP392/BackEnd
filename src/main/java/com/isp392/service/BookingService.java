@@ -32,13 +32,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Slf4j // 👈 Đã thêm
+@Slf4j
 public class BookingService {
     BookingRepository bookingRepository;
     CustomerRepository customerRepository;
     TableRepository tableRepository;
     BookingMapper bookingMapper;
-    EmailService emailService; // 👈 Đã thêm
+    EmailService emailService;
 
 
     @Transactional
@@ -98,7 +98,6 @@ public class BookingService {
 
         Booking savedBooking = bookingRepository.save(booking); // 👈 Lưu booking
 
-        // 🔽 GỬI EMAIL SAU KHI DUYỆT (ĐƯỢC GIỮ LẠI) 🔽
         try {
             Account customerAccount = savedBooking.getCustomer().getAccount();
             if (customerAccount != null && customerAccount.getEmail() != null) {
@@ -107,8 +106,8 @@ public class BookingService {
                         customerAccount.getFullName(),
                         savedBooking.getBookingDate(),
                         savedBooking.getSeat(),
-                        savedBooking.getTable().getTableName(), // 👈 Dùng tên bàn đã duyệt
-                        savedBooking.getStatus().name()        // Sẽ là "APPROVED"
+                        savedBooking.getTable().getTableName(),
+                        savedBooking.getStatus().name()
                 );
             }
         } catch (Exception e) {
@@ -172,9 +171,6 @@ public class BookingService {
         LocalDateTime endOfDay = startOfDay.plusDays(1);
 
         List<Booking> ls = bookingRepository.findByTableAndBookingDateBetween(table, startOfDay, endOfDay);
-//        if(ls.isEmpty()) {
-//            throw new RuntimeException("Can't find any bookings for this date!");
-//        }
         return ls.stream().map(bookingMapper::toResponse).toList();
     }
     public Page<BookingResponse> findBookingsByCusId(int customerId, Pageable pageable) {
@@ -218,17 +214,14 @@ public class BookingService {
                             booking.getTable().getTableName()
                     );
 
-                    // Đánh dấu là đã gửi
                     booking.setReminderSent(true);
                     bookingsSent.add(booking);
                 }
             } catch (Exception e) {
                 log.error("Failed to send reminder for bookingId {}: {}", booking.getBookingId(), e.getMessage(), e);
-                // Không ném lỗi, tiếp tục vòng lặp
             }
         }
 
-        // Lưu tất cả thay đổi (đánh dấu reminderSent= true)
         if (!bookingsSent.isEmpty()) {
             bookingRepository.saveAll(bookingsSent);
             log.info("Successfully sent {} reminders.", bookingsSent.size());

@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -255,258 +254,6 @@ public class EmailService {
         log.info("Booking REMINDER email sent to {}", toEmail);
     }
 
-    //    @Async("taskExecutor")
-//    public void sendPaymentSuccessEmail(String toEmail, String customerName, Orders order, PaymentMethod method, LocalDateTime paidAt) {
-//        String subject = "Hóa đơn thanh toán cho đơn hàng #" + order.getOrderId();
-//
-//        // 1. Chuẩn bị các định dạng
-//        Locale vietnameseLocale = new Locale("vi", "VN");
-//        NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(vietnameseLocale);
-//        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy");
-//        DateTimeFormatter orderDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-//
-//        // 2. Tạo bảng chi tiết món ăn (gọi helper đã được thiết kế lại)
-//        String invoiceTableHtml = generateHtmlInvoiceItemsTable(order, currencyFormatter);
-//
-//        // 3. Tính tổng tiền
-//        double totalAmount = order.getOrderDetails().stream()
-//                .mapToDouble(OrderDetail::getTotalPrice)
-//                .sum();
-//        double shippingFee = 0.0;
-//        String formattedSubtotal = currencyFormatter.format(totalAmount);
-//        String formattedShipping = currencyFormatter.format(shippingFee);
-//        String formattedGrandTotal = currencyFormatter.format(totalAmount + shippingFee);
-//        // 4. Định dạng các chuỗi
-//        String formattedOrderDate = order.getOrderDate() != null ? order.getOrderDate().format(orderDateFormatter) : "N/A";
-//        String formattedPaidAt = paidAt.format(dateFormatter);
-//        String paymentMethodString = (method == PaymentMethod.CASH) ? "Tiền mặt" : "Chuyển khoản Ngân hàng";
-//
-//        // 5. Tạo nội dung email
-//        String body = String.format("""
-//                            <div style="font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6; padding: 40px 0; margin: 0;">
-//                                            <div style="max-width: 680px; margin: 0 auto; background-color: #ffffff; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);">
-//                                                <div style="background: linear-gradient(135deg,#f97316,#facc15); padding: 32px; text-align: center; color: #ffffff;">
-//                                                    <div style="font-size: 13px; letter-spacing: 4px; text-transform: uppercase; opacity: 0.85;">Biên nhận thanh toán</div>
-//                                                    <h1 style="margin: 12px 0 0; font-size: 30px; font-weight: 700;">Thanh toán thành công</h1>
-//                                                    <p style="margin: 14px 0 0; font-size: 15px; opacity: 0.9;">Cảm ơn bạn, %s! Đơn hàng #%d đã được xác nhận.</p>
-//                                </div>
-//                                <div style="padding: 32px;">
-//                                                        <table width="100%%" style="border-collapse: separate; border-spacing: 0 16px; margin-bottom: 24px;">
-//                                                            <tr>
-//                                                                <td style="width: 50%%; padding: 0;">
-//                                                                    <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; height: 100%%;">
-//                                                                        <div style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Thông tin hóa đơn</div>
-//                                                                        <div style="font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 6px;">Mã đơn hàng #%d</div>
-//                                                                        <div style="color: #475569; font-size: 14px; line-height: 1.6;">
-//                                                                            <span style="display:block;">Khách hàng: <strong>%s</strong></span>
-//                                                                            <span style="display:block;">Ngày đặt: <strong>%s</strong></span>
-//                                                                        </div>
-//                                                                    </div>
-//                                                                </td>
-//                                                                <td style="width: 50%%; padding: 0; padding-left: 16px;">
-//                                                                    <div style="border: 1px solid #e2e8f0; border-radius: 14px; padding: 18px 20px; background-color: #f8fafc; height: 100%%;">
-//                                                                        <div style="font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px;">Thanh toán</div>
-//                                                                        <div style="color: #0f172a; font-size: 15px; font-weight: 600; margin-bottom: 6px;">%s</div>
-//                                                                        <div style="color: #16a34a; font-size: 13px; font-weight: 600;">Đã thanh toán lúc %s</div>
-//                                                                    </div>
-//                                                                </td>
-//                                                            </tr>
-//                                                        </table>
-//
-//                                                        <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 16px;">Tóm tắt đơn hàng</h3>
-//
-//                                                        %s
-//
-//                                                        <table width="100%%" style="border-collapse: collapse; margin-top: 24px;">
-//                                                                                    <tr>
-//                                                                                        <td style="padding: 8px 0; color: #475569; font-size: 14px;">Tổng từng phần</td>
-//                                                                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; text-align: right;">%s</td>
-//                                                                                    </tr>
-//                                                                                    <tr>
-//                                                                                        <td style="padding: 8px 0; color: #475569; font-size: 14px;">Phí vận chuyển</td>
-//                                                                                        <td style="padding: 8px 0; color: #0f172a; font-size: 14px; text-align: right;">%s</td>
-//                                                                                    </tr>
-//                                                                                    <tr>
-//                                                                                        <td style="padding: 12px 0; color: #0f172a; font-size: 18px; font-weight: 700;">Tổng cộng</td>
-//                                                                                        <td style="padding: 12px 0; color: #0f172a; font-size: 18px; font-weight: 700; text-align: right;">%s</td>
-//                                                                                    </tr>
-//                                                                                </table>
-//
-//                                                                                <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin-top: 32px; text-align: center;">Nếu bạn cần hỗ trợ, vui lòng liên hệ qua hotline <strong>0123 456 789</strong> hoặc email <strong>support@nhahang.com</strong>.</p>
-//                                                                            </div>
-//                                                            </div>
-//                                                        </div>
-//                        """, customerName, order.getOrderId(), order.getOrderId(), customerName, formattedOrderDate,
-//                paymentMethodString, formattedPaidAt, invoiceTableHtml, formattedSubtotal, formattedShipping, formattedGrandTotal);
-//
-//        send(toEmail, subject, body);
-//        log.info("Payment success email (invoice) sent to {} for order #{}", toEmail, order.getOrderId());
-//    }
-//
-//
-//    private String generateHtmlInvoiceItemsTable(Orders order, NumberFormat currencyFormatter) {
-//        StringBuilder tableBuilder = new StringBuilder();
-//
-//        // CSS cho bảng (Thiết kế lại đơn giản, giống hình tham khảo Beats)
-//        tableBuilder.append("""
-//                    <style>
-//                        .invoice-table {
-//                            width: 100%;
-//                            border-collapse: collapse;
-//                            font-size: 14px;
-//                            color: #333;
-//                        }
-//                        .invoice-table thead th {
-//                            text-align: left;
-//                            padding: 10px 8px;
-//                            border-bottom: 2px solid #ddd;
-//                            color: #666;
-//                            font-weight: 600;
-//                            font-size: 13px;
-//                            text-transform: uppercase;
-//                        }
-//                        .invoice-table tbody td {
-//                            padding: 10px 8px;
-//                            border-bottom: 1px solid #f0f0f0;
-//                            vertical-align: middle;
-//                        }
-//                        .invoice-table .item-cell {
-//                            display: flex;
-//                            align-items: center;
-//                            gap: 12px;
-//                        }
-//                        .invoice-table .item-thumb {
-//                            width: 10px;
-//                            height: 10px;
-//                            object-fit: cover;
-//                            border-radius: 6px;
-//                            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-//                        }
-//                        .invoice-table .item-text {
-//                            flex: 1;
-//                        }
-//                        .invoice-table .item-name {
-//                            font-weight: 600;
-//                            font-size: 14px;
-//                            color: #111827;
-//                            margin: 0;
-//                        }
-//                        .invoice-table .item-meta {
-//                            font-size: 12.5px;
-//                            color: #64748b;
-//                            margin-top: 4px;
-//                            line-height: 1.4;
-//                        }
-//                        .invoice-table .qty,
-//                        .invoice-table .price {
-//                            text-align: right;
-//                            font-weight: 600;
-//                            color: #111827;
-//                            white-space: nowrap;
-//                        }
-//                        .invoice-table .qty {
-//                            width: 50px;
-//                        }
-//                        .invoice-table .price {
-//                            width: 100px;
-//                        }
-//                    </style>
-//                """);
-//
-//        // HTML Bảng
-//        tableBuilder.append("<table class='invoice-table' width='100%' cellspacing='0' cellpadding='0'>");
-//        tableBuilder.append("<thead><tr>");
-//        tableBuilder.append("<th style='width: 60%;'>Món</th>"); // Cột Món (rộng nhất)
-//        tableBuilder.append("<th class='qty'>SL</th>");         // Cột SL
-//        tableBuilder.append("<th class='price'>Giá</th>");      // Cột Giá
-//        tableBuilder.append("</tr></thead>");
-//        tableBuilder.append("<tbody>");
-//
-//        if (order.getOrderDetails() == null || order.getOrderDetails().isEmpty()) {
-//            tableBuilder.append("<tr><td colspan='3'>Không có chi tiết đơn hàng.</td></tr>");
-//        } else {
-//            for (OrderDetail detail : order.getOrderDetails()) {
-//                String imageUrl = (detail.getDish() != null && detail.getDish().getPicture() != null)
-//                        ? detail.getDish().getPicture()
-//                        : "https://via.placeholder.com/60"; // Ảnh dự phòng 60x60
-//                String dishName = (detail.getDish() != null) ? detail.getDish().getDishName() : "Món không xác định";
-//
-//                tableBuilder.append("<tr>");
-//
-//                // Cột 1: Món (Hình + Tên + Meta)
-//                tableBuilder.append("<td>");
-//                tableBuilder.append("<div class='item-cell'>");
-//                tableBuilder.append(String.format("<img src='%s' alt='%s' class='item-thumb'>", imageUrl, dishName));
-//                tableBuilder.append("<div>"); // div bọc text
-//                tableBuilder.append(String.format("<p class='item-name'>%s</p>", dishName));
-//
-//                // Xây dựng meta (Topping/Note)
-//                StringBuilder metaBuilder = new StringBuilder();
-//                if (detail.getOrderToppings() != null && !detail.getOrderToppings().isEmpty()) {
-//                    String toppingText = detail.getOrderToppings().stream()
-//                            .map(ot -> {
-//                                String name = (ot.getTopping() != null) ? ot.getTopping().getName() : "Topping";
-//                                return name + (ot.getQuantity() != null && ot.getQuantity() > 1 ? " x" + ot.getQuantity() : "");
-//                            })
-//                            .collect(Collectors.joining(", "));
-//                    metaBuilder.append("<strong>Topping:</strong> ").append(toppingText);
-//                }
-//                if (detail.getNote() != null && !detail.getNote().isBlank()) {
-//                    if (metaBuilder.length() > 0) metaBuilder.append("<br>");
-//                    metaBuilder.append("<strong style='color:#dc2626;'>Ghi chú:</strong> ").append(detail.getNote().trim());
-//                }
-//
-//                if (metaBuilder.length() > 0) {
-//                    tableBuilder.append(String.format("<div class='item-meta'>%s</div>", metaBuilder.toString()));
-//                }
-//
-//                tableBuilder.append("</div>"); // end div bọc text
-//                tableBuilder.append("</div>"); // end item-cell
-//                tableBuilder.append("</td>");
-//
-//                // Cột 2: Số lượng (Giả định là 1 cho mỗi order detail)
-//                tableBuilder.append("<td class='qty'>1</td>");
-//
-//                // Cột 3: Giá
-//                tableBuilder.append(String.format("<td class='price'>%s</td>", currencyFormatter.format(detail.getTotalPrice())));
-//
-//                tableBuilder.append("</tr>");
-//            }
-//        }
-//
-//        tableBuilder.append("</tbody></table>");
-//        return tableBuilder.toString();
-//    }
-//
-//    private String formatEnumLabel(Enum<?> value) {
-//        if (value == null) {
-//            return "";
-//        }
-//        String[] words = value.name().toLowerCase(Locale.ROOT).split("_");
-//        StringBuilder builder = new StringBuilder();
-//        for (String word : words) {
-//            if (word.isEmpty()) {
-//                continue;
-//            }
-//            if (builder.length() > 0) {
-//                builder.append(' ');
-//            }
-//            builder.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
-//        }
-//        return builder.toString();
-//    }
-//
-//    private String truncateText(String text, int maxLength) {
-//        if (text == null) {
-//            return "";
-//        }
-//        String trimmed = text.trim();
-//        if (trimmed.length() <= maxLength) {
-//            return trimmed;
-//        }
-//        int endIndex = Math.max(0, maxLength - 3);
-//        return trimmed.substring(0, endIndex) + "...";
-//    }
     @Async("taskExecutor")
     public void sendPaymentSuccessEmail(String toEmail, String customerName, Orders order, PaymentMethod method, LocalDateTime paidAt) {
         String subject = "Xác nhận thanh toán đơn hàng #" + order.getOrderId();
@@ -584,7 +331,6 @@ public class EmailService {
         log.info("✅ Gửi email xác nhận thanh toán thành công cho {} đơn hàng #{}", toEmail, order.getOrderId());
     }
 
-    // *** THAY THẾ HÀM CŨ BẰNG HÀM NÀY ***
 
     private String generateHtmlInvoiceItemsTable(Orders order, NumberFormat currencyFormatter) {
         StringBuilder sb = new StringBuilder();
@@ -602,7 +348,7 @@ public class EmailService {
         } else {
             for (OrderDetail d : order.getOrderDetails()) {
                 String img = (d.getDish() != null && d.getDish().getPicture() != null)
-                        ? d.getDish().getPicture() : "https://via.placeholder.com/40"; // 40px là kích thước hợp lý
+                        ? d.getDish().getPicture() : "https://via.placeholder.com/40";
                 String name = (d.getDish() != null) ? d.getDish().getDishName() : "Món không xác định";
 
                 sb.append("<tr>");
@@ -628,13 +374,10 @@ public class EmailService {
                     sb.append("<div style='font-size:12px; color:#64748b; margin-top:2px;'><strong>Ghi chú:</strong> ").append(d.getNote()).append("</div>");
                 }
                 sb.append("</td>");
-                sb.append("</tr></table>"); // Hết bảng lồng nhau
-                sb.append("</td>"); // Hết cột Món
+                sb.append("</tr></table>");
+                sb.append("</td>");
 
-                // Cột 2: Số lượng (Đã inline)
                 sb.append("<td style='padding:10px 0; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right; font-weight:600; color:#111827; white-space:nowrap;'>1</td>");
-
-                // Cột 3: Giá (Đã inline)
                 sb.append("<td style='padding:10px 0; border-bottom:1px solid #f0f0f0; vertical-align:middle; text-align:right; font-weight:600; color:#111827; white-space:nowrap;'>")
                         .append(currencyFormatter.format(d.getTotalPrice())).append("</td></tr>");
             }

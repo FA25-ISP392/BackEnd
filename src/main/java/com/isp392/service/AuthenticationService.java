@@ -77,7 +77,6 @@ public class AuthenticationService {
         String token = generateToken(account.getUsername(), account.getRole());
 
         // 4. Tạo URL redirect về frontend với token trong fragment (#)
-        // Ví dụ: https://moncuaban.vercel.app/auth/callback#token=xxxx
         return frontendGoogleCallbackUrl + "#token=" + token;
     }
 

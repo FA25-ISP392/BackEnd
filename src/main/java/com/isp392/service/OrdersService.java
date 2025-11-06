@@ -171,9 +171,7 @@ public class OrdersService {
         Page<Orders> orderPage = ordersRepository.findAllPaidByCustomer_CustomerId(customerId, pageable);
 
         orderPage.getContent().forEach(order -> {
-            // Với mỗi order, lặp qua orderDetails của nó
             order.getOrderDetails().forEach(detail -> {
-                // Và chủ động tải topping
                 Hibernate.initialize(detail.getOrderToppings());
             });
         });
