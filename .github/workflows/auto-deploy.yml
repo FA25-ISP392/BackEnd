@@ -46,23 +46,19 @@ jobs:
           docker rm $IMAGE_NAME || true
           echo "Old container stopped and removed (if it existed)."
 
-      # ***** BƯỚC SỬA LỖI BẰNG BASE64 *****
+      # ***** BƯỚC SỬA LỖI - PHƯƠNG ÁN 2: TRUYỀN THẲNG BASE64 ENV *****
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
           
-          # 1: SỬA LỖI - Giải mã Base64 secret và ghi vào file
-          # Lệnh này yêu cầu secret GOOGLE_CREDENTIALS_JSON của bạn phải là chuỗi Base64
-          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" | base64 --decode > ./gemini-creds.json
-          echo "Temporary credentials file created from Base64 secret."
+          # 1: KHÔNG tạo file JSON nữa.
           
           # 2: Lệnh docker run (Định dạng multi-line đã loại bỏ các dòng trống)
-          # Cách này dễ đọc hơn là một dòng dài
+          # Truyền thẳng secret (đang là Base64) vào biến môi trường GOOGLE_CREDENTIALS_BASE64
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
-            -v $(pwd)/gemini-creds.json:/app/creds.json \
-            -e GOOGLE_APPLICATION_CREDENTIALS=/app/creds.json \
+            -e GOOGLE_CREDENTIALS_BASE64="${{ secrets.GOOGLE_CREDENTIALS_JSON }}" \
             -e FRONTEND_RESET_PASSWORD_URL=${{ secrets.FRONTEND_RESET_PASSWORD_URL }} \
             -e FRONTEND_VERIFY_EMAIL_URL=${{ secrets.FRONTEND_VERIFY_EMAIL_URL }} \
             -e PAYOS_RETURN_URL=${{ secrets.PAYOS_RETURN_URL }} \
@@ -72,9 +68,7 @@ jobs:
             -e GOOGLE_GEMINI_MODEL_NAME=${{ secrets.GOOGLE_GEMINI_MODEL_NAME }} \
             $IMAGE_NAME:latest
           
-          # 3: Xóa file credentials trên máy runner cho an toàn
-          rm ./gemini-creds.json
-          echo "Temporary credentials file removed."
+          # 3: KHÔNG cần xóa file
           
           echo "New Docker container started successfully, mapped to host port $DOCKER_HOST_PORT."
 
