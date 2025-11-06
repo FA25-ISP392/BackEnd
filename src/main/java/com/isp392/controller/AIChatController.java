@@ -14,18 +14,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/ai-chat")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 @SecurityRequirement(name = "bearerAuth")
 public class AIChatController {
 
     private final AISuggestionService aiSuggestionService;
 
     @PostMapping("/suggest")
-    @PreAuthorize("hasRole('CUSTOMER')")
+   @PreAuthorize("permitAll()")
     // 👇 SỬA ĐỔI kiểu trả về là AIChatResponse
     public ApiResponse<AIChatResponse> getSuggestion(
             @RequestBody AIChatRequest request,
-            @AuthenticationPrincipal Jwt jwt) {
+          @AuthenticationPrincipal(required = false) Jwt jwt {
 
         String username = jwt.getClaimAsString("sub");
 
