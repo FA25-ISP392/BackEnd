@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,6 +45,14 @@ public class BookingService {
     public BookingResponse createBooking(BookingCreationRequest request, String username) {
         Customer customer = customerRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("Customer not found"));
+        LocalDateTime bookingTime = request.getBookingDate();
+        LocalTime openingTime = LocalTime.of(10, 0);
+        LocalTime closingTime = LocalTime.of(23, 0);
+
+        LocalTime bookingLocalTime = bookingTime.toLocalTime();
+        if (bookingLocalTime.isBefore(openingTime) || bookingLocalTime.isAfter(closingTime)) {
+            throw  new RuntimeException("Nhà hàng chỉ mở cửa từ 10:00 đến 23:00, vui lòng chọn giờ khác!");
+        }
 
         Booking booking = bookingMapper.toBooking(request);
         booking.setCustomer(customer);
