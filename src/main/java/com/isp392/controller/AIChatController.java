@@ -25,7 +25,7 @@ public class AIChatController {
     public ApiResponse<AIChatResponse> getSuggestion(
             @RequestBody AIChatRequest request,
             // Sửa 1: Thêm dấu ) để đóng danh sách tham số
-            @AuthenticationPrincipal(required = false) Jwt jwt) { 
+            @AuthenticationPrincipal Jwt jwt) {
 
         // Sửa 2: Kiểm tra jwt != null trước khi sử dụng
         String username = null;
