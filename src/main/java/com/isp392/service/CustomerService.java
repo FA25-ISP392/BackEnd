@@ -98,7 +98,7 @@ public class CustomerService {
 
         // Update Account riêng
         Account account = customer.getAccount();
-        accountService.updateAccount(account, request); // Giả sử AccountService có xử lý update từ CustomerUpdateRequest
+        accountService.updateAccount(account, request);
 
         // Cần lưu lại Customer sau khi Account (có thể) đã thay đổi
         Customer savedCustomer = customerRepository.save(customer);

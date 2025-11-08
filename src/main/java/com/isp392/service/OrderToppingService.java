@@ -27,7 +27,6 @@ public class OrderToppingService {
     OrderDetailRepository orderDetailRepository;
     ToppingRepository toppingRepository;
 
-    //Lấy thông tin một OrderTopping theo id kép
 
     public OrderToppingResponse getOrderTopping(int orderDetailId, int toppingId) {
         OrderToppingId id = new OrderToppingId(orderDetailId, toppingId);

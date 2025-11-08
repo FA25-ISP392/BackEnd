@@ -32,13 +32,6 @@ public class DishController {
 
     DishService dishService;
 
-//    @PostMapping
-//    public ApiResponse<DishResponse> createDish(@Valid @RequestBody DishCreationRequest request) {
-//        return ApiResponse.<DishResponse>builder()
-//                .result(dishService.createDish(request))
-//                .build();
-//    }
-
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
     public ApiResponse<DishResponse> createDish(@Valid @RequestPart("dish") DishCreationRequest dish,

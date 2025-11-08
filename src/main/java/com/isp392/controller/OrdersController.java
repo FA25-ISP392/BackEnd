@@ -35,13 +35,6 @@ public class OrdersController {
                 .build();
     }
 
-//    @GetMapping
-//    public ApiResponse<List<OrdersResponse>> getOrder() {
-//        List<OrdersResponse> result = ordersService.getOrder();
-//        return ApiResponse.<List<OrdersResponse>>builder()
-//                .result(result)
-//                .build();
-//    }
 
     @GetMapping("/{orderId}")
     public ApiResponse<OrdersResponse> getOrder(@PathVariable Integer orderId) {

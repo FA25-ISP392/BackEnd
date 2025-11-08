@@ -15,27 +15,21 @@ public class PayOSWebhookController {
 
     private final PaymentService paymentService;
 
-    //
+
     @PostMapping("/payos-webhook")
     public ResponseEntity<String> handlePayOSWebhook(
-            @RequestBody String rawBody, // <-- Nhận JSON dạng String
-            @RequestHeader(value = "x-payos-signature", required = false) String signature) { // Header chứa chữ ký
-        log.info("--- NỘI DUNG WEBHOOK TỪ PAYOS ---");
-        log.info(rawBody); // In toàn bộ nội dung JSON ra log
-        log.info("--- KẾT THÚC NỘI DUNG WEBHOOK ---");
-        log.info("Received PayOS Webhook Raw Body."); // Che log body để tránh lộ sensitive data
+            @RequestBody String rawBody,
+            @RequestHeader(value = "x-payos-signature", required = false) String signature) {
+        log.info("Received PayOS Webhook Raw Body.");
         if (signature == null || signature.isEmpty()) {
             log.warn("Missing x-payos-signature header");
-            // Cân nhắc trả lỗi hoặc xử lý tùy theo yêu cầu bảo mật
         }
 
         try {
-            // Gọi phương thức xử lý thủ công trong service
             paymentService.processPayOSWebhookManual(rawBody, signature);
             return ResponseEntity.ok("Webhook processed successfully");
         } catch (Exception e) {
             log.error("Error processing PayOS webhook: {}", e.getMessage(), e);
-            // Vẫn trả 200 OK để PayOS không gửi lại
             return ResponseEntity.ok("Error processing webhook, but acknowledged: " + e.getMessage());
         }
     }

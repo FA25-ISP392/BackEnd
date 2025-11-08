@@ -37,9 +37,7 @@ public class DailyPlanService {
     StaffRepository staffRepository;
     DailyPlanMapper dailyPlanMapper;
 
-    // ===================================================================
-    // CÁC HÀM PUBLIC (ĐIỀU PHỐI)
-    // ===================================================================
+
 
     @Transactional
     public DailyPlanResponse createDailyPlan(DailyPlanCreationRequest request, Authentication authentication) {

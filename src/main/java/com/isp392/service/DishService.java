@@ -43,10 +43,6 @@ public class DishService {
     private record ItemIds(List<Integer> dishIds, List<Integer> toppingIds) {}
     private record QuantityMaps(Map<Integer, Integer> dishQuantities, Map<Integer, Integer> toppingQuantities) {}
 
-    // ===================================================================
-    // CÁC HÀM PUBLIC (ĐÃ ĐƯỢC TÁI CẤU TRÚC)
-    // ===================================================================
-
     @Transactional(readOnly = true)
     public DishResponse getDishById(int dishId) {
         // VIỆC 1: Lấy Dish Entity (kèm topping)
