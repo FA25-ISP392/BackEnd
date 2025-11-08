@@ -1,10 +1,8 @@
 package com.isp392.service;
 
-// --- CÁC IMPORT CẦN THÊM ---
 import com.isp392.dto.request.AIChatRequest;
 import com.isp392.dto.request.ChatMessage;
 import com.isp392.dto.response.AIChatResponse;
-// --- (Giữ các import cũ) ---
 import com.isp392.dto.response.DishResponse;
 import com.isp392.entity.Customer;
 import com.isp392.repository.CustomerRepository;
@@ -18,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList; // 👈 Thêm
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -48,24 +46,28 @@ public class AISuggestionService {
         List<Content> historyContents = new ArrayList<>();
 
         // 1a. (QUAN TRỌNG) Luôn bắt đầu bằng RÀNG BUỘC HỆ THỐNG (System Prompt)
-        // Chỉ thêm ràng buộc này nếu đây là tin nhắn đầu tiên (lịch sử rỗng)
-        if (request.getHistory() == null || request.getHistory().isEmpty()) {
-            log.info("AI Chat: Bắt đầu hội thoại mới cho {}", customerUsername);
-            String systemPrompt = buildSystemPrompt(customerUsername);
+        // Ràng buộc này PHẢI ĐƯỢC GỬI MỖI LẦN GỌI, không chỉ lần đầu tiên.
+        log.info("AI Chat: Đang xây dựng bối cảnh cho {}", customerUsername);
+        String systemPrompt = buildSystemPrompt(customerUsername);
 
-            // "Priming" - Gửi ràng buộc hệ thống cho AI (giả lập vai trò user)
-            historyContents.add(createVertexContent("user", systemPrompt));
-            // "Priming" - Gửi một câu trả lời mẫu của AI để nó nhận vai
-            historyContents.add(createVertexContent("model", "Đã hiểu. Tôi là trợ lý tư vấn món ăn. Tôi đã sẵn sàng, mời bạn đặt câu hỏi."));
-        } else {
-            log.info("AI Chat: Tiếp tục hội thoại cho {}", customerUsername);
-            // Tải lại lịch sử chat cũ từ request
+        // "Priming" - Gửi ràng buộc hệ thống cho AI (giả lập vai trò user)
+        historyContents.add(createVertexContent("user", systemPrompt));
+        // "Priming" - Gửi một câu trả lời mẫu của AI để nó nhận vai
+        historyContents.add(createVertexContent("model", "Đã hiểu. Tôi là trợ lý tư vấn món ăn. Tôi đã sẵn sàng, mời bạn đặt câu hỏi."));
+
+        // 1b. Tải lại lịch sử chat CŨ (nếu có)
+        // Phần này sẽ tải các câu hỏi/trả lời thực tế của người dùng
+        if (request.getHistory() != null && !request.getHistory().isEmpty()) {
+            log.info("AI Chat: Đang tải {} tin nhắn lịch sử.", request.getHistory().size());
+            // Bỏ qua tin nhắn mồi "Đã hiểu..." nếu nó vô tình bị gửi lên từ frontend
             for (ChatMessage msg : request.getHistory()) {
                 historyContents.add(createVertexContent(msg.getRole(), msg.getText()));
             }
+        } else {
+            log.info("AI Chat: Đây là tin nhắn đầu tiên.");
         }
 
-        // 1b. Thêm câu hỏi MỚI của người dùng vào cuối danh sách
+        // 1c. Thêm câu hỏi MỚI của người dùng vào cuối danh sách
         historyContents.add(createVertexContent("user", request.getQuery()));
 
         // --- PHẦN 2: GỌI API CỦA GEMINI ---
@@ -73,7 +75,7 @@ public class AISuggestionService {
         try (VertexAI vertexAi = new VertexAI(geminiProjectId, geminiLocation)) {
             GenerativeModel model = new GenerativeModel(geminiModelName, vertexAi);
 
-            // 👇 SỬA ĐỔI: Gửi TOÀN BỘ danh sách hội thoại
+            // Gửi TOÀN BỘ danh sách hội thoại
             GenerateContentResponse response = model.generateContent(historyContents);
 
             String aiResponseText = response.getCandidates(0).getContent().getParts(0).getText();
@@ -129,8 +131,8 @@ public class AISuggestionService {
 
         // 1. Thiết lập vai trò (Giữ nguyên các ràng buộc của bạn)
         prompt.append("Bạn là một chuyên gia tư vấn dinh dưỡng của nhà hàng. ");
-        prompt.append("Nhiệm vụ của bạn CHỈ LÀ gợi ý món ăn từ danh sách được cung cấp. ");
-        prompt.append("KHÔNG trả lời bất kỳ câu hỏi nào không liên quan đến việc chọn món ăn (ví dụ: không trả lời câu hỏi về thời tiết, lịch sử, toán học...). ");
+        prompt.append("Nhiệm vụ của bạn TUYỆT ĐỐI CHỈ LÀ gợi ý món ăn từ danh sách được cung cấp. ");
+        prompt.append("KHÔNG trả lời bất kỳ câu hỏi nào không liên quan đến việc chọn món ăn (ví dụ: không trả lời câu hỏi về thời tiết, lịch sử, toán học...). Những câu hỏi không liên quan đến món ăn hoặc topping, bạn sẽ trả lời chúng tôi chỉ phục vụ trong phạm vi dữ liệu của nhà hàng ");
         prompt.append("Nếu người dùng hỏi ngoài chủ đề, hãy từ chối một cách lịch sự. ");
         prompt.append("Phân tích sở thích của người dùng (ví dụ: 'cay', 'chua', 'ít béo') ");
         prompt.append("dựa trên 'dishName' và 'description' của món ăn. ");
