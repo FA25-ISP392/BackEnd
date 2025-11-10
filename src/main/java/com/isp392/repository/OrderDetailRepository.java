@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface OrderDetailRepository extends JpaRepository<OrderDetail, Integer> {
     @Query("SELECT od FROM OrderDetail od " +
+            "JOIN FETCH od.order o " +
+            "JOIN FETCH o.table " +
             "LEFT JOIN FETCH od.orderToppings ot " +
             "LEFT JOIN FETCH ot.topping " +
             "WHERE od.orderDetailId = :id")

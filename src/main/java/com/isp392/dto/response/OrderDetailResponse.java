@@ -14,6 +14,7 @@ import java.util.List;
 public class OrderDetailResponse {
     Integer orderDetailId;
     Integer orderId;
+    int tableId;
     Integer dishId;
     String dishName;
     Double totalPrice;
