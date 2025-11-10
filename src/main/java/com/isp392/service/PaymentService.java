@@ -48,7 +48,6 @@ public class PaymentService {
     PaymentRepository paymentRepository;
     OrdersRepository ordersRepository;
     EmailService emailService;
-    TableService tableService;
     PayOS payOs;
     private final TableRepository tableRepository;
 
