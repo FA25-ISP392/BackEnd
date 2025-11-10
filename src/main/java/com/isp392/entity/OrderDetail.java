@@ -4,6 +4,7 @@ import com.isp392.enums.OrderDetailStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
 import java.util.List;
 
 @Entity
@@ -39,4 +40,9 @@ public class OrderDetail {
 
     @OneToMany(mappedBy = "orderDetail", cascade = CascadeType.ALL, orphanRemoval = true)
     List<OrderTopping> orderToppings;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "serving_staff_id") // Tên cột trong DB
+    @ToString.Exclude // Tránh vòng lặp khi log
+            Staff servingStaff;
 }

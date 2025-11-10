@@ -154,38 +154,6 @@ public class OrdersService {
         return response;
     }
 
-    // === START SỬA: XÓA HÀM `createNewOrder` CŨ VÌ ĐÃ GỘP LOGIC LÊN TRÊN ===
-    /*
-    private OrdersResponse createNewOrder(OrdersCreationRequest request) {
-        log.info("No active order found for customer {} at table {}. Creating a new order.",
-                request.getCustomerId(), request.getTableId());
-
-        // Lấy thông tin Customer và Table
-        Customer customer = customerRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
-        TableEntity table = tableRepository.findById(request.getTableId())
-                .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
-
-        if (table.isServing()) {
-            log.warn("Failed to create new order: Table {} is already being served.", table.getTableId());
-            throw new AppException(ErrorCode.TABLE_ALREADY_SERVING);
-        }
-
-        Orders newOrder = ordersMapper.toOrders(request, customer, table);
-        // paid mặc định là false khi tạo mới (đã cấu hình trong mapper)
-
-        // Lưu vào DB
-        Orders savedOrder = ordersRepository.save(newOrder);
-
-        // Map sang response, đơn mới chưa có chi tiết nên tổng tiền là 0
-        OrdersResponse response = ordersMapper.toOrdersResponse(savedOrder);
-        response.setTotalPrice(0.0);
-        return response;
-    }
-    */
-    // === END SỬA ===
-
-
     /**
      * (HELPER) Tính tổng tiền của một đơn hàng dựa trên các chi tiết đơn hàng.
      *

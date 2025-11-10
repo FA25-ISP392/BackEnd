@@ -9,6 +9,7 @@ import com.isp392.dto.response.OrderToppingResponse;
 import com.isp392.entity.*;
 import com.isp392.enums.ItemType;
 import com.isp392.enums.OrderDetailStatus;
+import com.isp392.enums.Role; // 👈 THÊM IMPORT NÀY
 import com.isp392.exception.AppException;
 import com.isp392.exception.ErrorCode;
 import com.isp392.mapper.OrderDetailMapper;
@@ -39,10 +40,9 @@ public class OrderDetailService {
     EntityManager entityManager;
     TableRepository tableRepository;
 
-    // ===================================================================
-    // CÁC HÀM PUBLIC (CHỈ ĐIỀU PHỐI)
-    // ===================================================================
+    StaffRepository staffRepository; // 👈 THÊM REPOSITORY
 
+    // (Hàm createOrderDetail không thay đổi)
     @Transactional
     public OrderDetailResponse createOrderDetail(OrderDetailCreationRequest request) {
         // VIỆC 1: Lấy các entity gốc và kiểm tra
@@ -71,6 +71,7 @@ public class OrderDetailService {
         return mapToResponse(savedDetail);
     }
 
+    // (Hàm getOrderDetail không thay đổi)
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(int orderDetailId) {
         // VIỆC 1: Lấy entity
@@ -79,35 +80,69 @@ public class OrderDetailService {
         return mapToResponse(orderDetail);
     }
 
+    // (Hàm getOrderDetailsByStatus không thay đổi)
     @Transactional(readOnly = true)
     public List<OrderDetailResponse> getOrderDetailsByStatus(OrderDetailStatus status) {
         // VIỆC 1: Lấy list entity
         List<OrderDetail> details = orderDetailRepository.findByStatusWithOrder(status);
         // VIỆC 2: Map list
         return details.stream()
-                .map(orderDetailMapper::toOrderDetailResponse) // Dùng mapper đơn giản vì không cần topping
+                .map(orderDetailMapper::toOrderDetailResponse)
                 .toList();
     }
 
+
+    // 👇 HÀM NÀY ĐÃ ĐƯỢC CẬP NHẬT LOGIC 👇
     @Transactional
     public OrderDetailResponse updateOrderDetail(OrderDetailUpdateRequest request) {
         // VIỆC 1: Lấy entity
         OrderDetail detail = findOrderDetailWithToppings(request.getOrderDetailId());
 
         // VIỆC 2: Map các trường đơn giản (note, status)
+        // Nếu status là PREPARING, nó sẽ được cập nhật ở đây
         orderDetailMapper.updateOrderDetail(detail, request);
 
-        // VIỆC 3: Xử lý cập nhật topping (Nếu có)
+        // VIỆC 3: (LOGIC MỚI) Xử lý gán nhân viên CÓ ĐIỀU KIỆN
+        // Chỉ gán staff NẾU trạng thái mới là SERVED
+        if (request.getStatus() == OrderDetailStatus.SERVED) {
+            if (request.getStaffId() == null) {
+                // Nếu frontend set SERVED nhưng quên gửi staffId, ném lỗi
+                throw new AppException(ErrorCode.INVALID_REQUEST); // "Cần có staffId khi giao món"
+            }
+
+            // Lấy Staff KÈM Account để check Role
+            Staff servingStaff = staffRepository.findByIdWithAccount(request.getStaffId())
+                    .orElseThrow(() -> new AppException(ErrorCode.STAFF_NOT_FOUND));
+
+            // KIỂM TRA QUYỀN (Role): Chỉ Role.STAFF mới được "SERVED"
+            if (servingStaff.getAccount().getRole() == Role.STAFF) {
+                detail.setServingStaff(servingStaff); // Gán staff
+            } else {
+                // Nếu CHEF hoặc MANAGER cố gắng gán, ném lỗi và ROLLBACK (kể cả status)
+                // (Vì CHEF không nên tự mình "SERVED" món ăn)
+                throw new AppException(ErrorCode.ACCESS_DENIED); // "Chỉ nhân viên phục vụ mới được giao món"
+            }
+        }
+        // NẾU: request.getStatus() là PREPARING (hoặc bất cứ gì khác)
+        // thì code khối 'if' này bị bỏ qua.
+        // Việc gán staffId (nếu có) từ request sẽ không xảy ra,
+        // và quan trọng nhất là KHÔNG NÉM LỖI.
+
+        // VIỆC 4: Xử lý cập nhật topping (Nếu có)
         if (request.getToppings() != null) {
             processToppingUpdate(detail, request.getToppings());
         }
 
-        // VIỆC 4: Tính lại tổng tiền
+        // VIỆC 5: Tính lại tổng tiền
         recalculateTotalPrice(detail);
 
-        // VIỆC 5: Map và trả về
-        return mapToResponse(detail);
+        // VIỆC 6: Lưu (lúc này status đã là PREPARING hoặc SERVED)
+        OrderDetail savedDetail = orderDetailRepository.save(detail);
+
+        // VIỆC 7: Map và trả về
+        return mapToResponse(savedDetail);
     }
+    // 👆 KẾT THÚC SỬA HÀM 👆
 
     @Transactional
     public void deleteOrderDetail(Integer orderDetailId) {
@@ -144,6 +179,9 @@ public class OrderDetailService {
     }
 
     private OrderDetail findOrderDetailWithToppings(Integer orderDetailId) {
+        // Chúng ta cần đảm bảo servingStaff và account của nó được tải
+        // Cách 1: Thêm JOIN FETCH vào query findByIdWithToppings (trong OrderDetailRepository)
+        // Cách 2: Dựa vào hàm mapToResponse để tự load (như bên dưới)
         return orderDetailRepository.findByIdWithToppings(orderDetailId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_DETAIL_NOT_FOUND));
     }
@@ -197,6 +235,7 @@ public class OrderDetailService {
      * Helper map OrderDetail sang Response (kèm Topping)
      */
     private OrderDetailResponse mapToResponse(OrderDetail orderDetail) {
+        // 1. Map topping
         List<OrderToppingResponse> toppings = orderDetail.getOrderToppings().stream()
                 .map(ot -> OrderToppingResponse.builder()
                         .toppingId(ot.getTopping().getToppingId())
@@ -206,16 +245,34 @@ public class OrderDetailService {
                         .build())
                 .toList();
 
-        return orderDetailMapper.toResponse(orderDetail, toppings);
+        // 2. Map các trường chính (Mapper sẽ lo)
+        OrderDetailResponse response = orderDetailMapper.toResponse(orderDetail, toppings);
+
+        // 3. Set staff name thủ công (nếu có)
+        if (orderDetail.getServingStaff() != null) {
+            response.setStaffId(orderDetail.getServingStaff().getStaffId());
+            // Đảm bảo account được load (nếu query chưa fetch)
+            Account staffAccount = orderDetail.getServingStaff().getAccount();
+            if (staffAccount != null) {
+                response.setStaffName(staffAccount.getFullName());
+            } else {
+                // Fallback nếu account là lazy và chưa được load
+                Staff staffWithAccount = staffRepository.findByIdWithAccount(orderDetail.getServingStaff().getStaffId())
+                        .orElse(null);
+                if (staffWithAccount != null) {
+                    response.setStaffName(staffWithAccount.getAccount().getFullName());
+                }
+            }
+        }
+
+        return response;
     }
+
 
     // ===================================================================
     // HELPER: LOGIC NGHIỆP VỤ (PROCESSORS)
     // ===================================================================
 
-    /**
-     * Tính toán lại tổng tiền cho 1 OrderDetail
-     */
     private void recalculateTotalPrice(OrderDetail detail) {
         double toppingsPrice = detail.getOrderToppings().stream()
                 .mapToDouble(OrderTopping::getToppingPrice)
@@ -229,9 +286,6 @@ public class OrderDetailService {
         detail.setTotalPrice(dishPrice + toppingsPrice);
     }
 
-    /**
-     * Gộp danh sách ToppingSelection (dùng cho Create)
-     */
     private Map<Integer, Integer> mergeCreateToppings(List<OrderDetailCreationRequest.ToppingSelection> toppingRequests) {
         return toppingRequests.stream()
                 .collect(Collectors.groupingBy(
@@ -240,9 +294,6 @@ public class OrderDetailService {
                 ));
     }
 
-    /**
-     * Gộp danh sách ToppingSelection (dùng cho Update)
-     */
     private Map<Integer, Integer> mergeUpdateToppings(List<OrderDetailUpdateRequest.ToppingSelection> toppingRequests) {
         return toppingRequests.stream()
                 .collect(Collectors.groupingBy(
@@ -251,9 +302,6 @@ public class OrderDetailService {
                 ));
     }
 
-    /**
-     * Lặp qua Map topping đã gộp, trừ kho và build List<OrderTopping>
-     */
     private List<OrderTopping> buildNewOrderToppings(OrderDetail orderDetail, Map<Integer, Integer> mergedToppings) {
         List<OrderTopping> newToppings = new ArrayList<>();
         for (Map.Entry<Integer, Integer> entry : mergedToppings.entrySet()) {
@@ -271,9 +319,6 @@ public class OrderDetailService {
         return newToppings;
     }
 
-    /**
-     * Điều phối toàn bộ logic cập nhật topping
-     */
     private void processToppingUpdate(OrderDetail detail, List<OrderDetailUpdateRequest.ToppingSelection> newToppingRequests) {
         // 1. Hoàn kho topping cũ
         revertToppingInventory(detail.getOrderToppings());
@@ -291,9 +336,6 @@ public class OrderDetailService {
         detail.getOrderToppings().addAll(newToppings);
     }
 
-    /**
-     * Xóa topping cũ khỏi DB và evict khỏi Hibernate cache
-     */
     private void clearOldToppings(OrderDetail detail) {
         // Xóa TỨC THÌ tất cả topping cũ khỏi DB
         orderToppingRepository.deleteAllInBatch(detail.getOrderToppings());
@@ -315,32 +357,20 @@ public class OrderDetailService {
     // HELPER: CẬP NHẬT KHO (INVENTORY)
     // ===================================================================
 
-    /**
-     * Cập nhật kho (cộng/trừ) cho MÓN ĂN
-     */
     private void updateDishInventory(int dishId, int quantityChange) {
         dailyPlanService.updateRemainingQuantity(dishId, ItemType.DISH, LocalDate.now(), quantityChange);
     }
 
-    /**
-     * Cập nhật kho (cộng/trừ) cho TOPPING
-     */
     private void updateToppingInventory(int toppingId, int quantityChange) {
         dailyPlanService.updateRemainingQuantity(toppingId, ItemType.TOPPING, LocalDate.now(), quantityChange);
     }
 
-    /**
-     * Hoàn lại kho cho tất cả topping trong 1 list
-     */
     private void revertToppingInventory(List<OrderTopping> toppings) {
         for (OrderTopping ot : toppings) {
             updateToppingInventory(ot.getTopping().getToppingId(), ot.getQuantity());
         }
     }
 
-    /**
-     * Hoàn lại kho cho 1 món và tất cả topping của nó
-     */
     private void revertAllInventory(OrderDetail orderDetail) {
         // Hoàn kho món ăn
         updateDishInventory(orderDetail.getDish().getDishId(), 1);

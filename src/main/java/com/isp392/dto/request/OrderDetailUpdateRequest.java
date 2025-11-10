@@ -19,9 +19,10 @@ public class OrderDetailUpdateRequest {
 
     String note;
 
-    OrderDetailStatus status; // PENDING, COMPLETED, CANCELLED, v.v.
+    OrderDetailStatus status;
 
-    // Nếu muốn cập nhật topping
+    Integer staffId;
+
     List<ToppingSelection> toppings;
 
     @Data
