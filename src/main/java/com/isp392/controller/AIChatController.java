@@ -1,7 +1,7 @@
 package com.isp392.controller;
 
 import com.isp392.dto.request.AIChatRequest;
-import com.isp392.dto.response.AIChatResponse; // 👈 SỬA ĐỔI
+import com.isp392.dto.response.AIChatResponse;
 import com.isp392.dto.response.ApiResponse;
 import com.isp392.service.AISuggestionService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,22 +14,25 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/ai-chat")
 @RequiredArgsConstructor
-@CrossOrigin("*")
+@CrossOrigin(origins = "*")
 @SecurityRequirement(name = "bearerAuth")
 public class AIChatController {
 
     private final AISuggestionService aiSuggestionService;
 
     @PostMapping("/suggest")
-    @PreAuthorize("hasRole('CUSTOMER')")
-    // 👇 SỬA ĐỔI kiểu trả về là AIChatResponse
+    @PreAuthorize("permitAll()")
     public ApiResponse<AIChatResponse> getSuggestion(
             @RequestBody AIChatRequest request,
+            // Sửa 1: Thêm dấu ) để đóng danh sách tham số
             @AuthenticationPrincipal Jwt jwt) {
 
-        String username = jwt.getClaimAsString("sub");
+        // Sửa 2: Kiểm tra jwt != null trước khi sử dụng
+        String username = null;
+        if (jwt != null) {
+            username = jwt.getClaimAsString("sub");
+        }
 
-        // 👇 SỬA ĐỔI: Gọi hàm service mới, truyền cả request
         AIChatResponse aiResponse = aiSuggestionService.getChatSuggestion(request, username);
 
         return ApiResponse.<AIChatResponse>builder()

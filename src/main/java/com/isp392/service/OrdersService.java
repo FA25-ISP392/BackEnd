@@ -40,20 +40,54 @@ public class OrdersService {
 
     @Transactional
     public OrdersResponse createOrder(OrdersCreationRequest request) {
-        // 1. Tìm đơn hàng đang hoạt động (chưa thanh toán) trước
-        Optional<Orders> existingOrderOpt = ordersRepository.findActiveOrderByCustomerAndTable(
-                request.getCustomerId(),
-                request.getTableId()
-        );
+        Integer customerId = request.getCustomerId();
+        Integer tableId = request.getTableId();
 
-        // 2. Nếu tìm thấy -> xử lý và trả về đơn đó
-        if (existingOrderOpt.isPresent()) {
-            return handleExistingOrder(existingOrderOpt.get(), request.getCustomerId(), request.getTableId());
+        // 1. Tìm bất kỳ đơn hàng nào đang hoạt động (chưa thanh toán) tại bàn này
+        Optional<Orders> activeOrderOnTableOpt = ordersRepository.findActiveOrderByTable(tableId);
+
+        if (activeOrderOnTableOpt.isPresent()) {
+            // TRƯỜNG HỢP 1: Bàn ĐÃ CÓ đơn hàng
+            Orders activeOrder = activeOrderOnTableOpt.get();
+
+            // 2. Kiểm tra xem có phải CHÍNH KHÁCH HÀNG ĐÓ (Khách A) quay lại không
+            if (activeOrder.getCustomer().getCustomerId() == customerId) {
+                // Đúng là chủ bàn, trả về đơn hàng cũ (Luồng Khách A)
+                log.info("Found existing active order (ID: {}) for SAME customer {} at table {}",
+                        activeOrder.getOrderId(), customerId, tableId);
+                return handleExistingOrder(activeOrder, customerId, tableId);
+            } else {
+                // Là Khách B! Chặn ngay
+                log.warn("Failed to create order: Table {} already has an active order (ID: {}) belonging to another customer.",
+                        tableId, activeOrder.getOrderId());
+                throw new AppException(ErrorCode.TABLE_ALREADY_SERVING);
+            }
+
+        } else {
+            log.info("No active order found for table {}. Creating a new order for customer {}.",
+                    tableId, customerId);
+
+            Customer customer = customerRepository.findById(customerId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CUSTOMER_NOT_FOUND));
+            TableEntity table = tableRepository.findById(tableId)
+                    .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
+
+            // 4. (Kiểm tra thêm) Nếu bàn đang isServing (dù không có đơn) -> chặn
+            //    (Phòng trường hợp dữ liệu lỗi)
+            if (table.isServing()) {
+                log.warn("Failed to create order: Table {} is marked as SERVING but no active order was found. Inconsistency detected.",
+                        tableId);
+                throw new AppException(ErrorCode.TABLE_ALREADY_SERVING);
+            }
+
+            Orders newOrder = ordersMapper.toOrders(request, customer, table);
+
+            Orders savedOrder = ordersRepository.save(newOrder);
+
+            OrdersResponse response = ordersMapper.toOrdersResponse(savedOrder);
+            response.setTotalPrice(0.0);
+            return response;
         }
-
-
-        // 3. Nếu không tìm thấy -> tạo đơn hàng mới
-        return createNewOrder(request);
     }
 
     public OrdersResponse getOrder(Integer orderId) {
@@ -121,11 +155,8 @@ public class OrdersService {
         return response;
     }
 
-    /**
-     * (HELPER) Tạo một đơn hàng mới khi không tìm thấy đơn hàng đang hoạt động.
-     * @param request Dữ liệu yêu cầu tạo đơn hàng.
-     * @return OrdersResponse của đơn hàng vừa tạo.
-     */
+    // === START SỬA: XÓA HÀM `createNewOrder` CŨ VÌ ĐÃ GỘP LOGIC LÊN TRÊN ===
+    /*
     private OrdersResponse createNewOrder(OrdersCreationRequest request) {
         log.info("No active order found for customer {} at table {}. Creating a new order.",
                 request.getCustomerId(), request.getTableId());
@@ -152,9 +183,13 @@ public class OrdersService {
         response.setTotalPrice(0.0);
         return response;
     }
+    */
+    // === END SỬA ===
+
 
     /**
      * (HELPER) Tính tổng tiền của một đơn hàng dựa trên các chi tiết đơn hàng.
+     *
      * @param order Đơn hàng cần tính tổng tiền.
      * @return Tổng tiền của đơn hàng.
      */
@@ -167,6 +202,7 @@ public class OrdersService {
                 .mapToDouble(OrderDetail::getTotalPrice) // Giả sử OrderDetail có getter getTotalPrice()
                 .sum();
     }
+
     @Transactional(readOnly = true)
     public Page<OrdersResponse> getOrdersByCustomerId(Integer customerId, Pageable pageable) {
         Page<Orders> orderPage = ordersRepository.findAllPaidByCustomer_CustomerId(customerId, pageable);

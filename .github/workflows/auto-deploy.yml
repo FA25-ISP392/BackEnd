@@ -46,18 +46,17 @@ jobs:
           docker rm $IMAGE_NAME || true
           echo "Old container stopped and removed (if it existed)."
 
-      # ***** BƯỚC ĐÃ ĐƯỢC SỬA LỖI *****
+      # ***** SỬA LỖI: Quay lại phương pháp tạo file và mount file *****
       - name: Run Docker Container (Inject Environment Variables)
         run: |
           echo "Running new Docker container ${IMAGE_NAME}..."
           
-          # 1: SỬA LỖI - Dùng 'printf' để ghi file JSON một cách an toàn
-          # Lệnh 'echo' cũ làm hỏng định dạng JSON, gây ra lỗi MalformedJsonException
-          printf "%s\n" "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" > ./gemini-creds.json
-          echo "Temporary credentials file created."
+          # 1: Giải mã Base64 secret (chuỗi ewog...fQo=) và ghi vào file
+          echo "${{ secrets.GOOGLE_CREDENTIALS_JSON }}" | base64 --decode > ./gemini-creds.json
+          echo "Temporary credentials file created from Base64 secret."
           
-          # 2: Lệnh docker run (Định dạng multi-line đã loại bỏ các dòng trống)
-          # Cách này dễ đọc hơn là một dòng dài
+          # 2: Lệnh docker run
+          # Mount file -v và trỏ biến -e GOOGLE_APPLICATION_CREDENTIALS vào file đó
           docker run -d \
             --name $IMAGE_NAME \
             -p $DOCKER_HOST_PORT:$APP_INTERNAL_PORT \
@@ -89,7 +88,6 @@ jobs:
         run: |
           echo "=== Reading container logs (stdout/stderr) ==="
           # Thêm 'docker logs' để xem output của container, rất hữu ích khi debug
-          # Lỗi MalformedJsonException sẽ xuất hiện ở đây
           docker logs $IMAGE_NAME
           
           echo "=== Reading app.log from container (if available) ==="
