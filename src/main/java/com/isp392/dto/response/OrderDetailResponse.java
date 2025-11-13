@@ -13,6 +13,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderDetailResponse {
     Integer orderDetailId;
+    Integer orderId;
+    int tableId;
     Integer dishId;
     String dishName;
     Double totalPrice;
