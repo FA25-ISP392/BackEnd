@@ -22,6 +22,8 @@ public interface OrderDetailMapper {
     @Mapping(source = "orderToppings", target = "toppings")
     @Mapping(source = "order.orderDate", target = "orderDate")
     @Mapping(source = "order.table.tableName", target = "tableName")
+    @Mapping(source = "order.table.tableId", target = "tableId")
+    @Mapping(source = "order.orderId", target = "orderId")
     @Mapping(source = "servingStaff.staffId", target = "staffId", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     @Mapping(source = "servingStaff.account.fullName", target = "staffName", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     OrderDetailResponse toOrderDetailResponse(OrderDetail orderDetail);
@@ -31,6 +33,8 @@ public interface OrderDetailMapper {
     @Mapping(source = "orderDetail.status", target = "status")
     @Mapping(source = "orderDetail.order.orderDate", target = "orderDate")
     @Mapping(source = "orderDetail.order.table.tableName", target = "tableName")
+    @Mapping(source = "orderDetail.order.orderId", target = "orderId")
+    @Mapping(source = "orderDetail.order.table.tableId", target = "tableId")
     @Mapping(source = "orderDetail.servingStaff.staffId", target = "staffId", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     @Mapping(source = "orderDetail.servingStaff.account.fullName", target = "staffName", nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
     OrderDetailResponse toResponse(OrderDetail orderDetail, List<OrderToppingResponse> toppings);
