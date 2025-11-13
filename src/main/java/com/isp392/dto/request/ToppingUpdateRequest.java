@@ -14,7 +14,7 @@ public class ToppingUpdateRequest {
     @NotBlank(message = "INGREDIENT_NAME_NOT_BLANKED")
     @Size(min = 3, message = "INGREDIENT_NAME_INVALID")
     String name;
-    @Min(value = 0, message = "INGREDIENT_CALORIES_NEGATIVE")
+
     Double calories;
 
     @Min(value = 0, message = "INGREDIENT_QUANTITY_NEGATIVE")

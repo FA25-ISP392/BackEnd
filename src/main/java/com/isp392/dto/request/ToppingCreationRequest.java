@@ -17,7 +17,6 @@ public class ToppingCreationRequest {
     String name;
 
     @NotNull(message = "INGREDIENT_CALORIES_REQUIRED")
-    @Min(value = 0, message = "INGREDIENT_CALORIES_NEGATIVE")
     double calories;
 
     @NotNull(message = "INGREDIENT_QUANTITY_REQUIRED")
