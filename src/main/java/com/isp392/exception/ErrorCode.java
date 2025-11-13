@@ -83,6 +83,7 @@ public enum ErrorCode {
 
     ITEM_NOT_FOUND(4001, "can't find the dish or topping"),
     INVALID_REQUEST(4002, "just only oneStaffID can fix it"),
+    STAFF_ID_REQUIRED(4003, "staffID is required"),
 
     // Daily Plan
     ACCESS_DENIED(1007, "You do not have permission"),

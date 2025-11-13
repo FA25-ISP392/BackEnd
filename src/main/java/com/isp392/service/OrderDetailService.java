@@ -107,7 +107,7 @@ public class OrderDetailService {
         if (request.getStatus() == OrderDetailStatus.SERVED) {
             if (request.getStaffId() == null) {
                 // Nếu frontend set SERVED nhưng quên gửi staffId, ném lỗi
-                throw new AppException(ErrorCode.INVALID_REQUEST); // "Cần có staffId khi giao món"
+                throw new AppException(ErrorCode.STAFF_ID_REQUIRED); // "Cần có staffId khi giao món"
             }
 
             // Lấy Staff KÈM Account để check Role
@@ -123,10 +123,6 @@ public class OrderDetailService {
                 throw new AppException(ErrorCode.ACCESS_DENIED); // "Chỉ nhân viên phục vụ mới được giao món"
             }
         }
-        // NẾU: request.getStatus() là PREPARING (hoặc bất cứ gì khác)
-        // thì code khối 'if' này bị bỏ qua.
-        // Việc gán staffId (nếu có) từ request sẽ không xảy ra,
-        // và quan trọng nhất là KHÔNG NÉM LỖI.
 
         // VIỆC 4: Xử lý cập nhật topping (Nếu có)
         if (request.getToppings() != null) {
@@ -142,7 +138,6 @@ public class OrderDetailService {
         // VIỆC 7: Map và trả về
         return mapToResponse(savedDetail);
     }
-    // 👆 KẾT THÚC SỬA HÀM 👆
 
     @Transactional
     public void deleteOrderDetail(Integer orderDetailId) {
