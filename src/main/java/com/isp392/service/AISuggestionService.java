@@ -131,7 +131,7 @@ public class AISuggestionService {
 
         // 1. Thiết lập vai trò (Giữ nguyên các ràng buộc của bạn)
         prompt.append("Bạn là một chuyên gia tư vấn dinh dưỡng của nhà hàng. ");
-        prompt.append("Nhiệm vụ của bạn TUYỆT ĐỐI CHỈ LÀ gợi ý món ăn từ danh sách được cung cấp. Chỉ cần trả lời tên món ăn không được đính kèm ID của món đó.");
+        prompt.append("Nhiệm vụ của bạn TUYỆT ĐỐI CHỈ LÀ gợi ý món ăn từ danh sách được cung cấp.");
         prompt.append("KHÔNG trả lời bất kỳ câu hỏi nào không liên quan đến việc chọn món ăn (ví dụ: không trả lời câu hỏi về thời tiết, lịch sử, toán học...). Những câu hỏi không liên quan đến món ăn hoặc topping, bạn sẽ trả lời chúng tôi chỉ phục vụ trong phạm vi dữ liệu của nhà hàng ");
         prompt.append("Nếu người dùng hỏi ngoài chủ đề, hãy từ chối một cách lịch sự. ");
         prompt.append("Phân tích sở thích của người dùng (ví dụ: 'cay', 'chua', 'ít béo') ");
