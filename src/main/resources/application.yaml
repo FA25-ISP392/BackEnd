@@ -5,9 +5,9 @@ server:
   forward-headers-strategy: framework
 spring:
   datasource:
-    url: jdbc:sqlserver://database.purintech.id.vn:1433;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
-    username: ispmaifa
-    password: ispmaifa
+    url: jdbc:sqlserver://url:1433;databaseName=ISP392_FOODSYSTEM;encrypt=true;trustServerCertificate=true;
+    username: username
+    password: password
     # url: jdbc:sqlserver://localhost:1433;databaseName=FOODSYSTEM;encrypt=true;trustServerCertificate=true;
     # username: sa
     # password: 12345
@@ -23,7 +23,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: moncuaban@gmail.com
-    password: horilrdteknanpiz
+    password: password
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -35,8 +35,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 812416226843-emd2psskagm5orp5gk816tfrs9dohtp7.apps.googleusercontent.com
-            client-secret: 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
+            client-id: google-client-id
+            client-secret: google-client-secret
             redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
             scope:
               - email
@@ -56,16 +56,16 @@ jwt:
 
 cloudinary:
   cloud-name: dvcosaetb
-  api-key: 298672844131261
-  api-secret: 1eczGsocRPNluh28DuDUy1SxUfM
+  api-key:  cloudinary-api-key
+  api-secret: cloudinary-api-secret
 
 payos:
-  client-id: 67c71da0-2783-4017-b92c-253309ccc9d0
-  api-key: f8cab22b-6837-4578-b72a-dc2cd15ba941
-  checksum-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
+  client-id: payos-client-id
+  api-key: payos-api-key
+  checksum-key: payos-checksum-key
   return-url: ${PAYOS_RETURN_URL:http://localhost:5173/payment/success}
   cancel-url: ${PAYOS_CANCEL_URL:http://localhost:5173/payment/cancel}
-  webhook-key: b6cefd71c1f91f6af8039e945f4ae0897777792e8f2de5ca98522d48cc3269e7
+  webhook-key: payos-webhook-key
 logging:
   file:
     name: /app/logs/app.log
